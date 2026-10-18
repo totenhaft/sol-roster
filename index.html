@@ -313,8 +313,8 @@ function normalize(s){
   var cIds={},kIds={},tIds={};COLORS.forEach(function(c){cIds[c[0]]=1});KINDS.forEach(function(c){kIds[c[0]]=1});TIMES.forEach(function(c){tIds[c[0]]=1});
   s.types=(s.types||[]).filter(function(t){return t&&t.id&&!BUILTIN_IDS[t.id]}).map(function(t){return {id:t.id,name:t.name||'근무 형태',short:String(t.short||t.name||'?').slice(0,2),color:cIds[t.color]?t.color:'slate',kind:kIds[t.kind]?t.kind:'out',time:tIds[t.time]?t.time:'full'}});
   s.teams=(s.teams||[]).map(function(t){var n=t.need||{};return {id:t.id,name:t.name||'팀',leader:t.leader||'',need:{full:int(n.full,0,30),half:int(n.half,0,30),night:int(n.night,0,30)},
-    staff:(t.staff||[]).map(function(p){return {id:p.id,name:p.name||'',weekDays:int(p.weekDays||5,1,7),avail:(p.avail||[1,2,3,4,5,6]).map(Number),night:!!p.night,early:half30(p.early),late:half30(p.late)}}),updatedAt:t.updatedAt||0}});
-  var sc=s.sched||{};s.sched={};Object.keys(sc).forEach(function(ym){var m=sc[ym]||{};s.sched[ym]={};Object.keys(m).forEach(function(tid){var r=m[tid]||{};s.sched[ym][tid]={cells:r.cells||{},locks:r.locks||{},reqs:r.reqs||{},adj:cleanAdj(r.adj),gen:!!r.gen,updatedAt:r.updatedAt||0}})});
+    staff:(t.staff||[]).map(function(p){return {id:p.id,name:p.name||'',weekDays:int(p.weekDays||5,1,7),avail:(p.avail||[1,2,3,4,5,6]).map(Number),night:!!p.night,early:half30(p.early),late:half30(p.late)}}),updatedAt:t.updatedAt||0,updatedBy:t.updatedBy||''}});
+  var sc=s.sched||{};s.sched={};Object.keys(sc).forEach(function(ym){var m=sc[ym]||{};s.sched[ym]={};Object.keys(m).forEach(function(tid){var r=m[tid]||{};s.sched[ym][tid]={cells:r.cells||{},locks:r.locks||{},reqs:r.reqs||{},adj:cleanAdj(r.adj),gen:!!r.gen,updatedAt:r.updatedAt||0,updatedBy:r.updatedBy||''}})});
   return s;
 }
 function upgrade(s){
@@ -541,14 +541,14 @@ function header(){
     (auth?'<div class="authbox">'+auth+'</div>':'')+(save?'<div class="savebox">'+save+'</div>':'')+
     '</div>'+(tabs.length>1?'<nav class="tabs" role="tablist" aria-label="메뉴">'+tabs.map(function(t,i){return '<button class="tab" role="tab" id="tab-'+t[0]+'" data-act="tab" data-k="'+t[0]+'" aria-selected="'+(ui.tab===t[0])+'"><span class="num">'+(i+1)+'</span>'+t[1]+'</button>'}).join('')+'</nav>':'')+
     '</div></header>'}
-function authLabel(){if(!ui.auth)return '';if(ui.auth.role==='admin')return '관리자';if(ui.auth.role==='leader'){var t=teamById(ui.auth.teamId);return (t?t.name:'팀')+' 팀장'}return '직원(보기)'}
+function authLabel(){if(!ui.auth)return '';if(ui.auth.role==='admin')return '관리자';if(ui.auth.role==='leader'){var t=teamById(ui.auth.teamId);return (t?t.name:'팀')+' · '+(ui.auth.name||'팀장')}return '직원(보기)'}
 function isDirty(){var d=ui.dirty;return d.config||Object.keys(d.teams).length>0||Object.keys(d.rosters).length>0}
 function saveState(){if(isDirty())return '<span class="dot warn"></span>저장 안 된 변경 있음';
   if(MODE==='server'&&ui.lastSync)return '<span class="dot ok"></span>최신 · '+fmtTime(ui.lastSync);
   if(S.savedAt)return '<span class="dot ok"></span>저장됨 · '+fmtTime(S.savedAt);return ''}
 function teamBar(){var mine=myTeam();
   var h='<div class="teambar" role="group" aria-label="팀 고르기"><span class="lbl">'+esc(S.clinic)+'</span><button class="tchip" data-act="team" data-k="all" aria-pressed="'+(ui.team==='all')+'">전체</button>';
-  S.teams.forEach(function(t){h+='<button class="tchip" data-act="team" data-k="'+t.id+'" aria-pressed="'+(ui.team===t.id)+'">'+esc(t.name)+(t.leader?' <small>'+esc(t.leader)+'</small>':'')+(t.id===mine?'<span class="mine">내 팀</span>':'')+'</button>'});
+  S.teams.forEach(function(t){h+='<button class="tchip" data-act="team" data-k="'+t.id+'" aria-pressed="'+(ui.team===t.id)+'">'+esc(t.name)+(leaderNames(t)?' <small>'+esc(leaderNames(t))+'</small>':'')+(t.id===mine?'<span class="mine">내 팀</span>':'')+'</button>'});
   return h+'</div>'}
 function banners(){var h='';
   if(ui.conflict)h+='<div class="note bad"><div class="grow">'+esc(ui.conflict)+' 최신 내용을 불러오면 아직 저장하지 않은 변경은 사라져요.</div><button class="btn small" data-act="reload">최신 내용 불러오기</button></div>';
@@ -588,7 +588,7 @@ function rosterTab(){
   h+='</tr></thead><tbody>';
   var colspan=dates.length+7,ri=0;
   teams.forEach(function(team){var ed=canTeam(team.id),ro=roster(ym,team.id);
-    h+='<tr class="grp"><th class="name" scope="rowgroup">'+esc(team.name)+(team.leader?'<span class="ld">'+esc(team.leader)+'</span>':'')+(team.id===myTeam()?'<span class="mine">내 팀</span>':'')+'</th><td colspan="'+colspan+'"></td></tr>';
+    h+='<tr class="grp"><th class="name" scope="rowgroup">'+esc(team.name)+(leaderNames(team)?'<span class="ld">'+esc(leaderNames(team))+'</span>':'')+(ro.updatedBy?'<span class="ld">· 마지막 저장 '+esc(ro.updatedBy)+(ro.updatedAt?' '+fmtTime(ro.updatedAt):'')+'</span>':'')+(team.id===myTeam()?'<span class="mine">내 팀</span>':'')+'</th><td colspan="'+colspan+'"></td></tr>';
     team.staff.forEach(function(p){h+='<tr><th class="name" scope="row"><b>'+esc(p.name||'이름 없음')+'</b><small>'+staffSub(p)+'</small></th>';
       dates.forEach(function(iso,ci){var d=di(iso);if(d.type==='closed'){h+='<td class="c closed"></td>';return}h+='<td class="c">'+cellBtn(ro,team,p,iso,ed,ri,ci)+'</td>'});
       ['work','half','night','leave','adj','min','maxW'].forEach(function(k,i){h+='<td class="sm'+(i===0?' first':'')+'" data-sm="'+p.id+'-'+k+'"></td>'});
@@ -751,27 +751,44 @@ function rulesTab(){var r=S.rules,fx=function(t){return '<span class="fixed">'+t
 function typeUse(code){var n=0;Object.keys(S.sched).forEach(function(ym){Object.keys(S.sched[ym]).forEach(function(tid){var c=S.sched[ym][tid].cells;Object.keys(c).forEach(function(sid){Object.keys(c[sid]).forEach(function(iso){if(c[sid][iso]===code)n++})})})});return n}
 
 /* ----- teams tab ----- */
-function teamsTab(){var h='',admin=isAdmin();
+function leaderNames(t){if(MODE==='server'&&ui.pins&&ui.pins.leaders)return ui.pins.leaders.filter(function(l){return l.teamId===t.id}).map(function(l){return l.name}).join(', ');return t.leader||''}
+function teamsTab(){var h='',admin=isAdmin(),srv=MODE==='server';
   if(admin){
-    h+='<section class="panel"><h2>팀</h2><p>팀마다 팀장이 자기 팀 직원과 근무표를 관리해요. 관리자는 모든 팀과 병원 설정을 관리해요.'+(MODE==='server'?' 팀장은 팀 PIN으로 로그인해요.':' 팀장 PIN 로그인은 구글 드라이브 공유 서버에 연결했을 때 쓸 수 있어요. 지금은 위쪽 ‘미리보기’로 팀장 화면을 볼 수 있어요.')+'</p><div class="tblwrap"><table class="tbl"><thead><tr><th>팀 이름</th><th>팀장 이름</th>'+(MODE==='server'?'<th>팀장 PIN</th>':'')+'<th>직원</th><th></th></tr></thead><tbody>';
-    S.teams.forEach(function(t){var id='tm-'+t.id+'-';
-      h+='<tr><td><input type="text" id="'+id+'name" data-tm="'+t.id+'" data-k="name" value="'+esc(t.name)+'" aria-label="팀 이름"></td><td><input type="text" id="'+id+'leader" data-tm="'+t.id+'" data-k="leader" value="'+esc(t.leader)+'" aria-label="팀장 이름" placeholder="예: 홍길동"></td>'+
-        (MODE==='server'?'<td>'+pinCell('team:'+t.id,ui.pins&&ui.pins.teams&&ui.pins.teams[t.id])+'</td>':'')+
+    h+='<section class="panel"><h2>팀</h2><p>팀마다 팀장이 자기 팀 직원과 근무표를 관리해요. 관리자는 모든 팀과 병원 설정을 관리해요.'+(srv?' 팀장은 아래 ‘팀장’에서 사람마다 등록해요. 한 팀에 여러 명도 돼요.':' 여러 사람이 함께 쓰려면 구글 드라이브 공유 서버에 연결하세요. 지금은 위쪽 ‘미리보기’로 팀장 화면을 볼 수 있어요.')+'</p><div class="tblwrap"><table class="tbl"><thead><tr><th>팀 이름</th><th>팀장</th><th>직원</th><th></th></tr></thead><tbody>';
+    S.teams.forEach(function(t){var id='tm-'+t.id+'-',ln=leaderNames(t);
+      h+='<tr><td><input type="text" id="'+id+'name" data-tm="'+t.id+'" data-k="name" value="'+esc(t.name)+'" aria-label="팀 이름"></td>'+
+        (srv?'<td>'+(ln?esc(ln):'<span class="muted">아직 없음</span>')+'</td>':'<td><input type="text" id="'+id+'leader" data-tm="'+t.id+'" data-k="leader" value="'+esc(t.leader)+'" aria-label="팀장 이름" placeholder="예: 홍길동"></td>')+
         '<td class="num">'+t.staff.length+'명</td><td>'+(ui.confirm==='team:'+t.id?'<button class="btn small danger" data-act="teamDel" data-k="'+t.id+'">정말 삭제</button> <button class="btn small" data-act="cancel">취소</button>':'<button class="btn small" data-act="teamAsk" data-k="'+t.id+'">삭제</button>')+'</td></tr>'});
     h+='</tbody></table></div>';
-    if(ui.confirm&&ui.confirm.indexOf('team:')===0)h+='<p class="err" style="margin-top:8px">팀을 삭제하면 그 팀의 직원과 근무표도 함께 지워져요.</p>';
+    if(ui.confirm&&ui.confirm.indexOf('team:')===0)h+='<p class="err" style="margin-top:8px">팀을 삭제하면 그 팀의 직원·근무표'+(srv?'·팀장':'')+'도 함께 지워져요.</p>';
     h+='<div class="row" style="margin-top:12px"><button class="btn" data-act="teamAdd">+ 팀 추가</button></div></section>';
-    if(MODE==='server')h+='<section class="panel"><h2>접속 PIN</h2><p>PIN은 서로 달라야 해요. 열람 PIN을 정하면 PIN이 없는 사람은 근무표를 볼 수 없어요. 정하지 않으면 링크를 아는 사람은 누구나 볼 수 있어요.</p><div class="tblwrap"><table class="tbl"><tbody>'+
-      '<tr><th scope="row">관리자 PIN</th><td>'+pinCell('admin',true)+'</td></tr><tr><th scope="row">열람 PIN (직원용, 선택)</th><td>'+pinCell('view',ui.pins&&ui.pins.view)+'</td></tr></tbody></table></div></section>';
-  }else if(MODE==='server'&&role()==='leader'){h+='<section class="panel"><h2>내 팀 PIN</h2><p>로그인할 때 쓰는 PIN을 바꿀 수 있어요.</p>'+pinCell('team:'+myTeam(),true)+'</section>'}
+    if(srv){h+=leadersPanel();
+      h+='<section class="panel"><h2>관리자·열람 PIN</h2><p>PIN은 모두 서로 달라야 해요. 열람 PIN을 정하면 PIN이 없는 사람은 근무표를 볼 수 없어요. 정하지 않으면 링크를 아는 사람은 누구나 볼 수 있어요.</p><div class="tblwrap"><table class="tbl"><tbody>'+
+        '<tr><th scope="row">관리자 PIN</th><td>'+pinCell('admin',true)+'</td></tr><tr><th scope="row">열람 PIN (직원용, 선택)</th><td>'+pinCell('view',ui.pins&&ui.pins.view)+'</td></tr></tbody></table></div></section>'}
+  }else if(srv&&role()==='leader'&&ui.auth){var mates=((ui.pins&&ui.pins.leaders)||[]).filter(function(l){return l.teamId===myTeam()&&l.id!==ui.auth.leaderId}).map(function(l){return l.name});
+    h+='<section class="panel"><h2>내 PIN 바꾸기</h2><p>'+esc(ui.auth.name||'')+' 님이 로그인할 때 쓰는 PIN이에요.'+(mates.length?' 같은 팀 팀장: '+esc(mates.join(', '))+'.':'')+'</p>'+pinCell('leader:'+ui.auth.leaderId,true)+'</section>'}
   var list=admin?visibleTeams():S.teams.filter(function(t){return canTeam(t.id)});
   list.forEach(function(t){h+=teamPanel(t,admin)});
   return h}
+function leadersPanel(){var L=(ui.pins&&ui.pins.leaders)||[],saved=S.teams.filter(function(t){return t.updatedAt}),h='<section class="panel"><h2>팀장 '+L.length+'명</h2><p>팀장은 사람마다 이름과 PIN을 따로 등록해요. 한 팀에 여러 명을 등록해도 되고, 같은 팀 팀장끼리는 권한이 같아요. 그만둔 사람은 그 사람만 삭제하면 돼요. 여기서 고친 내용은 저장 버튼 없이 바로 반영돼요.</p>';
+  if(L.length){h+='<div class="tblwrap"><table class="tbl"><thead><tr><th>이름</th><th>팀</th><th>PIN</th><th></th></tr></thead><tbody>';
+    S.teams.forEach(function(t){L.filter(function(l){return l.teamId===t.id}).forEach(function(l){var id='ld-'+l.id+'-';
+      h+='<tr><td><input type="text" id="'+id+'name" data-ld="'+l.id+'" data-k="name" value="'+esc(l.name)+'" aria-label="팀장 이름"></td>'+
+        '<td><select id="'+id+'team" data-ld="'+l.id+'" data-k="teamId" aria-label="팀">'+saved.map(function(x){return '<option value="'+x.id+'"'+(x.id===l.teamId?' selected':'')+'>'+esc(x.name)+'</option>'}).join('')+'</select></td>'+
+        '<td>'+pinCell('leader:'+l.id,true)+'</td>'+
+        '<td>'+(ui.confirm==='ld:'+l.id?'<button class="btn small danger" data-act="ldDel" data-k="'+l.id+'">정말 삭제</button> <button class="btn small" data-act="cancel">취소</button>':'<button class="btn small" data-act="ldAsk" data-k="'+l.id+'">삭제</button>')+'</td></tr>'})});
+    h+='</tbody></table></div>'}
+  else h+='<p class="muted" style="margin:0">아직 등록한 팀장이 없어요.</p>';
+  h+='<h3 style="margin:18px 0 8px">팀장 추가</h3>';
+  if(!saved.length)h+='<p class="muted" style="margin:0">팀을 먼저 저장하면 팀장을 추가할 수 있어요.</p>';
+  else h+='<div class="row"><label class="vh" for="ld-new-name">이름</label><input type="text" id="ld-new-name" placeholder="이름" autocomplete="off"><label class="vh" for="ld-new-team">팀</label><select id="ld-new-team">'+saved.map(function(t){return '<option value="'+t.id+'"'+(ui.team===t.id?' selected':'')+'>'+esc(t.name)+'</option>'}).join('')+'</select><label class="vh" for="ld-new-pin">PIN</label><input type="password" class="pin" id="ld-new-pin" inputmode="numeric" autocomplete="new-password" placeholder="PIN 4~12자"><button class="btn primary" data-act="ldAdd">추가</button></div>';
+  if(S.teams.some(function(t){return !t.updatedAt}))h+='<p class="fine">새로 만든 팀은 먼저 저장해야 팀장을 추가할 수 있어요.</p>';
+  return h+'</section>'}
 function amtOpts(cur,k){return [0].concat(ADJ_AMTS).map(function(m){return '<option value="'+m+'"'+((cur||0)===m?' selected':'')+'>'+(m?hLong(m)+(k==='l'?' 늦게 출근':' 일찍 퇴근'):(k==='l'?'출근 정시':'퇴근 정시'))+'</option>'}).join('')}
 function pinCell(target,has){var id='pin-'+target.replace(':','-');
   return '<span class="row"><span class="muted" style="font-size:12.5px">'+(has?'설정됨':'없음')+'</span><input type="password" class="pin" id="'+id+'" inputmode="numeric" autocomplete="new-password" placeholder="새 PIN" aria-label="새 PIN"><button class="btn small" data-act="pinSet" data-k="'+target+'">'+(has?'바꾸기':'정하기')+'</button>'+
-    (has&&target!=='admin'?'<button class="btn small" data-act="pinClear" data-k="'+target+'">지우기</button>':'')+'</span>'}
-function teamPanel(t,admin){var tid=t.id,n=t.need,h='<section class="panel"><h2>'+esc(t.name)+(t.leader?' <span class="muted" style="font-weight:400;font-size:14px">팀장 '+esc(t.leader)+'</span>':'')+'</h2>';
+    (has&&target==='view'?'<button class="btn small" data-act="pinClear" data-k="'+target+'">지우기</button>':'')+'</span>'}
+function teamPanel(t,admin){var tid=t.id,n=t.need,h='<section class="panel"><h2>'+esc(t.name)+(leaderNames(t)?' <span class="muted" style="font-weight:400;font-size:14px">팀장 '+esc(leaderNames(t))+'</span>':'')+'</h2>';
   h+='<p>하루에 이 팀에서 최소 몇 명이 있어야 하는지 정해요. 오전과 오후를 각각 이 숫자에 맞춰 배치해요.</p><div class="row" style="margin-bottom:16px">'+
     [['full','종일 진료일'],['half','반일 진료일'],['night','야간 진료']].map(function(k){return '<label class="tr" for="nd-'+tid+'-'+k[0]+'">'+k[1]+' <input type="number" min="0" max="30" id="nd-'+tid+'-'+k[0]+'" data-nd="'+tid+'" data-k="'+k[0]+'" value="'+n[k[0]]+'"> 명</label>'}).join('<span class="muted">·</span>')+'</div>';
   h+='<div class="tblwrap"><table class="tbl"><thead><tr><th>이름</th>'+(admin&&S.teams.length>1?'<th>팀</th>':'')+'<th>주 근무일</th><th>근무 가능 요일</th><th>평소 근무시간</th><th>야간</th><th></th></tr></thead><tbody>';
@@ -885,6 +902,9 @@ app.addEventListener('click',function(e){
   case 'rule':S.rules[k]=t.dataset.v;S.rules=cleanRules(S.rules);dConfig();render();break;
   case 'rulesReset':S.rules=cleanRules({});S.holidayCredit=true;dConfig();render();toast('생성 조건을 기본값으로 되돌렸어요.');break;
   case 'pinSet':case 'pinClear':setPin(k,act==='pinClear');break;
+  case 'ldAdd':ldAdd();break;
+  case 'ldAsk':ui.confirm='ld:'+k;render();break;
+  case 'ldDel':ldDelete(k);break;
   case 'claim':claim();break;
   case 'login':(function(){var pin=(document.getElementById('loginPin')||{}).value||'',rem=!!(document.getElementById('loginRemember')||{}).checked;if(!pin){ui.loginErr='PIN을 입력하세요.';render();return}doLogin(pin,rem,false)})();break;
   case 'viewOnly':ui.auth=null;ui.loginErr='';loadData();break;
@@ -896,7 +916,8 @@ app.addEventListener('click',function(e){
   }
 });
 app.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target&&(e.target.id==='loginPin')){e.preventDefault();var b=app.querySelector('[data-act="login"]');if(b)b.click()}
-  if(e.key==='Enter'&&e.target&&e.target.id==='setPin2'){e.preventDefault();claim()}});
+  if(e.key==='Enter'&&e.target&&e.target.id==='setPin2'){e.preventDefault();claim()}
+  if(e.key==='Enter'&&e.target&&e.target.id==='ld-new-pin'){e.preventDefault();ldAdd()}});
 app.addEventListener('input',function(e){var t=e.target;
   if(t.dataset.f==='clinic'){S.clinic=t.value;var c=app.querySelector('.clinic');if(c)c.textContent=t.value;dConfig();return}
   if(t.dataset.st&&t.dataset.k==='name'){var L=staffLoc(t.dataset.st);if(L&&canTeam(L.team.id)){L.p.name=t.value;dTeam(L.team.id)}return}
@@ -905,6 +926,7 @@ app.addEventListener('input',function(e){var t=e.target;
   if(t.dataset.dh==='note'&&ui.selDate&&S.dateHours[ui.selDate]){S.dateHours[ui.selDate].note=t.value;dConfig();return}
 });
 app.addEventListener('change',function(e){var t=e.target;
+  if(t.dataset.ld){ldUpdate(t.dataset.ld,t.dataset.k,t.value);return}
   if(t.id==='importFile'){var f=t.files&&t.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var o=JSON.parse(rd.result);if(!o||!o.hours)throw 0;ui.importData=o;render()}catch(err){toast('근무표 백업 파일이 아니에요. ‘전체 백업 파일’로 받은 .json 파일을 골라 주세요.')}};rd.readAsText(f);t.value='';return}
   if(t.dataset.f==='preview'){ui.preview=t.value;ui.team=(t.value!=='admin'&&t.value!=='viewer')?t.value:'all';ui.confirm=null;render();return}
   if(t.dataset.f==='holidayCredit'){S.holidayCredit=t.checked;dConfig();render();return}
@@ -930,7 +952,7 @@ function pinArg(){return ui.auth?ui.auth.pin:''}
 function readAuth(){var raw=ssGet(KEYS.auth)||lsGet(KEYS.auth);try{return raw?JSON.parse(raw):null}catch(e){return null}}
 function writeAuth(rem){var v=JSON.stringify({pin:ui.auth.pin,remember:!!rem});ssSet(KEYS.auth,v);if(rem)lsSet(KEYS.auth,v);else lsDel(KEYS.auth)}
 function clearAuth(){ssDel(KEYS.auth);lsDel(KEYS.auth)}
-function errMsg(r){var e=r&&r.error;return e==='pin'?'PIN이 맞지 않아요.':e==='locked'?'PIN을 여러 번 틀려서 10분 동안 잠겼어요. 잠시 뒤 다시 시도하세요.':e==='forbidden'?'이 작업을 할 권한이 없어요.':e==='duplicate'?'다른 사람이 쓰는 PIN과 같아요. 다른 PIN을 정하세요.':e==='weak'?'PIN은 4~12자로 정하세요.':e==='exists'?'관리자 PIN이 이미 있어요. 로그인하세요.':(r&&r.message)||'처리하지 못했어요.'}
+function errMsg(r){var e=r&&r.error;return e==='pin'?'PIN이 맞지 않아요.':e==='locked'?'PIN을 여러 번 틀려서 10분 동안 잠겼어요. 잠시 뒤 다시 시도하세요.':e==='forbidden'?'이 작업을 할 권한이 없어요.':e==='duplicate'?'다른 사람이 쓰는 PIN과 같아요. 다른 PIN을 정하세요.':e==='weak'?'PIN은 4~12자로 정하세요.':e==='name'?'이름을 입력하세요.':e==='exists'?'관리자 PIN이 이미 있어요. 로그인하세요.':(r&&r.message)||'처리하지 못했어요.'}
 function netFail(err){ui.netErr='서버에 연결하지 못했어요. ('+(err&&err.message?err.message:'네트워크 오류')+')';if(ui.view!=='app')ui.view='error';render()}
 function boot(){
   if(MODE!=='server'){exampleFill();render();return}
@@ -945,7 +967,7 @@ function claim(){var a=(document.getElementById('setPin1')||{}).value||'',b=(doc
   api('claimAdmin',{pin:a}).then(function(r){if(!r.ok){ui.loginErr=errMsg(r);render();return}ui.status.hasAdmin=true;doLogin(a,false,false)}).catch(netFail)}
 function doLogin(pin,rem,silent){return api('login',{pin:pin}).then(function(r){
   if(!r.ok){if(silent){clearAuth();if(ui.status&&ui.status.viewPin){ui.view='login';ui.loginErr='다시 로그인해 주세요.';render();return}return loadData()}ui.loginErr=errMsg(r);render();return}
-  ui.auth={role:r.role,teamId:r.teamId||null,pin:pin};writeAuth(rem);ui.loginErr='';ui.team=r.role==='leader'?r.teamId:'all';ui.tab='roster';return loadData()}).catch(netFail)}
+  ui.auth={role:r.role,teamId:r.teamId||null,leaderId:r.leaderId||null,name:r.name||'',pin:pin};writeAuth(rem);ui.loginErr='';ui.team=r.role==='leader'?r.teamId:'all';ui.tab='roster';return loadData()}).catch(netFail)}
 function loadData(){ui.view=ui.view==='app'?'app':'loading';if(ui.view==='loading')render();
   return api('load',{pin:pinArg()}).then(function(r){
     if(!r.ok){if(r.error==='pin'||r.error==='auth'){clearAuth();ui.auth=null;ui.view='login';ui.loginErr=r.error==='auth'?'열람 PIN이 필요해요.':'다시 로그인해 주세요.';render();return}throw new Error(errMsg(r))}
@@ -957,17 +979,22 @@ function saveServer(){var pin=pinArg(),steps=[];
   if(ui.dirty.config&&isAdmin())steps.push(function(){return api('saveConfig',{pin:pin,base:S.meta.configAt||0,config:{clinic:S.clinic,holidayCredit:S.holidayCredit,rules:S.rules,hours:S.hours,dateHours:S.dateHours,types:S.types,teams:S.teams.map(function(t){return {id:t.id,name:t.name,leader:t.leader}})}}).then(function(r){
     if(!r.ok)throw r;S.meta.configAt=r.updatedAt;Object.keys(r.teams||{}).forEach(function(id){var tm=teamById(id);if(tm&&!ui.dirty.teams[id])tm.updatedAt=r.teams[id];else if(tm&&!tm.updatedAt)tm.updatedAt=r.teams[id]});ui.dirty.config=false})});
   Object.keys(ui.dirty.teams).forEach(function(tid){steps.push(function(){var tm=teamById(tid);if(!tm||!canTeam(tid)){delete ui.dirty.teams[tid];return Promise.resolve()}
-    return api('saveTeam',{pin:pin,base:tm.updatedAt||0,team:{id:tm.id,need:tm.need,staff:tm.staff}}).then(function(r){if(!r.ok){r.what=tm.name+' 직원 명단';throw r}tm.updatedAt=r.updatedAt;delete ui.dirty.teams[tid]})})});
+    return api('saveTeam',{pin:pin,base:tm.updatedAt||0,team:{id:tm.id,need:tm.need,staff:tm.staff}}).then(function(r){if(!r.ok){r.what=tm.name+' 직원 명단';throw r}tm.updatedAt=r.updatedAt;tm.updatedBy=r.updatedBy||'';delete ui.dirty.teams[tid]})})});
   Object.keys(ui.dirty.rosters).forEach(function(key){steps.push(function(){var p=key.split('|'),ym=p[0],tid=p[1],tm=teamById(tid);if(!tm||!canTeam(tid)){delete ui.dirty.rosters[key];return Promise.resolve()}
-    var ro=roster(ym,tid,true);return api('saveRoster',{pin:pin,ym:ym,teamId:tid,base:ro.updatedAt||0,roster:{cells:ro.cells,locks:ro.locks,reqs:ro.reqs,adj:ro.adj,gen:ro.gen}}).then(function(r){if(!r.ok){r.what=tm.name+' '+ymLabel(ym)+' 근무표';throw r}ro.updatedAt=r.updatedAt;delete ui.dirty.rosters[key]})})});
+    var ro=roster(ym,tid,true);return api('saveRoster',{pin:pin,ym:ym,teamId:tid,base:ro.updatedAt||0,roster:{cells:ro.cells,locks:ro.locks,reqs:ro.reqs,adj:ro.adj,gen:ro.gen}}).then(function(r){if(!r.ok){r.what=tm.name+' '+ymLabel(ym)+' 근무표';throw r}ro.updatedAt=r.updatedAt;ro.updatedBy=r.updatedBy||'';delete ui.dirty.rosters[key]})})});
   return steps.reduce(function(p,f){return p.then(f)},Promise.resolve())}
 function setPin(target,clear){var inp=document.getElementById('pin-'+target.replace(':','-')),v=clear?'':((inp&&inp.value)||'');
   if(!clear&&(v.length<4||v.length>12)){toast('PIN은 4~12자로 정하세요.');return}
   if(MODE!=='server'){toast('PIN은 구글 드라이브 공유 서버에 연결했을 때 쓸 수 있어요.');return}
-  if(target.indexOf('team:')===0){var ntm=teamById(target.slice(5));if(ntm&&!ntm.updatedAt){toast('새로 만든 팀은 먼저 저장한 뒤 PIN을 정하세요.');return}}
   api('setPin',{pin:pinArg(),target:target,newPin:v}).then(function(r){if(!r.ok){toast(errMsg(r));return}ui.pins=r.pins||ui.pins;
-    if((target==='admin'&&isAdmin())||(target==='team:'+myTeam())){ui.auth.pin=v;writeAuth(!!lsGet(KEYS.auth))}
-    toast(clear?'PIN을 지웠어요.':'PIN을 정했어요.');render()}).catch(function(e){toast('서버에 연결하지 못했어요.')})}
+    if((target==='admin'&&isAdmin())||(ui.auth&&target==='leader:'+ui.auth.leaderId)){ui.auth.pin=v;writeAuth(!!lsGet(KEYS.auth))}
+    toast(clear?'PIN을 지웠어요.':'PIN을 바꿨어요.');render()}).catch(function(){toast('서버에 연결하지 못했어요.')})}
+function ldAdd(){var g=function(id){var el=document.getElementById(id);return el?el.value:''},n=g('ld-new-name').trim(),tid=g('ld-new-team'),p=g('ld-new-pin'),tm=teamById(tid);
+  if(!n){toast('팀장 이름을 입력하세요.');return}if(p.length<4||p.length>12){toast('PIN은 4~12자로 정하세요.');return}
+  api('addLeader',{pin:pinArg(),teamId:tid,name:n,newPin:p}).then(function(r){if(!r.ok){toast(errMsg(r));return}ui.pins=r.pins;render();toast(n+' 님을 '+(tm?tm.name:'')+' 팀장으로 등록했어요. PIN을 본인에게 알려 주세요.')}).catch(function(){toast('서버에 연결하지 못했어요.')})}
+function ldUpdate(id,field,value){var body={pin:pinArg(),leaderId:id};body[field]=value;
+  api('updateLeader',body).then(function(r){if(!r.ok){toast(errMsg(r));render();return}ui.pins=r.pins;render();toast('팀장 정보를 바꿨어요.')}).catch(function(){toast('서버에 연결하지 못했어요.')})}
+function ldDelete(id){api('deleteLeader',{pin:pinArg(),leaderId:id}).then(function(r){if(!r.ok){toast(errMsg(r));return}ui.pins=r.pins;ui.confirm=null;render();toast('팀장을 삭제했어요. 그 PIN으로는 더 이상 로그인할 수 없어요.')}).catch(function(){toast('서버에 연결하지 못했어요.')})}
 
 /* ---------- save ---------- */
 function stashUI(extra){ssSet(KEYS.ui,JSON.stringify(Object.assign({tab:ui.tab,ym:ui.ym,team:ui.team,preview:ui.preview},extra||{})))}
@@ -976,9 +1003,10 @@ function buildDoc(){var json=JSON.stringify(S).replace(/</g,'\\u003c');
     '<title>'+TITLE+'</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n'+FONT_LINK+'\n<style id="app-style">'+styleEl.textContent+'</style>\n<div id="app"></div>\n'+CONFIG_TAG+'\n'+
     '<script id="app-state" type="application/json">'+json+'<'+'/script>\n<script id="app-script">'+scriptEl.textContent+'<'+'/script></body></html>'}
 function doSave(){if(ui.saving)return;ui.saving=true;render();
-  if(MODE==='server'){saveServer().then(function(){ui.saving=false;ui.lastSync=Date.now();render();toast('저장했어요. 다른 사람도 새로고침하면 보여요.')},function(r){ui.saving=false;
+  if(MODE==='server'){saveServer().then(function(){ui.saving=false;return loadData().then(function(){toast('저장했어요. 다른 사람도 ↻을 누르면 보여요.')})},function(r){ui.saving=false;
       if(r&&r.error==='conflict')ui.conflict='다른 사람이 먼저 저장한 내용이 있어요'+(r.what?' ('+r.what+')':'')+'.';
-      else if(r&&(r.error==='pin'||r.error==='forbidden'))toast(errMsg(r));
+      else if(r&&r.error==='pin'){clearAuth();ui.auth=null;ui.dirty=freshDirty();ui.view='login';ui.loginErr='PIN이 바뀌었거나 팀장 등록이 삭제됐어요. 다시 로그인해 주세요.'}
+      else if(r&&r.error==='forbidden')toast(errMsg(r));
       else if(r&&r.error)toast(errMsg(r));else ui.netErr='저장하지 못했어요. 인터넷 연결을 확인하고 다시 저장하세요.';
       render()});return}
   artP.then(function(a){var prev=S.savedAt;S.savedAt=Date.now();
@@ -1015,7 +1043,7 @@ function printDoc(ym){var dates=monthDates(ym),teams=visibleTeams().filter(funct
   var h='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(S.clinic+' '+ymLabel(ym)+' 근무표')+'</title>'+FONT_LINK+'<style>'+css+'</style></head><body><h1>'+esc(S.clinic)+' · '+ymLabel(ym)+' 근무표'+(ui.team!=='all'?' · '+esc((teamById(ui.team)||{}).name||''):'')+'</h1><p>'+allTypes().map(function(t){return esc(t.short+' '+t.name)}).join(' · ')+' · 조1.5 = 1시간 30분 일찍 퇴근 · 늦1 = 1시간 늦게 출근 · 회색 칸은 휴진·공휴일</p><table><thead><tr><th class="n">이름</th>';
   dates.forEach(function(iso){var d=di(iso),c=d.dow===6?'sat':(d.dow===0||d.hol)?'sun':'';h+='<th class="'+c+'">'+d.day+'<br>'+DOWK[d.dow]+'</th>'});
   h+='<th class="s">근무</th><th class="s">야간</th><th class="s">연차</th></tr></thead><tbody>';
-  teams.forEach(function(team){var ro=roster(ym,team.id);h+='<tr class="g"><td colspan="'+(dates.length+4)+'">'+esc(team.name)+(team.leader?' (팀장 '+esc(team.leader)+')':'')+'</td></tr>';
+  teams.forEach(function(team){var ro=roster(ym,team.id);h+='<tr class="g"><td colspan="'+(dates.length+4)+'">'+esc(team.name)+(leaderNames(team)?' (팀장 '+esc(leaderNames(team))+')':'')+'</td></tr>';
     team.staff.forEach(function(p){var o=st.per[p.id];h+='<tr><td class="n">'+esc(p.name)+((p.late||p.early)?'<small>'+esc(adjLong({e:p.early,l:p.late}))+'</small>':'')+'</td>';
       dates.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td class="x"></td>';return}var v=cellCode(ro,p.id,iso),c=isWork(v)&&ro.adj[p.id]&&ro.adj[p.id][iso];h+='<td class="'+(v?'k-'+v:'')+'">'+(v?esc(TY[v].short):'')+(c?'<small>'+esc(adjTag(c))+'</small>':'')+'</td>'});
       h+='<td>'+o.work+'</td><td>'+o.night+'</td><td>'+(o.leave?fmtNum(o.leave):'')+'</td></tr>'})});

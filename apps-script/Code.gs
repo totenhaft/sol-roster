@@ -29,6 +29,7 @@ function out_(obj) {
 }
 
 function handle_(req) {
+  migrateTeamPins_();
   switch (req && req.action) {
     case 'status': return status_();
     case 'claimAdmin': return withLock_(function () { return claimAdmin_(req); });
@@ -38,6 +39,9 @@ function handle_(req) {
     case 'saveTeam': return withLock_(function () { return saveTeam_(req); });
     case 'saveRoster': return withLock_(function () { return saveRoster_(req); });
     case 'setPin': return withLock_(function () { return setPin_(req); });
+    case 'addLeader': return withLock_(function () { return addLeader_(req); });
+    case 'updateLeader': return withLock_(function () { return updateLeader_(req); });
+    case 'deleteLeader': return withLock_(function () { return deleteLeader_(req); });
   }
   return { ok: false, error: 'unknown_action' };
 }
@@ -119,14 +123,49 @@ function fail_() {
   c.put('fails', String(n), LOCK_SECONDS);
 }
 
+/* ---------- 팀장 (사람마다 이름과 PIN) ---------- */
+function leaders_() {
+  var raw = props_().getProperty('LEADERS');
+  try { return raw ? JSON.parse(raw) : []; } catch (err) { return []; }
+}
+function saveLeaders_(list) { props_().setProperty('LEADERS', JSON.stringify(list)); }
+function newId_() { return 'L' + Utilities.getUuid().replace(/-/g, '').slice(0, 10); }
+
+/** 예전 방식(팀마다 PIN 하나)으로 정한 팀장 PIN을 사람별 팀장으로 옮겨요. 한 번만 일어나요. */
+function migrateTeamPins_() {
+  var p = props_();
+  var has = Object.keys(p.getProperties()).some(function (k) { return k.indexOf('TEAM_PIN_') === 0; });
+  if (!has) return;
+  withLock_(function () {
+    var list = leaders_(), d = readData_(), all = p.getProperties();
+    Object.keys(all).forEach(function (k) {
+      if (k.indexOf('TEAM_PIN_') !== 0) return;
+      var tid = k.slice(9), tm = d.teams[tid];
+      if (tm) list.push({ id: newId_(), teamId: tid, name: String(tm.leader || (tm.name + ' 팀장')).slice(0, 30), hash: all[k] });
+      p.deleteProperty(k);
+    });
+    saveLeaders_(list);
+    return {};
+  });
+}
+
+/** 이 PIN 해시를 다른 사람이 이미 쓰고 있는지 확인해요 */
+function pinTaken_(h, exceptLeaderId, exceptKey) {
+  var p = props_().getProperties();
+  if (exceptKey !== 'ADMIN_PIN' && p.ADMIN_PIN === h) return true;
+  if (exceptKey !== 'VIEW_PIN' && p.VIEW_PIN === h) return true;
+  return leaders_().some(function (l) { return l.id !== exceptLeaderId && l.hash === h; });
+}
+
+function actorName_(a) { return a.role === 'admin' ? '관리자' : (a.name || '팀장'); }
+
 /** PIN이 누구 것인지 찾아요. 없으면 null */
 function who_(pin) {
   if (!pin) return null;
   var p = props_().getProperties(), h = hash_(pin);
   if (p.ADMIN_PIN && p.ADMIN_PIN === h) return { role: 'admin' };
-  for (var k in p) {
-    if (k.indexOf('TEAM_PIN_') === 0 && p[k] === h) return { role: 'leader', teamId: k.slice(9) };
-  }
+  var l = leaders_().filter(function (x) { return x.hash === h; })[0];
+  if (l) return { role: 'leader', teamId: l.teamId, leaderId: l.id, name: l.name };
   if (p.VIEW_PIN && p.VIEW_PIN === h) return { role: 'viewer' };
   return null;
 }
@@ -140,16 +179,19 @@ function auth_(pin) {
 }
 
 function pinsInfo_(d) {
-  var p = props_().getProperties(), teams = {};
-  (d.config.teamOrder || []).forEach(function (id) { teams[id] = !!p['TEAM_PIN_' + id]; });
-  return { teams: teams, view: !!p.VIEW_PIN };
+  var order = d.config.teamOrder || [];
+  return {
+    view: !!props_().getProperty('VIEW_PIN'),
+    leaders: leaders_().filter(function (l) { return order.indexOf(l.teamId) >= 0; })
+      .map(function (l) { return { id: l.id, teamId: l.teamId, name: l.name }; })
+  };
 }
 
 /* ---------- actions ---------- */
 function status_() {
   var p = props_().getProperties(), d = readData_();
   return {
-    ok: true, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
+    ok: true, version: 2, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
     teams: (d.config.teamOrder || []).map(function (id) { return { id: id, name: (d.teams[id] || {}).name || '' }; })
   };
 }
@@ -167,7 +209,7 @@ function claimAdmin_(req) {
 function login_(req) {
   var a = auth_(req.pin);
   if (a.error) return { ok: false, error: a.error };
-  return { ok: true, role: a.role, teamId: a.teamId || null };
+  return { ok: true, role: a.role, teamId: a.teamId || null, leaderId: a.leaderId || null, name: a.name || '' };
 }
 
 function load_(req) {
@@ -258,8 +300,8 @@ function saveConfig_(req) {
     if (keep[id]) return;
     delete d.teams[id];
     Object.keys(d.sched).forEach(function (ym) { delete d.sched[ym][id]; });
-    props_().deleteProperty('TEAM_PIN_' + id);
   });
+  saveLeaders_(leaders_().filter(function (l) { return keep[l.teamId]; }));
   d.config = { clinic: str_(c.clinic, 40), holidayCredit: c.holidayCredit !== false, rules: cleanRules_(c.rules), hours: hours, dateHours: dateHours, types: types, teamOrder: order, updatedAt: now };
   writeData_(d);
   var teamTimes = {};
@@ -282,8 +324,9 @@ function saveTeam_(req) {
       early: half30_(p.early), late: half30_(p.late) };
   });
   tm.updatedAt = Date.now();
+  tm.updatedBy = actorName_(a);
   writeData_(d);
-  return { ok: true, updatedAt: tm.updatedAt };
+  return { ok: true, updatedAt: tm.updatedAt, updatedBy: tm.updatedBy };
 }
 
 function saveRoster_(req) {
@@ -310,33 +353,85 @@ function saveRoster_(req) {
     });
     return outv;
   }
-  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), gen: !!r.gen, updatedAt: Date.now() };
+  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
   writeData_(d);
-  return { ok: true, updatedAt: m[tid].updatedAt };
+  return { ok: true, updatedAt: m[tid].updatedAt, updatedBy: m[tid].updatedBy };
 }
 
 function setPin_(req) {
   var a = auth_(req.pin);
   if (a.error) return { ok: false, error: a.error };
-  var target = String(req.target || ''), newPin = String(req.newPin || ''), key;
-  if (target === 'admin') { if (a.role !== 'admin') return { ok: false, error: 'forbidden' }; key = 'ADMIN_PIN'; if (!newPin) return { ok: false, error: 'weak' }; }
-  else if (target === 'view') { if (a.role !== 'admin') return { ok: false, error: 'forbidden' }; key = 'VIEW_PIN'; }
-  else if (target.indexOf('team:') === 0) {
-    var tid = target.slice(5);
-    if (!(a.role === 'admin' || (a.role === 'leader' && a.teamId === tid))) return { ok: false, error: 'forbidden' };
-    if (!readData_().teams[tid]) return { ok: false, error: 'not_found', message: '팀을 먼저 저장하세요.' };
-    key = 'TEAM_PIN_' + tid;
-  } else return { ok: false, error: 'bad_request' };
-  var p = props_();
-  if (!newPin) { p.deleteProperty(key); }
-  else {
-    if (newPin.length < 4 || newPin.length > 12) return { ok: false, error: 'weak' };
-    var h = hash_(newPin), all = p.getProperties();
-    for (var k in all) {
-      if (k !== key && (k === 'ADMIN_PIN' || k === 'VIEW_PIN' || k.indexOf('TEAM_PIN_') === 0) && all[k] === h) return { ok: false, error: 'duplicate' };
+  var target = String(req.target || ''), newPin = String(req.newPin || ''), p = props_();
+  if (target === 'admin' || target === 'view') {
+    if (a.role !== 'admin') return { ok: false, error: 'forbidden' };
+    var key = target === 'admin' ? 'ADMIN_PIN' : 'VIEW_PIN';
+    if (!newPin) {
+      if (target === 'admin') return { ok: false, error: 'weak' };
+      p.deleteProperty(key);
+      return { ok: true, pins: pinsInfo_(readData_()) };
     }
+    if (newPin.length < 4 || newPin.length > 12) return { ok: false, error: 'weak' };
+    var h = hash_(newPin);
+    if (pinTaken_(h, null, key)) return { ok: false, error: 'duplicate' };
     p.setProperty(key, h);
+    return { ok: true, pins: pinsInfo_(readData_()) };
   }
+  if (target.indexOf('leader:') === 0) {
+    var id = target.slice(7);
+    if (!(a.role === 'admin' || (a.role === 'leader' && a.leaderId === id))) return { ok: false, error: 'forbidden' };
+    if (newPin.length < 4 || newPin.length > 12) return { ok: false, error: 'weak' };
+    var list = leaders_(), l = list.filter(function (x) { return x.id === id; })[0];
+    if (!l) return { ok: false, error: 'not_found', message: '팀장을 찾을 수 없어요. 새로고침하세요.' };
+    var h2 = hash_(newPin);
+    if (pinTaken_(h2, id)) return { ok: false, error: 'duplicate' };
+    l.hash = h2;
+    saveLeaders_(list);
+    return { ok: true, pins: pinsInfo_(readData_()) };
+  }
+  return { ok: false, error: 'bad_request' };
+}
+
+/** 관리자만: 팀장 한 명 등록 (이름·팀·PIN) */
+function addLeader_(req) {
+  var a = requireAdmin_(req.pin);
+  if (a.error) return { ok: false, error: a.error };
+  var d = readData_(), tid = String(req.teamId || ''), name = str_(req.name, 30).trim(), pin = String(req.newPin || '');
+  if (!d.teams[tid]) return { ok: false, error: 'not_found', message: '팀을 먼저 저장하세요.' };
+  if (!name) return { ok: false, error: 'name' };
+  if (pin.length < 4 || pin.length > 12) return { ok: false, error: 'weak' };
+  var h = hash_(pin);
+  if (pinTaken_(h)) return { ok: false, error: 'duplicate' };
+  var list = leaders_();
+  if (list.length >= 60) return { ok: false, error: 'bad_request', message: '팀장은 60명까지 등록할 수 있어요.' };
+  list.push({ id: newId_(), teamId: tid, name: name, hash: h });
+  saveLeaders_(list);
+  return { ok: true, pins: pinsInfo_(d) };
+}
+
+/** 관리자만: 팀장 이름이나 팀 바꾸기 */
+function updateLeader_(req) {
+  var a = requireAdmin_(req.pin);
+  if (a.error) return { ok: false, error: a.error };
+  var d = readData_(), list = leaders_(), l = list.filter(function (x) { return x.id === req.leaderId; })[0];
+  if (!l) return { ok: false, error: 'not_found', message: '팀장을 찾을 수 없어요. 새로고침하세요.' };
+  if (req.name !== undefined) {
+    var n = str_(req.name, 30).trim();
+    if (!n) return { ok: false, error: 'name' };
+    l.name = n;
+  }
+  if (req.teamId !== undefined) {
+    if (!d.teams[req.teamId]) return { ok: false, error: 'not_found', message: '팀을 먼저 저장하세요.' };
+    l.teamId = String(req.teamId);
+  }
+  saveLeaders_(list);
+  return { ok: true, pins: pinsInfo_(d) };
+}
+
+/** 관리자만: 팀장 삭제 (그 사람의 PIN도 함께 없어져요) */
+function deleteLeader_(req) {
+  var a = requireAdmin_(req.pin);
+  if (a.error) return { ok: false, error: a.error };
+  saveLeaders_(leaders_().filter(function (x) { return x.id !== req.leaderId; }));
   return { ok: true, pins: pinsInfo_(readData_()) };
 }
 
