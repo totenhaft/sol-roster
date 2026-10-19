@@ -454,11 +454,90 @@ input[type=date]{height:34px;border:1px solid var(--line);border-radius:8px;back
 .otlist li.earn .m{color:var(--work-ink);font-weight:600}
 .otlist li.use .m{color:var(--cu-violet-fg)}
 .dl-adj.is-ot{color:var(--cu-violet-fg);font-weight:600}
+/* 7. 취업규칙 · 8. 근로기준법: search first, then cards grouped by category */
+.hb-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start}
+.hb-head .grow{flex:1 1 320px;min-width:0}
+.hb-head .lead{margin-bottom:0}
+.searchbox{margin-top:14px}
+input[type=search]{width:100%;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);font:inherit;font-size:15px;padding:0 14px;min-width:0}
+input[type=search]:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent;background:var(--surface)}
+textarea{width:100%;min-height:180px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;line-height:1.65;padding:10px 12px;resize:vertical;display:block}
+textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+mark{background:#FFF200;color:#17211E;border-radius:2px;padding:0 1px}
+.quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;font-size:13px}
+.quick .muted{margin-right:2px}
+.qchip{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font:inherit;font-size:13px;cursor:pointer}
+.qchip:hover{border-color:var(--ink-2)}
+.qchip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--work-ink)}
+.hb-res,.law-list{display:flex;flex-direction:column;gap:14px;min-width:0}
+.hb-group,.law-group{display:flex;flex-direction:column;gap:8px}
+.grp-h{margin:4px 0 0;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.hb-card,.qa{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
+.hb-q{appearance:none;width:100%;display:flex;align-items:center;gap:8px;padding:14px 16px;border:0;background:none;color:var(--ink);font:inherit;font-size:15px;font-weight:600;text-align:left;cursor:pointer;border-radius:12px}
+.hb-q:hover{background:var(--surface-2)}
+.hb-t{flex:1 1 auto;min-width:0;text-wrap:pretty}
+.chev{flex:none;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.hb-card.open .chev{transform:rotate(-135deg) translateY(-2px)}
+.badge{flex:none;font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.badge.mgr{background:var(--night-soft);color:var(--night)}
+.badge.blank-b{background:var(--warn-soft);color:var(--warn)}
+.hb-body{padding:0 16px 14px}
+.hb-text{white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;line-height:1.75;color:var(--ink-2);max-width:80ch}
+.blank{background:var(--warn-soft);color:var(--warn);border-radius:4px;padding:0 3px;font-weight:500}
+.hb-meta{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px}
+.ask-t{color:var(--danger);font-weight:500;align-self:center}
+.hb-ed{display:flex;flex-direction:column;gap:12px;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.hb-form{display:flex;flex-wrap:wrap;gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld.grow{flex:1 1 260px}
+.fld label,.hb-vis legend{font-size:13px;font-weight:500;color:var(--ink-2)}
+.fld input[type=text]{width:100%}
+.fld .fine{margin-top:2px}
+.hb-vis{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.hb-vis legend{float:left;margin-right:8px;padding:0}
+.theirs{background:var(--surface-2);border-radius:8px;padding:8px 12px}
+.theirs summary{cursor:pointer;font-weight:500;font-size:13px}
+.theirs .hb-text{margin-top:6px;font-size:13px}
+.hb-empty p{margin:0 auto 10px;max-width:60ch}
+.row.center{justify-content:center}
+.linkbtn{appearance:none;border:0;background:none;padding:0;color:var(--accent);font:inherit;font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-align:left}
+.qa{padding:14px 16px}
+.qa-q{margin:0 0 4px;font-size:15px;font-weight:600;text-wrap:pretty}
+.qa-a{margin:0;color:var(--ink-2);line-height:1.7;word-break:keep-all;overflow-wrap:anywhere}
+.qa-more{margin-top:8px}
+.qa-more ul{margin:0;padding-left:20px;color:var(--ink-2);display:flex;flex-direction:column;gap:4px;line-height:1.65;word-break:keep-all;overflow-wrap:anywhere}
+.qa-law{margin:8px 0 0;font-size:12.5px;color:var(--muted)}
+.qa-law a{color:var(--accent);text-underline-offset:2px}
+.qa-more .linkbtn{margin-top:8px;font-size:13.5px}
+.qa-tog{appearance:none;margin-top:8px;height:28px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;cursor:pointer}
+.qa-tog:hover{border-color:var(--ink-2)}
+.lawgrid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);grid-template-areas:"calc" "list" "help"}
+.law-calc{grid-area:calc;min-width:0}.law-list{grid-area:list}.law-help{grid-area:help;min-width:0}
+@media (max-width:999.98px){.lawgrid.searching{grid-template-areas:"list" "calc" "help"}}
+@media (min-width:1000px){.lawgrid{grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto 1fr;grid-template-areas:"list calc" "list help";align-items:start}}
+.calc .row{gap:8px}
+.calc label{font-weight:500}
+.calc-out{margin:12px 0;padding:12px 14px;border-radius:10px;background:var(--accent-soft);color:var(--work-ink)}
+.calc-out p{margin:0}
+.calc-out .muted{color:var(--work-ink);opacity:.8}
+.calc-big{font-size:15px}
+.calc-big b{font-size:18px}
+.calc-ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:3px;font-size:13.5px;line-height:1.6}
+.calc-t{width:100%;border-collapse:collapse;font-size:13px}
+.calc-t caption{text-align:left;font-weight:600;font-size:13px;margin-bottom:4px;color:var(--ink-2)}
+.calc-t th,.calc-t td{border-top:1px solid var(--line);padding:6px 4px;text-align:left;font-weight:400}
+.calc-t th{color:var(--muted);width:42%;white-space:nowrap}
+.calc-t td{font-variant-numeric:tabular-nums}
+.helplist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.helplist li{display:flex;flex-direction:column;gap:1px}
+.helplist a{color:var(--accent);font-weight:500;text-underline-offset:3px}
+.helplist .muted{font-size:12.5px}
+@media print{.law-calc,.law-help,.quick,.searchbox{display:none}}
 @media (max-width:640px){.calrow{grid-template-columns:72px repeat(7,minmax(104px,1fr))}.calinner{min-width:800px}}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
-<script id="app-state" type="application/json">{"v":2,"example":true,"savedAt":0,"clinic":"연세솔안과","holidayCredit":true,"hours":{"1":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":true,"ne":"20:00"},"2":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"},"3":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"},"4":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"},"5":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"},"6":{"type":"half","start":"09:00","end":"13:00","lunch":false,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"},"0":{"type":"closed","start":"09:00","end":"13:00","lunch":false,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"}},"dateHours":{"2026-11-16":{"closed":false,"note":"야간 진료 없음","h":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"}},"2026-12-31":{"closed":false,"note":"연말 단축 진료","h":{"type":"half","start":"09:00","end":"13:00","lunch":false,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"}}},"rules":{},"groups":[{"id":"g1","label":"접수 담당","members":["s1","s2"],"max":1},{"id":"g2","label":"","members":["s3","s9"],"max":1}],"types":[{"id":"T1","name":"외근","short":"외","color":"blue","kind":"out","time":"full"},{"id":"T2","name":"교육","short":"교","color":"violet","kind":"out","time":"full"},{"id":"T3","name":"경조사","short":"경","color":"rose","kind":"paid","time":"full"}],"teams":[{"id":"t1","name":"외래팀","leader":"김하늘","need":{"full":3,"half":1,"night":1},"posts":[{"id":"p1","name":"1번 진료실","need":1},{"id":"p2","name":"2번 진료실","need":1},{"id":"p3","name":"데스크","need":1}],"staff":[{"id":"s1","name":"김하늘","weekDays":5,"avail":[1,2,3,4,5,6],"night":true,"leave0":{"y":2026,"d":9},"post":"p3","lt":{"2026":15},"ot0":120},{"id":"s2","name":"이수진","weekDays":5,"avail":[1,2,3,4,5,6],"night":true,"post":"p1","lt":{"2026":15}},{"id":"s3","name":"한소희","weekDays":5,"avail":[1,2,3,4,5,6],"night":false,"early":30},{"id":"s4","name":"윤가람","weekDays":3,"avail":[1,3,5],"night":false}]},{"id":"t2","name":"검안팀","leader":"박지영","need":{"full":2,"half":1,"night":1},"posts":[{"id":"p4","name":"검사실","need":1},{"id":"p5","name":"상담실","need":1}],"staff":[{"id":"s5","name":"박지영","weekDays":5,"avail":[1,2,3,4,5,6],"night":true,"post":"p4"},{"id":"s6","name":"최민지","weekDays":5,"avail":[1,2,3,4,5,6],"night":true},{"id":"s7","name":"정유나","weekDays":5,"avail":[1,2,3,4,5,6],"night":true}]},{"id":"t3","name":"수술실팀","leader":"오세진","need":{"full":1,"half":1,"night":0},"posts":[{"id":"p6","name":"수술실","need":1}],"staff":[{"id":"s8","name":"오세진","weekDays":5,"avail":[1,2,3,4,5,6],"night":false,"post":"p6"},{"id":"s9","name":"강다은","weekDays":5,"avail":[1,2,3,4,5,6],"night":false},{"id":"s10","name":"오세린","weekDays":5,"avail":[1,2,3,4,5,6],"night":false,"abs":{"from":"2026-09-01","to":"2027-02-28","why":"육아휴직"}}]}],"sched":{"2026-11":{"t1":{"cells":{"s2":{"2026-11-18":"T1","2026-11-19":"W"},"s3":{"2026-11-23":"HP"}},"locks":{"s2":{"2026-11-18":1,"2026-11-19":1},"s3":{"2026-11-23":1}},"reqs":{"s1":{"2026-11-20":"P"}},"adj":{"s2":{"2026-11-19":{"e":90,"ot":1}}},"ot":{"s2":{"2026-11-10":90,"2026-11-12":60}},"memo":{"2026-11-12":"김하늘 야간불가"},"notes":{"s2":{"2026-11-18":"학회 부스"},"s3":{"2026-11-23":"검진"}},"gen":false},"t2":{"cells":{"s5":{"2026-11-13":"V"},"s6":{"2026-11-06":"HA","2026-11-25":"W"}},"locks":{"s5":{"2026-11-13":1},"s6":{"2026-11-06":1,"2026-11-25":1}},"reqs":{"s6":{"2026-11-07":"P"}},"adj":{"s6":{"2026-11-25":{"l":60}}},"memo":{"2026-11-20":"장비 점검"},"notes":{"s5":{"2026-11-13":"가족 행사"}},"gen":false},"t3":{"cells":{"s8":{"2026-11-27":"V"}},"locks":{"s8":{"2026-11-27":1}},"reqs":{},"gen":false}},"2026-12":{"t1":{"cells":{"s2":{"2026-12-24":"V"}},"locks":{"s2":{"2026-12-24":1}},"reqs":{},"gen":false},"t2":{"cells":{},"locks":{},"reqs":{"s7":{"2026-12-26":"P"}},"gen":false}}}}</script>
+<script id="app-state" type="application/json">{"v":2,"example":true,"savedAt":0,"clinic":"연세솔안과","holidayCredit":true,"hours":{"1":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":true,"ne":"20:00"},"2":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"},"3":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"},"4":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"},"5":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"},"6":{"type":"half","start":"09:00","end":"13:00","lunch":false,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"},"0":{"type":"closed","start":"09:00","end":"13:00","lunch":false,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"}},"dateHours":{"2026-11-16":{"closed":false,"note":"야간 진료 없음","h":{"type":"full","start":"09:00","end":"18:00","lunch":true,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"}},"2026-12-31":{"closed":false,"note":"연말 단축 진료","h":{"type":"half","start":"09:00","end":"13:00","lunch":false,"ls":"13:00","le":"14:00","night":false,"ne":"20:00"}}},"rules":{},"groups":[{"id":"g1","label":"접수 담당","members":["s1","s2"],"max":1},{"id":"g2","label":"","members":["s3","s9"],"max":1}],"types":[{"id":"T1","name":"외근","short":"외","color":"blue","kind":"out","time":"full"},{"id":"T2","name":"교육","short":"교","color":"violet","kind":"out","time":"full"},{"id":"T3","name":"경조사","short":"경","color":"rose","kind":"paid","time":"full"}],"teams":[{"id":"t1","name":"외래팀","leader":"김하늘","need":{"full":3,"half":1,"night":1},"posts":[{"id":"p1","name":"1번 진료실","need":1},{"id":"p2","name":"2번 진료실","need":1},{"id":"p3","name":"데스크","need":1}],"staff":[{"id":"s1","name":"김하늘","weekDays":5,"avail":[1,2,3,4,5,6],"night":true,"leave0":{"y":2026,"d":9},"post":"p3","lt":{"2026":15},"ot0":120},{"id":"s2","name":"이수진","weekDays":5,"avail":[1,2,3,4,5,6],"night":true,"post":"p1","lt":{"2026":15}},{"id":"s3","name":"한소희","weekDays":5,"avail":[1,2,3,4,5,6],"night":false,"early":30},{"id":"s4","name":"윤가람","weekDays":3,"avail":[1,3,5],"night":false}]},{"id":"t2","name":"검안팀","leader":"박지영","need":{"full":2,"half":1,"night":1},"posts":[{"id":"p4","name":"검사실","need":1},{"id":"p5","name":"상담실","need":1}],"staff":[{"id":"s5","name":"박지영","weekDays":5,"avail":[1,2,3,4,5,6],"night":true,"post":"p4"},{"id":"s6","name":"최민지","weekDays":5,"avail":[1,2,3,4,5,6],"night":true},{"id":"s7","name":"정유나","weekDays":5,"avail":[1,2,3,4,5,6],"night":true}]},{"id":"t3","name":"수술실팀","leader":"오세진","need":{"full":1,"half":1,"night":0},"posts":[{"id":"p6","name":"수술실","need":1}],"staff":[{"id":"s8","name":"오세진","weekDays":5,"avail":[1,2,3,4,5,6],"night":false,"post":"p6"},{"id":"s9","name":"강다은","weekDays":5,"avail":[1,2,3,4,5,6],"night":false},{"id":"s10","name":"오세린","weekDays":5,"avail":[1,2,3,4,5,6],"night":false,"abs":{"from":"2026-09-01","to":"2027-02-28","why":"육아휴직"}}]}],"handbook":{"items":[{"id":"a1","cat":"근무시간","title":"오버타임(OT) 기록과 사용","body":"진료가 끝난 뒤 남아서 일한 시간은 팀장이 근무표 아래 ‘연차·OT 현황’에 30분 단위로 기록해요.\n쌓인 OT는 30분 단위로 일찍 퇴근하거나 늦게 출근하는 데 쓸 수 있어요. 하루를 통째로 쉬는 ‘오버타임 사용’도 할 수 있어요.\nOT를 쓰려면 [   ]일 전까지 팀장에게 말해요.","vis":"all","own":"admin","createdAt":1792022400000,"updatedAt":1792022400000,"updatedBy":"관리자"},{"id":"a2","cat":"휴가·휴일","title":"연차 신청 방법","body":"연차는 쓰려는 날 [   ]일 전까지 팀장에게 말해요.\n오전 반차·오후 반차(0.5일)도 쓸 수 있어요.\n희망 휴무는 매달 [   ]일까지 팀장에게 알려 주세요.","vis":"all","own":"T:t1","createdAt":1792022400000,"updatedAt":1792022400000,"updatedBy":"김하늘"},{"id":"a3","cat":"복무·규정","title":"팀장 회의","body":"매달 [   ]째 주 [   ]요일에 해요.\n다음 달 근무표는 회의 전까지 초안을 올려 주세요.","vis":"mgr","own":"admin","createdAt":1792022400000,"updatedAt":1792022400000,"updatedBy":"관리자"}]},"sched":{"2026-11":{"t1":{"cells":{"s2":{"2026-11-18":"T1","2026-11-19":"W"},"s3":{"2026-11-23":"HP"}},"locks":{"s2":{"2026-11-18":1,"2026-11-19":1},"s3":{"2026-11-23":1}},"reqs":{"s1":{"2026-11-20":"P"}},"adj":{"s2":{"2026-11-19":{"e":90,"ot":1}}},"ot":{"s2":{"2026-11-10":90,"2026-11-12":60}},"memo":{"2026-11-12":"김하늘 야간불가"},"notes":{"s2":{"2026-11-18":"학회 부스"},"s3":{"2026-11-23":"검진"}},"gen":false},"t2":{"cells":{"s5":{"2026-11-13":"V"},"s6":{"2026-11-06":"HA","2026-11-25":"W"}},"locks":{"s5":{"2026-11-13":1},"s6":{"2026-11-06":1,"2026-11-25":1}},"reqs":{"s6":{"2026-11-07":"P"}},"adj":{"s6":{"2026-11-25":{"l":60}}},"memo":{"2026-11-20":"장비 점검"},"notes":{"s5":{"2026-11-13":"가족 행사"}},"gen":false},"t3":{"cells":{"s8":{"2026-11-27":"V"}},"locks":{"s8":{"2026-11-27":1}},"reqs":{},"gen":false}},"2026-12":{"t1":{"cells":{"s2":{"2026-12-24":"V"}},"locks":{"s2":{"2026-12-24":1}},"reqs":{},"gen":false},"t2":{"cells":{},"locks":{},"reqs":{"s7":{"2026-12-26":"P"}},"gen":false}}}}</script>
 <script id="app-script">(function(){
 'use strict';
 var HOL={"2025-01-01":"신정","2025-01-27":"임시공휴일","2025-01-28":"설날 전날","2025-01-29":"설날","2025-01-30":"설날 다음날","2025-03-01":"삼일절","2025-03-03":"삼일절 대체 휴일","2025-05-05":"부처님오신날 · 어린이날","2025-05-06":"부처님오신날 대체 휴일 · 어린이날 대체 휴일","2025-06-03":"대통령 선거일","2025-06-06":"현충일","2025-08-15":"광복절","2025-10-03":"개천절","2025-10-05":"추석 전날","2025-10-06":"추석","2025-10-07":"추석 다음날","2025-10-08":"추석 대체 휴일","2025-10-09":"한글날","2025-12-25":"기독탄신일","2026-01-01":"신정","2026-02-16":"설날 전날","2026-02-17":"설날","2026-02-18":"설날 다음날","2026-03-01":"삼일절","2026-03-02":"삼일절 대체 휴일","2026-05-01":"노동절","2026-05-05":"어린이날","2026-05-24":"부처님오신날","2026-05-25":"부처님오신날 대체 휴일","2026-06-03":"지방선거일","2026-06-06":"현충일","2026-07-17":"제헌절","2026-08-15":"광복절","2026-08-17":"광복절 대체 휴일","2026-09-24":"추석 전날","2026-09-25":"추석","2026-09-26":"추석 다음날","2026-10-03":"개천절","2026-10-05":"개천절 대체 휴일","2026-10-09":"한글날","2026-12-25":"기독탄신일","2027-01-01":"신정","2027-02-06":"설날 전날","2027-02-07":"설날","2027-02-08":"설날 다음날","2027-02-09":"설날 대체 휴일","2027-03-01":"삼일절","2027-05-01":"노동절","2027-05-03":"노동절 대체 휴일","2027-05-05":"어린이날","2027-05-13":"부처님오신날","2027-06-06":"현충일","2027-07-17":"제헌절","2027-07-19":"제헌절 대체 휴일","2027-08-15":"광복절","2027-08-16":"광복절 대체 휴일","2027-09-14":"추석 전날","2027-09-15":"추석","2027-09-16":"추석 다음날","2027-10-03":"개천절","2027-10-04":"개천절 대체 휴일","2027-10-09":"한글날","2027-10-11":"한글날 대체 휴일","2027-12-25":"기독탄신일","2027-12-27":"기독탄신일 대체 휴일","2028-01-01":"신정","2028-01-26":"설날 전날","2028-01-27":"설날","2028-01-28":"설날 다음날","2028-03-01":"삼일절","2028-04-12":"국회의원 선거일","2028-05-01":"노동절","2028-05-02":"부처님오신날","2028-05-05":"어린이날","2028-06-06":"현충일","2028-07-17":"제헌절","2028-08-15":"광복절","2028-10-02":"추석 전날","2028-10-03":"개천절 · 추석","2028-10-04":"추석 다음날","2028-10-05":"추석 대체 휴일","2028-10-09":"한글날","2028-12-25":"기독탄신일"};
@@ -488,6 +567,7 @@ var LEVELS=[['off','사용 안 함'],['low','낮게'],['mid','보통'],['high','
 var LV={off:0,low:0.4,mid:1,high:2.5};
 var DEF_RULES={pref:'mid',satFair:'mid',nightFair:'mid',maxWeekH:52,maxWeek:'high',maxRun:6,run:'mid',offStyle:'together',partial:'half',effort:'normal'};
 var ADJ_AMTS=[];for(var _m=30;_m<=480;_m+=30)ADJ_AMTS.push(_m);
+var HB_CATS=['근무시간','휴가·휴일','급여·수당','복지','복무·규정','기타'];
 
 var API=String(window.SOL_ROSTER_API||'').trim();
 var hasViewer=!!(window.claude&&typeof window.claude.use==='function');
@@ -523,7 +603,7 @@ function ssDel(k){try{sessionStorage.removeItem(k)}catch(e){}}
 /* ---------- state ---------- */
 function defHours(dw){return {type:dw===0?'closed':dw===6?'half':'full',start:'09:00',end:dw===6?'13:00':'18:00',lunch:dw!==6,ls:'13:00',le:'14:00',night:false,ne:'20:00'}}
 function fixHours(h,dw){var d=defHours(dw==null?1:dw);h=h||{};return {type:['full','half','closed'].indexOf(h.type)>=0?h.type:d.type,start:h.start||d.start,end:h.end||d.end,lunch:h.lunch===undefined?d.lunch:!!h.lunch,ls:h.ls||'13:00',le:h.le||'14:00',night:!!h.night,ne:h.ne||'20:00'}}
-function blankState(){var h={};for(var dw=0;dw<7;dw++)h[dw]=defHours(dw);return {v:2,clinic:'',holidayCredit:true,labels:{},hours:h,dateHours:{},types:[],teams:[],sched:{},meta:{}}}
+function blankState(){var h={};for(var dw=0;dw<7;dw++)h[dw]=defHours(dw);return {v:2,clinic:'',holidayCredit:true,labels:{},hours:h,dateHours:{},types:[],teams:[],sched:{},handbook:{items:[]},meta:{}}}
 function int(v,lo,hi){v=parseInt(v,10);if(isNaN(v))v=0;return Math.max(lo,Math.min(hi,v))}
 function half30(v){return Math.round(int(v,0,480)/30)*30}
 function cleanRules(r){r=r||{};var o={};Object.keys(DEF_RULES).forEach(function(k){o[k]=r[k]!==undefined?r[k]:DEF_RULES[k]});
@@ -538,11 +618,12 @@ function cleanLt(o){var r={};Object.keys(o||{}).forEach(function(y){if(!/^\d{4}$
 function cleanOt(a){var o={};Object.keys(a||{}).forEach(function(sid){var row={};Object.keys(a[sid]||{}).forEach(function(iso){var v=half30(a[sid][iso]);if(v>0)row[iso]=v});if(Object.keys(row).length)o[sid]=row});return o}
 function cleanPosts(a){return (Array.isArray(a)?a:[]).slice(0,30).map(function(x){x=x||{};return {id:String(x.id||uid('p')).slice(0,20),name:String(x.name||'자리').slice(0,20),need:int(x.need,0,9)}})}
 function cleanLabels(o){o=o||{};var r={};['night','leave','etc'].forEach(function(k){var v=String(o[k]||'').trim().slice(0,12);if(v)r[k]=v});return r}
+function cleanHandbook(h){h=h||{};var seen={};return {items:(Array.isArray(h.items)?h.items:[]).slice(0,200).map(function(x){x=x||{};return {id:String(x.id||uid('a')).slice(0,20),cat:HB_CATS.indexOf(x.cat)>=0?x.cat:'기타',title:String(x.title||'').slice(0,80),body:String(x.body||'').slice(0,4000),vis:x.vis==='mgr'?'mgr':'all',own:String(x.own||''),createdAt:+x.createdAt||0,updatedAt:+x.updatedAt||0,updatedBy:String(x.updatedBy||'').slice(0,40)}}).filter(function(x){if(!x.title||seen[x.id])return false;seen[x.id]=1;return true})}}
 function isISO(x){return /^\d{4}-\d{2}-\d{2}$/.test(String(x||''))}
 function cleanAbs(a){if(!a||!isISO(a.from))return null;return {from:a.from,to:isISO(a.to)&&a.to>=a.from?a.to:'',why:String(a.why||'휴직').slice(0,12)||'휴직'}}
 function cleanAdj(a){var o={};Object.keys(a||{}).forEach(function(sid){var row={};Object.keys(a[sid]||{}).forEach(function(iso){var c=a[sid][iso]||{},x={};if(c.e!==undefined)x.e=half30(c.e);if(c.l!==undefined)x.l=half30(c.l);if(c.ot&&(x.e||x.l))x.ot=1;if(Object.keys(x).length)row[iso]=x});if(Object.keys(row).length)o[sid]=row});return o}
 function normalize(s){
-  s.v=2;s.meta=s.meta||{};if(!s.clinic)s.clinic='우리 병원';if(s.holidayCredit===undefined)s.holidayCredit=true;s.rules=cleanRules(s.rules);s.groups=cleanGroups(s.groups);s.labels=cleanLabels(s.labels);
+  s.v=2;s.meta=s.meta||{};if(!s.clinic)s.clinic='우리 병원';if(s.holidayCredit===undefined)s.holidayCredit=true;s.rules=cleanRules(s.rules);s.groups=cleanGroups(s.groups);s.labels=cleanLabels(s.labels);s.handbook=cleanHandbook(s.handbook);
   var h=s.hours||{};s.hours={};for(var dw=0;dw<7;dw++)s.hours[dw]=fixHours(h[dw],dw);
   var dh=s.dateHours||{};s.dateHours={};Object.keys(dh).forEach(function(iso){var o=dh[iso];if(!o)return;s.dateHours[iso]=o.closed?{closed:true,note:o.note||''}:{closed:false,note:o.note||'',h:fixHours(o.h,dateOf(iso).getDay())}});
   var cIds={},kIds={},tIds={};COLORS.forEach(function(c){cIds[c[0]]=1});KINDS.forEach(function(c){kIds[c[0]]=1});TIMES.forEach(function(c){tIds[c[0]]=1});
@@ -585,7 +666,7 @@ function rebuildTypes(){TY={};BUILTIN.forEach(function(t){TY[t.id]=t});S.types.f
 rebuildTypes();
 function allTypes(){return BUILTIN.slice(0,4).concat(BUILTIN.slice(4),S.types)}
 
-function freshDirty(){return {config:false,teams:{},rosters:{}}}
+function freshDirty(){return {config:false,teams:{},rosters:{},hb:false}}
 var ui={rv:(lsGet(KEYS.view)==='table'?'table':'cal'),selDay:null,selSec:null,leaveKind:'V',etcAdd:null,adjKind:'e',adjAmt:'30',view:MODE==='server'?'loading':'app',tab:(sess&&sess.tab)||'roster',ym:(sess&&sess.ym)||null,team:(sess&&sess.team)||'all',brush:'V',
   preview:(sess&&sess.preview)||'admin',auth:null,pins:null,status:null,ro:false,dirty:freshDirty(),confirm:null,resetOpen:false,saving:false,
   selDate:null,importData:null,conflict:null,loginErr:'',lastSync:0,netErr:''};
@@ -608,7 +689,8 @@ function canEditAny(){return role()==='admin'||role()==='leader'}
 function teamById(id){return S.teams.find(function(t){return t.id===id})}
 function staffLoc(sid){for(var i=0;i<S.teams.length;i++){var t=S.teams[i];for(var j=0;j<t.staff.length;j++)if(t.staff[j].id===sid)return {team:t,p:t.staff[j]}}return null}
 function visibleTeams(){if(ui.team==='all')return S.teams;var t=teamById(ui.team);return t?[t]:S.teams}
-function tabsFor(){var r=role();if(r==='admin')return [['hours','진료 시간'],['types','근무 형태'],['rules','생성 조건'],['teams','팀·직원'],['roster','근무표'],['place','근무 배치']];if(r==='leader')return [['teams','우리 팀 직원'],['roster','근무표'],['place','근무 배치']];return [['roster','근무표'],['place','근무 배치']]}
+var TABS_INFO=[['rulebook','취업규칙'],['law','근로기준법']];
+function tabsFor(){var r=role();if(r==='admin')return [['hours','진료 시간'],['types','근무 형태'],['rules','생성 조건'],['teams','팀·직원'],['roster','근무표'],['place','근무 배치']].concat(TABS_INFO);if(r==='leader')return [['teams','우리 팀 직원'],['roster','근무표'],['place','근무 배치']].concat(TABS_INFO);return [['roster','근무표'],['place','근무 배치']].concat(TABS_INFO)}
 function fixTab(){var ok=tabsFor().some(function(t){return t[0]===ui.tab});if(!ok)ui.tab='roster';if(ui.team!=='all'&&!teamById(ui.team))ui.team='all'}
 
 /* ---------- calendar model ---------- */
@@ -793,7 +875,7 @@ function render(){
   else if(ui.view==='setup')body=setupView();
   else if(ui.view==='login')body=loginView();
   else if(ui.view==='error')body=errorView();
-  else body=banners()+(ui.tab==='hours'?hoursTab():ui.tab==='types'?typesTab():ui.tab==='rules'?rulesTab():ui.tab==='teams'?teamsTab():ui.tab==='place'?placeTab():rosterTab());
+  else body=banners()+(ui.tab==='hours'?hoursTab():ui.tab==='types'?typesTab():ui.tab==='rules'?rulesTab():ui.tab==='teams'?teamsTab():ui.tab==='place'?placeTab():ui.tab==='rulebook'?rulebookTab():ui.tab==='law'?lawTab():rosterTab());
   var showTeams=ui.view==='app'&&(ui.tab==='roster'||ui.tab==='teams'||ui.tab==='place')&&S.teams.length>0&&!(role()==='leader'&&ui.tab==='teams');
   var de0=document.getElementById('dayed'),dsc=de0?de0.scrollTop:0,dday=ui.shownDay,sy=window.scrollY||0,anc=app.querySelector('.cd-date.sel'),aiso=anc&&anc.dataset.day,at=anc?anc.getBoundingClientRect().top:0;
   app.innerHTML=header()+'<main class="wrap main">'+(showTeams?teamBar():'')+body+'</main>';
@@ -820,12 +902,12 @@ function header(){
   if(ui.view==='app'&&(canEditAny()||MODE!=='server')&&!ui.ro)save='<span class="savestate" id="savestate">'+saveState()+'</span><button class="btn primary" id="saveBtn" data-act="save"'+(ui.saving?' disabled':'')+'>'+(ui.saving?'저장 중…':'저장')+'</button>';
   return '<header class="bar"><div class="wrap"><div class="bar-top">'+
     '<div class="brand"><div class="mark" aria-hidden="true">근</div><div style="min-width:0"><div class="clinic">'+esc(S.clinic||'근무표')+'</div><div class="sub">직원 근무표</div></div></div>'+
-    (ui.view==='app'?'<div class="month"><button class="icon-btn" id="prevM" data-act="month" data-k="-1" aria-label="이전 달">‹</button><div class="mlabel" aria-live="polite">'+ymLabel(ui.ym)+'</div><button class="icon-btn" id="nextM" data-act="month" data-k="1" aria-label="다음 달">›</button></div>':'')+
+    (ui.view==='app'&&ui.tab!=='rulebook'&&ui.tab!=='law'?'<div class="month"><button class="icon-btn" id="prevM" data-act="month" data-k="-1" aria-label="이전 달">‹</button><div class="mlabel" aria-live="polite">'+ymLabel(ui.ym)+'</div><button class="icon-btn" id="nextM" data-act="month" data-k="1" aria-label="다음 달">›</button></div>':'')+
     (auth?'<div class="authbox">'+auth+'</div>':'')+(save?'<div class="savebox">'+save+'</div>':'')+
     '</div>'+(tabs.length>1?'<nav class="tabs" role="tablist" aria-label="메뉴">'+tabs.map(function(t,i){return '<button class="tab" role="tab" id="tab-'+t[0]+'" data-act="tab" data-k="'+t[0]+'" aria-selected="'+(ui.tab===t[0])+'"><span class="num">'+(i+1)+'</span>'+t[1]+'</button>'}).join('')+'</nav>':'')+
     '</div></header>'}
 function authLabel(){if(!ui.auth)return '';if(ui.auth.role==='admin')return '관리자';if(ui.auth.role==='leader'){var t=teamById(ui.auth.teamId);return (t?t.name:'팀')+' · '+(ui.auth.name||'팀장')}return '직원(보기)'}
-function isDirty(){var d=ui.dirty;return d.config||Object.keys(d.teams).length>0||Object.keys(d.rosters).length>0}
+function isDirty(){var d=ui.dirty;return d.config||d.hb||Object.keys(d.teams).length>0||Object.keys(d.rosters).length>0}
 function saveState(){if(isDirty())return '<span class="dot warn"></span>저장 안 된 변경 있음';
   if(MODE==='server'&&ui.lastSync)return '<span class="dot ok"></span>최신 · '+fmtTime(ui.lastSync);
   if(S.savedAt)return '<span class="dot ok"></span>저장됨 · '+fmtTime(S.savedAt);return ''}
@@ -1282,6 +1364,235 @@ function balancePanel(ym,teams){var eds=teams.filter(function(t){return canTeam(
   if(!rows.length)h+='<p class="muted" style="margin:0">이번 달 OT 기록이 없어요.</p>';
   else h+='<ul class="otlist">'+rows.map(function(r){var q=parts(r.iso);return '<li class="'+(r.k==='a'?'earn':'use')+'"><span class="d">'+q[1]+'/'+q[2]+' ('+DOWK[di(r.iso).dow]+')</span><b>'+esc(r.p.name)+'</b><span class="m">'+(r.k==='a'?'+'+hLong(r.m)+' 적립':'−'+hLong(r.m)+' · '+esc(r.how))+'</span>'+(r.k==='a'?'<button class="btn small" data-act="otDel" data-k="'+r.p.id+'" data-d="'+r.iso+'" data-t="'+r.t.id+'">지우기</button>':'')+'</li>'}).join('')+'</ul>';
   return h+'</section>'}
+/* ----- 7. 취업규칙 (우리 병원 규칙·복지: 관리자와 팀장이 적고, 직원은 찾아봐요) ----- */
+var HB_SEED=[
+  ['근무시간','근무 시간과 점심시간','평일: [09:00 ~ 18:00]\n토요일: [09:00 ~ 13:00]\n점심시간: [13:00 ~ 14:00] (근무시간에 들어가지 않아요)\n야간 진료: [월요일 ~ 20:00]\n\n내 근무 날짜와 시간은 ‘근무표’ 탭에서 확인하세요.'],
+  ['근무시간','오버타임(OT) 기록과 사용','진료가 끝난 뒤 남아서 일한 시간은 팀장이 근무표 아래 ‘연차·OT 현황’에 30분 단위로 기록해요.\n쌓인 OT는 30분 단위로 일찍 퇴근하거나 늦게 출근하는 데 쓸 수 있어요. 하루를 통째로 쉬는 ‘오버타임 사용’도 할 수 있어요.\nOT 1시간 = 쉬는 시간 [   ]\nOT를 쓰려면 [   ]일 전까지 팀장에게 말해요.\n남은 OT가 궁금하면 팀장에게 물어보세요.'],
+  ['휴가·휴일','연차 신청 방법','연차는 쓰려는 날 [   ]일 전까지 팀장에게 말해요.\n오전 반차·오후 반차(0.5일)도 쓸 수 있어요. 오전 반차는 [   ]시 출근, 오후 반차는 [   ]시 퇴근이에요.\n희망 휴무는 매달 [   ]일까지 팀장에게 알려 주세요.\n연차 계산 기준: [입사일 / 1월 1일]'],
+  ['휴가·휴일','경조사 휴가','본인 결혼: [   ]일\n자녀 결혼: [   ]일\n배우자·부모(배우자의 부모 포함) 사망: [   ]일\n조부모·형제자매 사망: [   ]일\n경조금: [   ]\n\n경조사 휴가는 [연차와 따로 줘요 / 연차에서 빼요]. 근무표에는 ‘경조사’로 넣어요.'],
+  ['휴가·휴일','여름휴가·명절','여름휴가: [   ]일 ([연차에서 빼요 / 따로 줘요])\n설·추석 연휴: [   ]\n공휴일에 진료하는 날: [다른 날 쉬어요 / 휴일근로수당]'],
+  ['급여·수당','급여일과 수당','급여일: 매월 [   ]일 (주말·공휴일이면 [그 전날])\n야간 진료 수당: [   ]\n식대: [   ]\n임금명세서는 [   ](으)로 받아요.'],
+  ['복지','직원 복지','본인·가족 진료비 할인: [   ]\n생일: [   ]\n명절 선물: [   ]\n건강검진: [   ]'],
+  ['복지','교육·학회·자격증 지원','외부 교육·학회 참가: [   ]\n자격증 취득 지원: [   ]\n근무표에는 ‘교육’으로 넣어요.'],
+  ['복무·규정','지각·조퇴·결근','늦을 것 같으면 [   ]시 전까지 팀장에게 연락해요.\n갑자기 아파서 못 나오면 [   ]에게 바로 알려요.\n[   ]'],
+  ['복무·규정','근무 바꾸기','동료와 근무 날을 바꾸려면 두 사람이 함께 팀장에게 말해요. 팀장이 근무표를 고치면 확정이에요.\n같은 날 함께 쉴 수 없는 사람(예: 접수 담당)끼리는 근무표에서 경고가 떠요.'],
+  ['복무·규정','환자 정보 보호','환자 정보는 업무 밖에서 보거나 말하지 않아요.\n근무표 같은 사내 프로그램에도 환자 이름이나 진료 내용을 적지 않아요.\n[   ]'],
+  ['기타','그만둘 때','그만두려면 [30]일 전까지 원장님께 말해요.\n남은 연차와 OT는 [   ](으)로 정산해요.\n퇴직금은 [퇴직금 / 퇴직연금]으로 받아요.']
+];
+function hbOwn(){if(MODE==='server')return ui.auth?(ui.auth.role==='admin'?'admin':'L:'+ui.auth.leaderId):'';return isAdmin()?'admin':role()==='leader'?'T:'+myTeam():''}
+function hbWho(){if(isAdmin())return '관리자';var t=teamById(myTeam());return (t&&t.leader)||((t?t.name:'')+' 팀장')}
+function hbCanWrite(){return canEditAny()&&!ui.ro}
+function hbCan(it){return hbCanWrite()&&(isAdmin()||it.own===hbOwn())}
+function hbVisible(it){return it.vis!=='mgr'||canEditAny()}
+function hbItems(){return S.handbook.items.filter(hbVisible)}
+function hbById(id){return S.handbook.items.filter(function(x){return x.id===id})[0]}
+function hbPut(it){var c=cleanHandbook({items:[it]}).items[0];if(!c)return;var i=S.handbook.items.findIndex(function(x){return x.id===c.id});if(i>=0)S.handbook.items[i]=c;else S.handbook.items.push(c)}
+function fmtDate(ts){var d=new Date(ts);return d.getFullYear()+'. '+(d.getMonth()+1)+'. '+d.getDate()+'.'}
+function terms(q){return String(q||'').toLowerCase().split(/\s+/).filter(Boolean)}
+function hit(hay,ts){hay=String(hay).toLowerCase();return ts.every(function(t){return hay.indexOf(t)>=0})}
+/* escape, wrap search words in <mark> */
+function mark(s,ts){s=String(s==null?'':s);if(!ts||!ts.length)return esc(s);var low=s.toLowerCase(),out='',i=0;
+  while(i<s.length){var best=-1,bl=0;ts.forEach(function(t){var j=low.indexOf(t,i);if(j>=0&&(best<0||j<best||(j===best&&t.length>bl))){best=j;bl=t.length}});
+    if(best<0){out+=esc(s.slice(i));break}out+=esc(s.slice(i,best))+'<mark>'+esc(s.slice(best,best+bl))+'</mark>';i=best+bl}
+  return out}
+function hbText(body,ts){var h=mark(body,ts);return ts.length?h:h.replace(/\[[^\]\n<>]{0,40}\]/g,function(m){return '<span class="blank">'+m+'</span>'})}
+function hasBlank(body){return /\[[^\]\n]{0,40}\]/.test(body)}
+function tabNum(k){var i=tabsFor().findIndex(function(t){return t[0]===k});return i>=0?i+1:''}
+
+function rulebookTab(){var can=hbCanWrite(),items=hbItems(),h='';
+  h+='<section class="panel hb-top"><div class="hb-head"><div class="grow"><h2>취업규칙 · 복지</h2><p class="lead">'+
+    (can?'우리 병원에서 실제로 시행 중인 규칙과 복지를 적어 두는 곳이에요. 직원들도 궁금할 때 여기서 찾아봐요.':'우리 병원의 규칙과 복지예요. 더 궁금한 점은 팀장님께 물어보세요.')+'</p></div>'+
+    '<div class="acts">'+(can?'<button class="btn primary" data-act="hbNew">+ 새 항목</button>':'')+(items.length?'<button class="btn" data-act="hbPrint">인쇄용 파일</button>':'')+'</div></div>'+
+    (items.length?'<div class="searchbox"><label class="vh" for="hbQ">취업규칙에서 찾기</label><input type="search" id="hbQ" placeholder="찾을 말을 넣어 보세요 (예: 경조사, 급여일, OT)" value="'+esc(ui.hbQ||'')+'" autocomplete="off" enterkeyhint="search"></div>':'')+'</section>';
+  if(ui.hbEdit&&!ui.hbEdit.id)h+=hbEditor();
+  h+='<div id="hbRes" class="hb-res">'+hbResults()+'</div>';
+  if(can)h+='<p class="fine">'+(isAdmin()?'관리자는 모든 항목을 고치고 지울 수 있어요. 팀장은 새 항목을 쓰고, 자기가 쓴 항목만 고치고 지울 수 있어요. 이곳은 직원 안내용이에요. 직원이 상시 10명 이상이면 취업규칙을 고용노동부에 신고해야 하고, 직원에게 불리하게 바꿀 때는 직원 과반수의 동의가 필요해요.':'새 항목을 쓰고, 내가 쓴 항목은 고치고 지울 수 있어요. 다른 사람이 쓴 항목은 원장님(관리자)께 말씀해 주세요.')+
+    ' ‘관리자·팀장만’으로 정한 항목은 직원 화면에 보이지 않아요. 직원 개인의 급여·연락처 같은 개인정보는 적지 마세요.'+(MODE==='server'?' 저장하면 바로 모든 사람에게 보여요.':' 고친 뒤 위의 ‘저장’을 눌러야 저장돼요.')+'</p>';
+  return h}
+function hbResults(){var ts=terms(ui.hbQ),all=hbItems(),cat=ui.hbCat||'all',can=hbCanWrite();
+  if(!all.length){if(ui.hbEdit&&!ui.hbEdit.id)return '';
+    return '<section class="panel empty hb-empty"><p><b>아직 적어 둔 규칙이 없어요.</b></p>'+(can?'<p>처음이라면 병원에서 자주 쓰는 항목 틀 '+HB_SEED.length+'개를 넣고, <span class="blank">[ ]</span> 칸만 우리 병원에 맞게 채우면 돼요. 필요 없는 항목은 지우면 돼요.</p><div class="row center"><button class="btn primary" data-act="hbSeed"'+(ui.hbSaving?' disabled':'')+'>자주 쓰는 항목 틀 넣기</button><button class="btn" data-act="hbNew">직접 쓰기</button></div>':'<p>관리자나 팀장이 규칙과 복지를 적으면 여기에 보여요.</p>')+'</section>'}
+  var found=all.filter(function(it){return !ts.length||hit(it.cat+' '+it.title+' '+it.body,ts)}),cnt={};
+  found.forEach(function(it){cnt[it.cat]=(cnt[it.cat]||0)+1});
+  var h='<div class="chips catchips" role="group" aria-label="분류"><button class="tchip" data-act="hbCat" data-k="all" aria-pressed="'+(cat==='all')+'">전체 <small>'+found.length+'</small></button>'+
+    HB_CATS.filter(function(c){return cnt[c]||cat===c}).map(function(c){return '<button class="tchip" data-act="hbCat" data-k="'+esc(c)+'" aria-pressed="'+(cat===c)+'">'+esc(c)+' <small>'+(cnt[c]||0)+'</small></button>'}).join('')+'</div>';
+  var list=found.filter(function(it){return cat==='all'||it.cat===cat});
+  if(!list.length)return h+'<section class="panel empty"><p>‘'+esc(ui.hbQ||'')+'’'+(cat!=='all'?' (분류: '+esc(cat)+')':'')+'에 맞는 항목이 없어요.</p><p class="muted">다른 말로 찾아보거나, 법에 정한 내용은 <button class="linkbtn" data-act="lawFind" data-k="'+esc(ui.hbQ||'')+'">근로기준법 탭에서 찾아보세요</button>.</p></section>';
+  HB_CATS.forEach(function(c){var g=list.filter(function(it){return it.cat===c});if(!g.length)return;
+    h+='<section class="hb-group" aria-label="'+esc(c)+'"><h3 class="grp-h">'+esc(c)+'</h3>'+g.map(function(it){return hbCard(it,ts)}).join('')+'</section>'});
+  return h}
+function hbCard(it,ts){if(ui.hbEdit&&ui.hbEdit.id===it.id)return hbEditor();
+  var open=ts.length>0||!!(ui.hbOpen&&ui.hbOpen[it.id]),can=hbCan(it),blank=hbCanWrite()&&hasBlank(it.body);
+  var h='<article class="hb-card'+(open?' open':'')+'" id="hb-'+esc(it.id)+'"><button class="hb-q" data-act="hbOpen" data-k="'+esc(it.id)+'" aria-expanded="'+open+'"><span class="hb-t">'+mark(it.title,ts)+'</span>'+
+    (it.vis==='mgr'?'<span class="badge mgr">관리자·팀장만</span>':'')+(blank?'<span class="badge blank-b">채울 칸 있음</span>':'')+'<span class="chev" aria-hidden="true"></span></button>';
+  if(open){h+='<div class="hb-body"><div class="hb-text">'+(it.body.trim()?hbText(it.body,ts):'<span class="muted">내용이 비어 있어요.</span>')+'</div><div class="hb-meta"><span class="muted">'+(it.updatedAt?fmtDate(it.updatedAt)+(it.updatedBy?' · '+esc(it.updatedBy):'')+' 고침':'')+'</span>';
+    if(can)h+='<span class="acts">'+(ui.confirm==='hbdel:'+it.id?'<span class="ask-t">이 항목을 지울까요?</span><button class="btn small danger" data-act="hbDel" data-k="'+esc(it.id)+'">지우기</button><button class="btn small" data-act="cancel">취소</button>':
+      '<button class="btn small" data-act="hbEdit" data-k="'+esc(it.id)+'">고치기</button><button class="btn small" data-act="hbAsk" data-k="'+esc(it.id)+'">지우기</button>')+'</span>';
+    h+='</div></div>'}
+  return h+'</article>'}
+function hbEditor(){var e=ui.hbEdit,isNew=!e.id;
+  return '<section class="panel hb-ed" id="hbEd" aria-label="'+(isNew?'새 항목 쓰기':'항목 고치기')+'"><h3>'+(isNew?'새 항목 쓰기':'항목 고치기')+'</h3>'+
+    (e.warn?'<div class="note warn"><div class="grow">'+esc(e.warn)+'</div></div>':'')+
+    (e.theirs?'<details class="theirs"><summary>방금 저장된 다른 사람의 내용 보기</summary><div class="hb-text">'+esc(e.theirs)+'</div></details>':'')+
+    '<div class="hb-form"><div class="fld"><label for="hbe-cat">분류</label><select id="hbe-cat" data-hb="cat">'+HB_CATS.map(function(c){return '<option'+(e.cat===c?' selected':'')+'>'+esc(c)+'</option>'}).join('')+'</select></div>'+
+    '<div class="fld grow"><label for="hbe-title">제목</label><input type="text" id="hbe-title" data-hb="title" maxlength="80" value="'+esc(e.title||'')+'" placeholder="예: 경조사 휴가"></div></div>'+
+    '<div class="fld"><label for="hbe-body">내용</label><textarea id="hbe-body" data-hb="body" maxlength="4000" rows="9" placeholder="직원들이 읽기 쉽게 한 줄에 하나씩 적어 주세요.&#10;예: 본인 결혼 5일, 부모 사망 5일">'+esc(e.body||'')+'</textarea><span class="fine">[ ]처럼 대괄호로 적은 곳은 ‘채울 칸’으로 표시돼요.</span></div>'+
+    '<fieldset class="hb-vis"><legend>누가 볼 수 있나요?</legend><label class="chk"><input type="radio" name="hbvis" data-hb="vis" value="all"'+(e.vis!=='mgr'?' checked':'')+'>모든 직원</label><label class="chk"><input type="radio" name="hbvis" data-hb="vis" value="mgr"'+(e.vis==='mgr'?' checked':'')+'>관리자·팀장만</label></fieldset>'+
+    '<div class="row"><button class="btn primary" data-act="hbSave"'+(ui.hbSaving?' disabled':'')+'>'+(ui.hbSaving?'저장 중…':'저장')+'</button><button class="btn" data-act="hbCancel">취소</button></div></section>'}
+function hbStart(it){ui.hbEdit=it?{id:it.id,cat:it.cat,title:it.title,body:it.body,vis:it.vis,base:it.updatedAt||0}:{id:'',cat:ui.hbCat&&ui.hbCat!=='all'?ui.hbCat:HB_CATS[0],title:'',body:'',vis:'all',base:0};ui.confirm=null;render();
+  var f=document.getElementById(it?'hbe-body':'hbe-title');if(f)try{f.focus({preventScroll:true});var ed=document.getElementById('hbEd');if(ed&&ed.scrollIntoView)ed.scrollIntoView({block:'nearest'})}catch(x){}}
+function hbDone(it){ui.hbEdit=null;ui.hbOpen=ui.hbOpen||{};ui.hbOpen[it.id]=true;if(ui.hbCat!=='all'&&ui.hbCat!==it.cat)ui.hbCat='all';if(ui.hbQ&&!hit(it.cat+' '+it.title+' '+it.body,terms(ui.hbQ)))ui.hbQ='';render();
+  var c=document.getElementById('hb-'+it.id);if(c&&c.scrollIntoView)try{c.scrollIntoView({block:'nearest'})}catch(x){}}
+function hbLost(){clearAuth();ui.auth=null;ui.dirty=freshDirty();ui.view='login';ui.loginErr='PIN이 바뀌었거나 팀장 등록이 삭제됐어요. 다시 로그인해 주세요.';render()}
+function hbSave(){var e=ui.hbEdit;if(!e||ui.hbSaving||!hbCanWrite())return;
+  var x={id:e.id||'',cat:HB_CATS.indexOf(e.cat)>=0?e.cat:'기타',title:String(e.title||'').trim().slice(0,80),body:String(e.body||'').replace(/\s+$/,'').slice(0,4000),vis:e.vis==='mgr'?'mgr':'all'};
+  if(!x.title){toast('제목을 적어 주세요.');var t=document.getElementById('hbe-title');if(t)t.focus();return}
+  if(MODE!=='server'){var now=Date.now(),it=x.id&&hbById(x.id);
+    if(it)Object.assign(it,{cat:x.cat,title:x.title,body:x.body,vis:x.vis,updatedAt:now,updatedBy:hbWho()});
+    else{if(S.handbook.items.length>=200){toast('항목은 200개까지 쓸 수 있어요.');return}it={id:uid('a'),cat:x.cat,title:x.title,body:x.body,vis:x.vis,own:hbOwn(),createdAt:now,updatedAt:now,updatedBy:hbWho()};S.handbook.items.push(it)}
+    ui.dirty.hb=true;S.example=false;touched();hbDone(it);toast('적어 뒀어요. 위의 ‘저장’을 눌러야 저장돼요.');return}
+  ui.hbSaving=true;render();
+  api('saveArticle',{pin:pinArg(),article:x,base:e.base||0}).then(function(r){ui.hbSaving=false;
+    if(r.ok){hbPut(r.item);hbDone(r.item);toast((x.id?'고쳤어요.':'올렸어요.')+(x.vis==='mgr'?' 관리자·팀장에게만 보여요.':' 직원들에게 바로 보여요.'));return}
+    if(r.error==='conflict'&&r.item){hbPut(r.item);e.base=r.item.updatedAt||0;e.theirs=r.item.title+'\n\n'+r.item.body;e.warn=(r.item.updatedBy||'다른 사람')+' 님이 방금 이 항목을 고쳤어요. 아래에서 그 내용을 확인하세요. 내 내용으로 바꾸려면 한 번 더 저장하세요.';render();return}
+    if(r.error==='gone'){S.handbook.items=S.handbook.items.filter(function(y){return y.id!==e.id});e.id='';e.base=0;e.warn='다른 사람이 이 항목을 지웠어요. 저장하면 새 항목으로 올라가요.';render();return}
+    if(r.error==='pin'){hbLost();return}
+    toast(errMsg(r));render()}).catch(function(){ui.hbSaving=false;toast('서버에 연결하지 못했어요. 쓴 내용은 그대로 있어요. 잠시 뒤 다시 저장하세요.');render()})}
+function hbDel(id){var it=hbById(id);if(!it||!hbCan(it))return;
+  var gone=function(){S.handbook.items=S.handbook.items.filter(function(y){return y.id!==id});ui.confirm=null;if(ui.hbEdit&&ui.hbEdit.id===id)ui.hbEdit=null;render()};
+  if(MODE!=='server'){gone();ui.dirty.hb=true;touched();toast('지웠어요. 위의 ‘저장’을 눌러야 저장돼요.');return}
+  api('deleteArticle',{pin:pinArg(),id:id}).then(function(r){if(!r.ok){if(r.error==='pin'){hbLost();return}toast(errMsg(r));return}gone();toast('지웠어요.')}).catch(function(){toast('서버에 연결하지 못했어요.')})}
+function hbSeed(){if(!hbCanWrite()||ui.hbSaving)return;var items=HB_SEED.map(function(x){return {cat:x[0],title:x[1],body:x[2],vis:'all'}});
+  var done=function(n){ui.hbCat='all';ui.hbQ='';ui.hbOpen={};render();toast('항목 틀 '+n+'개를 넣었어요. 노란 [ ] 칸을 우리 병원에 맞게 고쳐 주세요.')};
+  if(MODE!=='server'){var now=Date.now();items.forEach(function(x){S.handbook.items.push(Object.assign({id:uid('a'),own:hbOwn(),createdAt:now,updatedAt:now,updatedBy:hbWho()},x))});ui.dirty.hb=true;S.example=false;touched();done(items.length);return}
+  ui.hbSaving=true;render();
+  api('addArticles',{pin:pinArg(),items:items}).then(function(r){ui.hbSaving=false;if(!r.ok){if(r.error==='pin'){hbLost();return}toast(errMsg(r));render();return}(r.items||[]).forEach(hbPut);done((r.items||[]).length)}).catch(function(){ui.hbSaving=false;toast('서버에 연결하지 못했어요.');render()})}
+function hbPrint(){var items=hbItems();
+  var css='@page{size:A4;margin:14mm}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;font-size:12px;line-height:1.65;margin:0}h1{font-size:18px;margin:0 0 4px}p.d{color:#64716C;margin:0 0 14px}h2{font-size:14px;margin:18px 0 6px;padding:3px 8px;background:#FFF200}h3{font-size:12.5px;margin:10px 0 2px}div.b{white-space:pre-wrap;margin:0 0 6px}small{color:#64716C;font-weight:400}';
+  var h='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(S.clinic+' 취업규칙·복지')+'</title>'+FONT_LINK+'<style>'+css+'</style></head><body><h1>'+esc(S.clinic)+' 취업규칙 · 복지</h1><p class="d">'+fmtDate(Date.now())+' 기준</p>';
+  HB_CATS.forEach(function(c){var g=items.filter(function(it){return it.cat===c});if(!g.length)return;h+='<h2>'+esc(c)+'</h2>'+g.map(function(it){return '<h3>'+esc(it.title)+(it.vis==='mgr'?' <small>(관리자·팀장만)</small>':'')+'</h3><div class="b">'+esc(it.body)+'</div>'}).join('')});
+  return h+'<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},500)})<\/script></body></html>'}
+
+/* ----- 8. 근로기준법 쉽게 보기 (모든 직원) ----- */
+var LAW_CATS=[['leave','연차'],['rest','휴가·휴일'],['birth','임신·출산'],['child','육아'],['hours','근로시간·OT'],['pay','임금·퇴직'],['work','직장생활']];
+var LAW_ASOF='2026년 10월';
+var LAW=[
+ {id:'l1',c:'leave',q:'연차는 며칠 생기나요?',a:'입사 첫해에는 한 달 개근할 때마다 1일씩(최대 11일) 생기고, 1년을 채우고 80% 이상 출근했다면 15일이 생겨요.',
+  p:['3년 이상 일하면 2년마다 1일씩 늘어요. 3·4년차 16일, 5·6년차 17일 … 최대 25일이에요.','입사 첫해에 생긴 연차(최대 11일)는 입사하고 1년 안에 써야 해요.','출산전후휴가·육아휴직, 일하다 다쳐서 쉰 기간은 출근한 것으로 쳐요.','아래 ‘내 연차 계산기’에 입사일을 넣으면 바로 계산돼요.'],
+  law:[['근로기준법','제60조']],t:'연차일수 휴가 15일 11일 25일 가산 1년 미만 신입 출근율',hb:'연차'},
+ {id:'l2',c:'leave',q:'반차(0.5일)도 쓸 수 있나요?',a:'법에 반차가 따로 정해져 있지는 않지만, 병원과 직원이 정하면 쓸 수 있어요. 이 근무표에서는 오전 반차·오후 반차를 0.5일로 계산해요.',
+  p:['반차 두 번이 연차 1일이에요.','반차를 몇 시까지로 보는지는 취업규칙 탭에서 확인하세요.'],ref:'고용노동부 해석: 노사가 정하면 반일 단위로 쓸 수 있어요.',t:'반차 반일 오전반차 오후반차 0.5',hb:'반차'},
+ {id:'l3',c:'leave',q:'연차를 다 못 쓰면 어떻게 되나요?',a:'쓸 수 있는 기간(보통 1년) 안에 못 쓴 연차는 돈(연차수당)으로 받아요. 단, 병원이 법에 정한 ‘연차 사용 촉진’을 했다면 수당이 없을 수 있어요.',
+  p:['연차 사용 촉진: 쓸 수 있는 기간이 끝나기 약 6개월 전에 병원이 남은 일수를 서면으로 알리고, 쓸 날을 정하라고 요청하는 절차예요.','퇴사할 때 남은 연차는 수당으로 정산해요.','연차수당은 보통 하루치 통상임금 × 남은 일수예요.'],
+  law:[['근로기준법','제60조'],['근로기준법','제61조']],t:'연차수당 미사용 소멸 사용촉진 정산 퇴사 돈'},
+ {id:'l4',c:'leave',q:'연차는 원하는 날 쓸 수 있나요?',a:'원칙적으로 직원이 원하는 날 쓸 수 있어요. 다만 그날 쉬면 병원 운영에 큰 지장이 있을 때는 병원이 날짜를 바꿔 달라고 할 수 있어요.',
+  p:['미리 팀장에게 말하고 근무표에 넣어 두면 좋아요.','신청 방법과 기한은 취업규칙 탭에서 확인하세요.'],law:[['근로기준법','제60조']],t:'연차 신청 날짜 시기 변경 희망휴무',hb:'연차'},
+ {id:'r1',c:'rest',q:'주휴일(주휴수당)이 뭔가요?',a:'1주일 동안 정해진 날을 모두 출근하면 1주에 하루, 쉬어도 돈을 받는 날(보통 일요일)이 생겨요.',
+  p:['일주일에 15시간 미만으로 일하면 주휴일이 없어요.','월급제는 보통 주휴수당이 월급에 들어 있어요. 최저임금 월 환산액(209시간)에도 주휴시간이 들어가 있어요.'],
+  law:[['근로기준법','제55조'],['근로기준법','제18조']],t:'주휴 주휴수당 유급휴일 일요일 개근'},
+ {id:'r2',c:'rest',q:'공휴일(빨간 날)은 쉬는 날인가요?',a:'직원이 5명 이상인 병원은 공휴일과 대체공휴일이 유급휴일이에요. 쉬어도 월급이 깎이지 않아요.',
+  p:['공휴일에 진료하면, 근로자대표와 서면으로 합의해 다른 근무일과 바꿔 쉬거나(휴일 대체), 휴일근로수당(8시간까지 1.5배)을 받아요.','공휴일을 연차에서 빼는 건 안 돼요.'],
+  law:[['근로기준법','제55조']],t:'공휴일 빨간날 대체공휴일 휴일대체 명절 설날 추석 휴일근로',hb:'공휴일'},
+ {id:'r3',c:'rest',q:'생리휴가가 있나요?',a:'여성 직원이 청구하면 한 달에 하루 생리휴가를 줘야 해요. 법으로는 무급이에요.',p:['병원이 유급으로 정했다면 취업규칙을 따라요.'],law:[['근로기준법','제73조']],t:'생리휴가 보건휴가 여성'},
+ {id:'r4',c:'rest',q:'경조사 휴가·여름휴가는 며칠인가요?',a:'경조사 휴가와 여름휴가는 법으로 정한 휴가가 아니라 병원이 정해요. 우리 병원 기준은 취업규칙 탭에서 확인하세요.',
+  p:['병원마다 연차와 따로 주기도 하고, 연차에서 빼기도 해요.'],ref:'법에 정한 휴가가 아니라 취업규칙·근로계약으로 정해요.',t:'경조사 결혼 장례 사망 상 여름휴가 하계휴가 휴가',hb:'경조사'},
+ {id:'r5',c:'rest',q:'가족을 돌봐야 할 때 쉴 수 있나요?',a:'가족이 아프거나 다쳤을 때, 또는 자녀를 돌봐야 할 때 가족돌봄휴가(1년에 10일, 하루 단위)를 쓸 수 있어요. 오래 돌봐야 하면 가족돌봄휴직(1년에 최대 90일)도 있어요.',
+  p:['가족: 부모, 배우자, 자녀, 배우자의 부모, 조부모, 손자녀.','가족돌봄휴가 10일은 가족돌봄휴직 90일 안에 들어가요.','휴직은 한 번에 30일 이상 써야 해요.','법으로는 무급이에요. 병원이 따로 정했다면 취업규칙을 따라요.'],
+  law:[['남녀고용평등법','제22조의2']],t:'가족돌봄 가족 간병 병간호 부모님 자녀 아이 아플 때 휴직'},
+ {id:'b1',c:'birth',q:'출산휴가는 얼마나 쓸 수 있나요?',a:'출산 전후로 90일(쌍둥이 이상 120일, 미숙아를 낳으면 100일)을 쓸 수 있어요. 출산 뒤에 45일(쌍둥이 이상 60일) 이상이 남도록 나눠야 해요.',
+  p:['처음 60일(쌍둥이 이상 75일)은 병원이 유급으로 줘야 해요. 고용보험에서도 출산전후휴가 급여를 지원해요(상한 있음, 고용24에서 신청).','유산·사산 경험이 있거나 만 40세 이상이거나 의사 진단이 있으면 출산 전에도 나눠 쓸 수 있어요.','출산휴가 기간과 그 뒤 30일 동안은 해고할 수 없어요.'],
+  law:[['근로기준법','제74조'],['근로기준법','제23조']],t:'출산휴가 출산전후휴가 산휴 산전후 출산 쌍둥이 미숙아 임신'},
+ {id:'b2',c:'birth',q:'임신 중에 일하는 시간을 줄일 수 있나요?',a:'임신 12주 이내이거나 32주 이후라면 하루 2시간 줄여 일할 수 있어요. 월급은 깎이지 않아요.',
+  p:['의사가 고위험 임신이라고 진단하면 임신 기간 내내 줄일 수 있어요.','임신 중에는 연장근로(시간 외 근무)를 할 수 없어요.','하루 근무시간은 그대로 두고 출근·퇴근 시간을 바꿔 달라고 할 수 있어요.','정기 검진(태아 검진)에 필요한 시간을 받을 수 있고, 그 시간도 월급에서 빼지 않아요.'],
+  law:[['근로기준법','제74조'],['근로기준법','제74조의2']],t:'임신 근로시간 단축 임산부 검진 태아검진 출퇴근 시간 변경 연장근로 금지'},
+ {id:'b3',c:'birth',q:'배우자가 출산하면 휴가가 있나요?',a:'배우자 출산휴가 20일(유급)을 쓸 수 있어요. 출산한 날부터 120일 안에, 4번까지 나눠 쓸 수 있어요.',
+  p:['고용보험에서 배우자 출산휴가 급여를 지원해요(고용24에서 신청).','휴가를 썼다고 불이익을 주면 안 돼요.'],law:[['남녀고용평등법','제18조의2']],t:'배우자 출산휴가 아빠 남편 출산'},
+ {id:'b4',c:'birth',q:'난임 치료를 받을 때 쉴 수 있나요?',a:'난임치료휴가를 1년에 6일 쓸 수 있어요. 처음 2일은 유급이에요.',p:['시술 같은 치료를 받으려고 쓰는 휴가예요. 업무 사정이 있으면 병원이 날짜를 바꿔 달라고 할 수 있어요.'],law:[['남녀고용평등법','제18조의3']],t:'난임 시술 치료 휴가 임신 준비'},
+ {id:'b5',c:'birth',q:'유산·사산했을 때 휴가가 있나요?',a:'임신 기간에 따라 유산·사산휴가를 받을 수 있어요. 15주 이내 10일, 16~21주 30일, 22~27주 60일, 28주 이상 90일이에요.',
+  p:['직원이 청구하면 병원은 꼭 줘야 해요.','출산휴가처럼 처음 60일까지는 유급이고, 고용보험 급여도 지원돼요.'],law:[['근로기준법','제74조']],t:'유산 사산 휴가 임신'},
+ {id:'c1',c:'child',q:'육아휴직은 누가, 얼마나 쓸 수 있나요?',a:'만 8세 이하(또는 초등학교 2학년 이하) 자녀가 있으면 엄마·아빠가 각각 1년씩 쓸 수 있어요. 부모가 각각 3개월 이상 쓰면 1년 6개월까지 늘어나요.',
+  p:['한부모, 중증 장애아동의 부모도 1년 6개월까지 쓸 수 있어요.','4번까지 나눠 쓸 수 있어요.','시작하려는 날 30일 전까지 병원에 신청해요.','입사한 지 6개월이 안 됐으면 병원이 거절할 수 있어요.','휴직 기간도 근속기간에 들어가고, 연차를 계산할 때 출근한 것으로 쳐요.','끝나면 전과 같은 일이나 같은 수준의 임금을 받는 자리로 돌아와요. 육아휴직을 이유로 해고하거나 불이익을 주면 안 돼요.'],
+  law:[['남녀고용평등법','제19조']],t:'육아휴직 육휴 휴직 아이 자녀 1년6개월 분할 복직'},
+ {id:'c2',c:'child',q:'육아휴직 중에 돈은 얼마나 받나요?',a:'고용보험에서 육아휴직 급여를 받아요. 1~3개월은 통상임금의 100%(월 최대 250만 원), 4~6개월은 100%(월 최대 200만 원), 7개월부터는 80%(월 최대 160만 원)예요.',
+  p:['최소 금액은 월 70만 원이에요.','휴직을 시작하고 1개월이 지난 뒤부터, 끝난 뒤 12개월 안에 고용24에서 신청해요.','예전처럼 일부를 복직한 뒤에 나눠 주지 않고, 휴직하는 동안 다 받아요.','생후 18개월 안의 자녀를 두고 부모가 모두 육아휴직을 쓰면(6+6 부모육아휴직제) 첫 6개월은 상한이 더 높아요(최대 월 450만 원).','고용보험에 180일 이상 가입돼 있어야 받을 수 있어요.'],
+  law:[['고용보험법','제70조']],t:'육아휴직 급여 돈 수당 고용24 6+6 상한 통상임금 얼마'},
+ {id:'c3',c:'child',q:'아이를 키우면서 일하는 시간을 줄일 수 있나요?',a:'만 12세 이하(또는 초등학교 6학년 이하) 자녀가 있으면 육아기 근로시간 단축을 쓸 수 있어요. 주 15~35시간으로 줄여 일해요.',
+  p:['기간은 1년이고, 육아휴직을 다 쓰지 않았다면 남은 기간의 2배만큼 더 쓸 수 있어요(최대 3년).','1개월 단위로 나눠 쓸 수 있어요.','줄어든 시간만큼 고용보험에서 급여를 받아요(고용24에서 신청).','단축을 이유로 불이익을 주면 안 되고, 끝나면 원래 근무로 돌아와요.'],
+  law:[['남녀고용평등법','제19조의2']],t:'육아기 근로시간 단축 단축근무 아이 자녀 초등학생'},
+ {id:'h1',c:'hours',q:'하루·일주일에 몇 시간까지 일할 수 있나요?',a:'기본은 하루 8시간, 일주일 40시간이에요. 직원이 동의하면 일주일에 12시간까지 더 일할 수 있어서, 최대 주 52시간이에요.',
+  p:['휴게시간(점심시간 등)은 근무시간에 들어가지 않아요.'],law:[['근로기준법','제50조'],['근로기준법','제53조']],t:'근로시간 52시간 40시간 8시간 연장근로 한도'},
+ {id:'h2',c:'hours',q:'휴게시간은 얼마나 있어야 하나요?',a:'4시간 일하면 30분 이상, 8시간 일하면 1시간 이상 쉬어야 해요. 일하는 중간에 주고, 자유롭게 쓸 수 있어야 해요.',p:['보통 점심시간이 이 휴게시간이에요.'],law:[['근로기준법','제54조']],t:'휴게 점심 쉬는시간 휴식'},
+ {id:'h3',c:'hours',q:'연장·야간·휴일에 일하면 수당이 더 붙나요?',a:'네. 하루 8시간·주 40시간을 넘긴 시간(연장), 밤 10시~아침 6시(야간), 휴일에 일한 시간은 통상임금의 50%를 더 받아요. 휴일에 8시간을 넘긴 시간은 100%를 더 받아요.',
+  p:['병원의 ‘야간 진료’(예: 저녁 8시까지)는 법에서 말하는 야간근로(밤 10시 이후)가 아니에요. 대신 하루 8시간이나 주 40시간을 넘기면 연장근로예요.','하루 8시간·주 40시간을 넘지 않는 추가 근무는 50%가 붙지 않고 일한 시간만큼 받아요.','연장과 야간이 겹치면 각각 더해요.'],
+  law:[['근로기준법','제56조']],t:'연장근로 야간 휴일 수당 가산 1.5배 OT 오버타임 초과근무 야근 야간진료'},
+ {id:'h4',c:'hours',q:'OT(초과근무) 대신 쉬는 시간으로 받을 수 있나요?',a:'네. 근로자대표와 서면으로 합의하면 연장·야간·휴일근로 수당 대신 휴가로 줄 수 있어요(보상휴가제). 이때 휴가는 수당만큼이어야 해서, 연장 1시간이면 보통 1시간 30분이에요.',
+  p:['쓰지 못한 보상휴가는 수당으로 받아야 해요.','하루 8시간·주 40시간 안의 추가 근무는 50%가 붙지 않아서 일한 만큼(1:1) 쉬어도 돼요.','우리 병원의 OT 사용 방법은 취업규칙 탭에서 확인하세요. 남은 OT는 팀장이 근무표에서 관리해요.'],
+  law:[['근로기준법','제57조']],t:'OT 오버타임 보상휴가 대체휴가 초과근무 조기퇴근 일찍 퇴근 늦게 출근 30분',hb:'OT'},
+ {id:'p1',c:'pay',q:'최저임금은 얼마인가요?',a:'2026년은 시간당 10,320원(주 40시간이면 월 2,156,880원)이에요. 2027년 1월 1일부터는 시간당 10,700원(월 2,236,300원)이에요.',
+  p:['월 환산액은 주휴시간을 넣은 월 209시간 기준이에요.'],law:[['최저임금법','제6조']],t:'최저임금 최저시급 시급 월급 2026 2027 10320 10700'},
+ {id:'p2',c:'pay',q:'월급은 어떻게 받아야 하나요?',a:'매달 1번 이상 정해진 날에, 돈으로, 직접, 전액을 받아야 해요. 임금명세서도 받아야 해요.',
+  p:['임금명세서에는 기본급·수당·공제 내역과 계산 방법이 들어가요.','우리 병원 급여일은 취업규칙 탭에서 확인하세요.'],law:[['근로기준법','제43조'],['근로기준법','제48조']],t:'월급 급여일 월급날 임금 명세서 지급',hb:'급여'},
+ {id:'p3',c:'pay',q:'퇴직금은 언제, 얼마나 받나요?',a:'1년 이상 일하고 일주일에 15시간 이상 일했다면 퇴직금을 받아요. 일한 1년마다 30일분의 평균임금이에요.',
+  p:['퇴사하고 14일 안에 받아야 해요(서로 합의하면 늦출 수 있어요).','퇴직연금에 가입돼 있으면 연금 계좌로 받아요.','평균임금은 퇴사 전 3개월 동안 받은 임금을 그 기간의 날수로 나눈 금액이에요.'],
+  law:[['근로자퇴직급여보장법','제8조'],['근로기준법','제36조']],t:'퇴직금 퇴사 퇴직연금 평균임금 그만둘 때'},
+ {id:'p4',c:'pay',q:'해고되거나 그만둘 때 알아둘 것은?',a:'병원이 해고하려면 정당한 이유가 있어야 하고, 이유와 날짜를 서면으로 알려야 해요. 30일 전에 미리 알리지 않았다면 30일분 통상임금을 줘야 해요.',
+  p:['직원이 그만둘 때는 근무표를 다시 짜야 하니, 취업규칙·근로계약서에서 정한 기간 전에 미리 알려 주세요.','부당하게 해고됐다고 생각하면 3개월 안에 노동위원회에 구제 신청을 할 수 있어요.'],
+  law:[['근로기준법','제23조'],['근로기준법','제26조'],['근로기준법','제27조'],['근로기준법','제28조']],t:'해고 퇴사 사직 그만둘 때 해고예고 부당해고',hb:'그만둘'},
+ {id:'w1',c:'work',q:'근로계약서는 꼭 받아야 하나요?',a:'네. 일을 시작할 때 임금, 근로시간, 휴일, 연차 같은 내용이 적힌 근로계약서를 서면으로 받아야 해요.',p:['임금 같은 중요한 내용이 바뀌면 바뀐 내용도 서면으로 받아요.'],law:[['근로기준법','제17조']],t:'근로계약서 계약서 서면 입사'},
+ {id:'w2',c:'work',q:'직장 내 괴롭힘을 당하면 어떻게 하나요?',a:'직장에서 지위나 관계를 이용해 업무 범위를 넘어 괴롭히는 것은 법으로 금지돼 있어요. 병원(원장님)에 알리면 병원은 바로 조사하고 보호해야 해요.',
+  p:['신고했다는 이유로 불이익을 주면 안 돼요.','병원 안에서 해결하기 어려우면 고용노동부(☎ 1350)에 신고할 수 있어요.'],law:[['근로기준법','제76조의2'],['근로기준법','제76조의3']],t:'괴롭힘 갑질 폭언 신고 따돌림'},
+ {id:'w3',c:'work',q:'직장 내 성희롱은 어떻게 예방하고 신고하나요?',a:'병원은 1년에 1번 이상 성희롱 예방교육을 해야 하고, 신고가 들어오면 조사하고 피해자를 보호해야 해요.',
+  p:['신고했다는 이유로 불이익을 주면 안 돼요.','고용노동부(☎ 1350)에도 신고할 수 있어요.'],law:[['남녀고용평등법','제13조'],['남녀고용평등법','제14조']],t:'성희롱 예방교육 신고'},
+ {id:'w4',c:'work',q:'일하다 다치거나 병이 나면요?',a:'일 때문에 다치거나 병이 나면 산재보험으로 치료비와, 쉬는 동안 휴업급여(평균임금의 70%)를 받을 수 있어요.',
+  p:['근로복지공단(☎ 1588-0075)에 신청해요. 병원이 산재 신청을 막으면 안 돼요.','출퇴근길 사고도 산재가 될 수 있어요.'],law:[['산업재해보상보험법','제37조']],t:'산재 다침 부상 사고 치료 출퇴근 근로복지공단'}
+];
+function lawCatName(c){var x=LAW_CATS.filter(function(y){return y[0]===c})[0];return x?x[1]:''}
+function lawHay(x){return x.q+' '+x.a+' '+(x.p||[]).join(' ')+' '+(x.t||'')+' '+(x.law||[]).map(function(l){return l[0]+' '+l[1]}).join(' ')}
+function lawLink(l){var url='https://www.law.go.kr/법령/'+encodeURIComponent(l[0])+(l[1]?'/'+encodeURIComponent(l[1]):'');return '<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(l[0]+(l[1]?' '+l[1]:''))+'</a>'}
+function lawTab(){var h='<section class="panel law-top"><div class="hb-head"><div class="grow"><h2>근로기준법 쉽게 보기</h2><p class="lead">연차·휴가·출산·육아휴직처럼 자주 궁금한 것을 쉬운 말로 정리했어요. <b>'+LAW_ASOF+' 기준</b>이고, 직원이 5명 이상인 병원 기준이에요.</p></div></div>'+
+  '<div class="searchbox"><label class="vh" for="lawQ">궁금한 것 찾기</label><input type="search" id="lawQ" placeholder="궁금한 말을 넣어 보세요 (예: 연차, 출산, 퇴직금)" value="'+esc(ui.lawQ||'')+'" autocomplete="off" enterkeyhint="search"></div>'+
+  '<div class="quick"><span class="muted">자주 찾는 말</span>'+['연차','반차','출산휴가','육아휴직','OT','공휴일','퇴직금','최저임금'].map(function(w){return '<button class="qchip" data-act="lawFind" data-k="'+esc(w)+'" aria-pressed="'+(String(ui.lawQ||'').trim()===w)+'">'+esc(w)+'</button>'}).join('')+'</div></section>';
+  h+='<div class="lawgrid'+(terms(ui.lawQ).length?' searching':'')+'" id="lawGrid"><div class="law-calc">'+leaveCalcPanel()+'</div><div class="law-list" id="lawRes">'+lawResults()+'</div><div class="law-help">'+lawHelpPanel()+'</div></div>';
+  return h}
+function lawResults(){var ts=terms(ui.lawQ),cat=ui.lawCat||'all',found=LAW.filter(function(x){return !ts.length||hit(lawHay(x),ts)}),cnt={};
+  found.forEach(function(x){cnt[x.c]=(cnt[x.c]||0)+1});
+  var h='<div class="chips catchips" role="group" aria-label="분류"><button class="tchip" data-act="lawCat" data-k="all" aria-pressed="'+(cat==='all')+'">전체 <small>'+found.length+'</small></button>'+
+    LAW_CATS.filter(function(c){return cnt[c[0]]||cat===c[0]}).map(function(c){return '<button class="tchip" data-act="lawCat" data-k="'+c[0]+'" aria-pressed="'+(cat===c[0])+'">'+c[1]+' <small>'+(cnt[c[0]]||0)+'</small></button>'}).join('')+'</div>';
+  var list=found.filter(function(x){return cat==='all'||x.c===cat});
+  if(!list.length)return h+'<section class="panel empty"><p>‘'+esc(ui.lawQ||'')+'’에 맞는 내용을 찾지 못했어요.</p><p class="muted">다른 말로 찾아보거나 고용노동부 상담센터(☎ 1350)에 물어보세요.'+(hbItems().some(function(it){return ts.length&&hit(it.cat+' '+it.title+' '+it.body,ts)})?' <button class="linkbtn" data-act="hbFind" data-k="'+esc(ui.lawQ||'')+'">우리 병원 취업규칙에는 있어요 →</button>':'')+'</p></section>';
+  LAW_CATS.forEach(function(c){var g=list.filter(function(x){return x.c===c[0]});if(!g.length)return;
+    h+='<section class="law-group" aria-label="'+c[1]+'"><h3 class="grp-h">'+c[1]+'</h3>'+g.map(function(x){return lawCard(x,ts)}).join('')+'</section>'});
+  return h}
+function lawCard(x,ts){var open=ts.length>0||!!(ui.lawOpen&&ui.lawOpen[x.id]),more=(x.p&&x.p.length)||x.law||x.ref;
+  var hbHit=x.hb&&hbItems().some(function(it){return hit(it.title+' '+it.body,terms(x.hb))});
+  var h='<article class="qa" id="law-'+x.id+'"><h4 class="qa-q">'+mark(x.q,ts)+'</h4><p class="qa-a">'+mark(x.a,ts)+'</p>';
+  if(more){if(open){h+='<div class="qa-more">'+(x.p&&x.p.length?'<ul>'+x.p.map(function(s){return '<li>'+mark(s,ts)+'</li>'}).join('')+'</ul>':'')+
+      '<p class="qa-law">'+(x.law?'근거: '+x.law.map(lawLink).join(', '):'')+(x.ref?(x.law?' · ':'')+esc(x.ref):'')+'</p>'+
+      (hbHit?'<button class="linkbtn" data-act="hbFind" data-k="'+esc(x.hb)+'">우리 병원 취업규칙에서 ‘'+esc(x.hb)+'’ 보기 →</button>':'')+'</div>'}
+    if(!ts.length)h+='<button class="qa-tog" data-act="lawOpen" data-k="'+x.id+'" aria-expanded="'+open+'">'+(open?'접기':'자세히 보기')+'</button>'}
+  return h+'</article>'}
+function todayISO(){var t=new Date();return isoOf(t.getFullYear(),t.getMonth()+1,t.getDate())}
+function annOf(j,n){var a=parts(j),y=a[0]+n;return isoOf(y,a[1],Math.min(a[2],new Date(y,a[1],0).getDate()))}
+/* 법정 연차 (입사일 기준, 1년 80% 이상 출근 가정) */
+function leaveCalc(j,at){if(!isISO(j))return null;if(j>at)return {future:true};var a=parts(j),b=parts(at),m=(b[0]-a[0])*12+(b[1]-a[1])-(b[2]<a[2]?1:0),y=Math.floor(m/12);
+  return {months:m,years:y,rest:m-y*12,first:Math.min(11,m),days:y>=1?Math.min(25,15+Math.floor((y-1)/2)):0,since:annOf(j,y),next:annOf(j,y+1),nextDays:Math.min(25,15+Math.floor(y/2))}}
+function isoText(iso){var p=parts(iso);return p[0]+'년 '+p[1]+'월 '+p[2]+'일'}
+function calcOut(){var j=ui.lawJoin||'';if(!j)return '<p class="muted">입사일을 고르면 결과가 여기에 보여요.</p>';var r=leaveCalc(j,todayISO());if(!r)return '';
+  if(r.future)return '<p class="muted">입사일이 오늘보다 뒤예요.</p>';
+  if(r.years<1)return '<p class="calc-big">입사 <b>'+r.months+'개월</b>째</p><ul class="calc-ul"><li>'+(r.months?'한 달 개근할 때마다 1일씩 생겨서 지금까지 <b>최대 '+r.first+'일</b>이에요(11일까지).':'아직 생긴 연차가 없어요. 한 달 개근하면 1일이 생겨요.')+'</li><li>이 연차는 입사하고 1년 안에 써야 해요.</li><li><b>'+isoText(r.next)+'</b>에 1년을 채우면(80% 이상 출근) <b>15일</b>이 새로 생겨요.</li></ul>';
+  return '<p class="calc-big">근속 <b>'+r.years+'년'+(r.rest?' '+r.rest+'개월':'')+'</b></p><ul class="calc-ul"><li>지금 쓰는 연차: <b>'+r.days+'일</b> ('+isoText(r.since)+'에 생겼고, 1년 동안 써요)</li><li>다음 연차: <b>'+isoText(r.next)+'</b>에 <b>'+r.nextDays+'일</b></li></ul>'}
+function leaveCalcPanel(){return '<section class="panel calc" aria-labelledby="calcH"><h2 id="calcH">내 연차 계산기</h2><p class="lead">입사일을 넣으면 법으로 생기는 연차를 알려 줘요.</p>'+
+  '<div class="row"><label for="lawJoin">입사일</label><input type="date" id="lawJoin" value="'+esc(ui.lawJoin||'')+'" max="'+todayISO()+'"></div><div id="calcOut" class="calc-out" aria-live="polite">'+calcOut()+'</div>'+
+  '<table class="calc-t"><caption>근속 기간별 연차</caption><tbody><tr><th scope="row">1년 미만</th><td>한 달 개근마다 1일 (최대 11일)</td></tr><tr><th scope="row">1년 · 2년</th><td>15일</td></tr><tr><th scope="row">3년 · 4년</th><td>16일</td></tr><tr><th scope="row">5년 · 6년</th><td>17일</td></tr><tr><th scope="row">10년</th><td>19일</td></tr><tr><th scope="row">21년 이상</th><td>25일 (최대)</td></tr></tbody></table>'+
+  '<p class="fine">1년 동안 80% 이상 출근했을 때 기준이에요. 병원이 1월 1일(회계연도) 기준으로 계산하면 일수가 다를 수 있어요. 그래도 퇴사할 때 입사일 기준보다 적게 받았다면 차이만큼 정산해요.</p></section>'}
+function lawHelpPanel(){var n=tabNum('rulebook');return '<section class="panel lawhelp"><h2>더 궁금하면</h2><ul class="helplist">'+
+  '<li><b>고용노동부 고객상담센터 ☎ 1350</b><span class="muted">평일 9~18시 · 노동 상담 무료</span></li>'+
+  '<li><a href="https://www.work24.go.kr" target="_blank" rel="noopener noreferrer">고용24</a><span class="muted">출산전후휴가·육아휴직 급여 신청</span></li>'+
+  '<li><a href="https://www.law.go.kr" target="_blank" rel="noopener noreferrer">국가법령정보센터</a><span class="muted">법 조문 원문</span></li>'+
+  '<li><a href="https://www.moel.go.kr" target="_blank" rel="noopener noreferrer">고용노동부</a><span class="muted">제도 안내·민원 신청</span></li>'+
+  '<li><button class="linkbtn" data-act="tab" data-k="rulebook">'+(n?n+'. ':'')+'취업규칙</button><span class="muted">우리 병원에서 정한 규칙·복지</span></li></ul>'+
+  '<p class="fine">이 내용은 이해를 돕기 위해 쉽게 줄여 쓴 안내라 법적인 효력은 없어요. 법과 금액은 바뀔 수 있으니, 내 상황에 맞는 정확한 답은 ☎ 1350이나 노무사에게 확인하세요. ('+LAW_ASOF+' 기준)</p></section>'}
+
 /* ----- hours tab ----- */
 function hoursRowInputs(h,prefix,attr,dis){
   var d=dis?' disabled':'',cl=h.type==='closed';
@@ -1541,6 +1852,20 @@ app.addEventListener('click',function(e){
   var t=e.target.closest('[data-act]');if(!t)return;var act=t.dataset.act,k=t.dataset.k;
   switch(act){
   case 'tab':ui.tab=k;ui.confirm=null;render();try{window.scrollTo(0,0)}catch(x){}break;
+  case 'hbNew':if(hbCanWrite())hbStart(null);break;
+  case 'hbEdit':(function(){var it=hbById(k);if(it&&hbCan(it))hbStart(it)})();break;
+  case 'hbCancel':ui.hbEdit=null;render();break;
+  case 'hbSave':hbSave();break;
+  case 'hbAsk':ui.confirm='hbdel:'+k;render();break;
+  case 'hbDel':hbDel(k);break;
+  case 'hbSeed':hbSeed();break;
+  case 'hbOpen':ui.hbOpen=ui.hbOpen||{};if(terms(ui.hbQ).length)break;ui.hbOpen[k]=!ui.hbOpen[k];render();break;
+  case 'hbCat':ui.hbCat=k;render();break;
+  case 'hbPrint':offerFile(S.clinic+' 취업규칙.html',hbPrint());break;
+  case 'hbFind':ui.tab='rulebook';ui.hbQ=k||'';ui.hbCat='all';ui.confirm=null;render();try{window.scrollTo(0,0)}catch(x){}break;
+  case 'lawFind':(function(){var same=ui.tab==='law'&&String(ui.lawQ||'').trim()===k;ui.tab='law';ui.lawQ=same?'':(k||'');ui.lawCat='all';render();try{window.scrollTo(0,0)}catch(x){}})();break;
+  case 'lawCat':ui.lawCat=k;render();break;
+  case 'lawOpen':ui.lawOpen=ui.lawOpen||{};ui.lawOpen[k]=!ui.lawOpen[k];render();break;
   case 'team':ui.team=k;ui.resetOpen=false;ui.confirm=null;render();break;
   case 'goRoster':ui.team=k;ui.tab='roster';render();break;
   case 'month':ui.selDay=null;ui.selSec=null;ui.pw=null;ui.pday=null;ui.psel=null;ui.ym=shiftYM(ui.ym,+k);ui.resetOpen=false;clearDI();exampleFill();render();break;
@@ -1593,7 +1918,7 @@ app.addEventListener('click',function(e){
   case 'draftLoad':S=upgrade(draft.state);draft=null;ui.dirty.config=true;touched();render();toast('저장하지 않았던 작업을 불러왔어요.');break;
   case 'draftDrop':draft=null;lsDel(KEYS.draft);render();break;
   case 'exampleAsk':ui.confirm='example';render();break;
-  case 'exampleClear':S.teams.forEach(function(tm){tm.staff=[]});S.sched={};S.example=false;ui.confirm=null;ui.tab='teams';dConfig();S.teams.forEach(function(tm){dTeam(tm.id)});render();toast('예시 직원을 지웠어요. 팀 이름을 바꾸고 직원을 추가하세요.');break;
+  case 'exampleClear':S.teams.forEach(function(tm){tm.staff=[]});S.sched={};S.handbook={items:[]};S.example=false;ui.confirm=null;ui.tab='teams';dConfig();S.teams.forEach(function(tm){dTeam(tm.id)});render();toast('예시 직원을 지웠어요. 팀 이름을 바꾸고 직원을 추가하세요.');break;
   case 'previewAdmin':ui.preview='admin';ui.team='all';render();break;
   case 'cancel':ui.confirm=null;render();break;
   case 'pickDate':ui.selDate=ui.selDate===k?null:k;render();break;
@@ -1643,6 +1968,10 @@ app.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.psel&&ui.tab=
   if(e.key==='Enter'&&e.target&&e.target.id==='setPin2'){e.preventDefault();claim()}
   if(e.key==='Enter'&&e.target&&e.target.id==='ld-new-pin'){e.preventDefault();ldAdd()}});
 app.addEventListener('input',function(e){var t=e.target;
+  if(t.id==='hbQ'){ui.hbQ=t.value;var hr=document.getElementById('hbRes');if(hr)hr.innerHTML=hbResults();return}
+  if(t.id==='lawQ'){ui.lawQ=t.value;var lr=document.getElementById('lawRes');if(lr)lr.innerHTML=lawResults();var lg=document.getElementById('lawGrid');if(lg)lg.classList.toggle('searching',terms(ui.lawQ).length>0);app.querySelectorAll('.qchip').forEach(function(b){b.setAttribute('aria-pressed',String(t.value.trim()===b.dataset.k))});return}
+  if(t.id==='lawJoin'){ui.lawJoin=t.value;var co=document.getElementById('calcOut');if(co)co.innerHTML=calcOut();return}
+  if(t.dataset.hb&&ui.hbEdit){if(t.dataset.hb==='vis'){if(t.checked)ui.hbEdit.vis=t.value}else ui.hbEdit[t.dataset.hb]=t.value;return}
   if(t.dataset.f==='clinic'){S.clinic=t.value;var c=app.querySelector('.clinic');if(c)c.textContent=t.value;dConfig();return}
   if(t.dataset.st&&t.dataset.k==='name'){var L=staffLoc(t.dataset.st);if(L&&canTeam(L.team.id)){L.p.name=t.value;dTeam(L.team.id)}return}
   if(t.dataset.tm){var tm=teamById(t.dataset.tm);if(tm&&isAdmin()){tm[t.dataset.k]=t.value;dConfig()}return}
@@ -1655,6 +1984,8 @@ app.addEventListener('input',function(e){var t=e.target;
   if(t.dataset.dh==='note'&&ui.selDate&&S.dateHours[ui.selDate]){S.dateHours[ui.selDate].note=t.value;dConfig();return}
 });
 app.addEventListener('change',function(e){var t=e.target;
+  if(t.id==='lawJoin'){ui.lawJoin=t.value;var co2=document.getElementById('calcOut');if(co2)co2.innerHTML=calcOut();return}
+  if(t.dataset.hb&&ui.hbEdit){if(t.dataset.hb==='vis'){if(t.checked)ui.hbEdit.vis=t.value}else ui.hbEdit[t.dataset.hb]=t.value;return}
   if(t.dataset.ld){ldUpdate(t.dataset.ld,t.dataset.k,t.value);return}
   if(t.dataset.memo||t.dataset.note){render();return}
   if(t.id==='otWho'||t.id==='otDay'||t.id==='otAmt'){ui[t.id]=t.value;return}
@@ -1692,7 +2023,7 @@ function pinArg(){return ui.auth?ui.auth.pin:''}
 function readAuth(){var raw=ssGet(KEYS.auth)||lsGet(KEYS.auth);try{return raw?JSON.parse(raw):null}catch(e){return null}}
 function writeAuth(rem){var v=JSON.stringify({pin:ui.auth.pin,remember:!!rem});ssSet(KEYS.auth,v);if(rem)lsSet(KEYS.auth,v);else lsDel(KEYS.auth)}
 function clearAuth(){ssDel(KEYS.auth);lsDel(KEYS.auth)}
-function errMsg(r){var e=r&&r.error;return e==='pin'?'PIN이 맞지 않아요.':e==='locked'?'PIN을 여러 번 틀려서 10분 동안 잠겼어요. 잠시 뒤 다시 시도하세요.':e==='forbidden'?'이 작업을 할 권한이 없어요.':e==='duplicate'?'다른 사람이 쓰는 PIN과 같아요. 다른 PIN을 정하세요.':e==='weak'?'PIN은 4~12자로 정하세요.':e==='name'?'이름을 입력하세요.':e==='exists'?'관리자 PIN이 이미 있어요. 로그인하세요.':(r&&r.message)||'처리하지 못했어요.'}
+function errMsg(r){var e=r&&r.error;return e==='pin'?'PIN이 맞지 않아요.':e==='locked'?'PIN을 여러 번 틀려서 10분 동안 잠겼어요. 잠시 뒤 다시 시도하세요.':e==='forbidden'?'이 작업을 할 권한이 없어요.':e==='duplicate'?'다른 사람이 쓰는 PIN과 같아요. 다른 PIN을 정하세요.':e==='weak'?'PIN은 4~12자로 정하세요.':e==='name'?'이름을 입력하세요.':e==='exists'?'관리자 PIN이 이미 있어요. 로그인하세요.':e==='title'?'제목을 적어 주세요.':e==='full'?'항목은 200개까지 쓸 수 있어요.':(r&&r.message)||'처리하지 못했어요.'}
 function netFail(err){ui.netErr='서버에 연결하지 못했어요. ('+(err&&err.message?err.message:'네트워크 오류')+')';if(ui.view!=='app')ui.view='error';render()}
 function boot(){
   if(MODE!=='server'){exampleFill();render();return}
@@ -1713,7 +2044,7 @@ function loadData(){ui.view=ui.view==='app'?'app':'loading';if(ui.view==='loadin
     if(!r.ok){if(r.error==='pin'||r.error==='auth'){clearAuth();ui.auth=null;ui.view='login';ui.loginErr=r.error==='auth'?'열람 PIN이 필요해요.':'다시 로그인해 주세요.';render();return}throw new Error(errMsg(r))}
     applyServer(r);ui.dirty=freshDirty();ui.conflict=null;ui.lastSync=Date.now();ui.view='app';render()}).catch(netFail)}
 function applyServer(r){var d=r.data||{},c=d.config||{};var n=blankState();n.clinic=c.clinic||'';n.holidayCredit=c.holidayCredit!==false;n.rules=c.rules||{};n.groups=c.groups||[];n.labels=c.labels||{};n.hours=c.hours||n.hours;n.dateHours=c.dateHours||{};n.types=c.types||[];
-  n.teams=(c.teamOrder||[]).map(function(id){return (d.teams||{})[id]}).filter(Boolean);n.sched=d.sched||{};n.meta={configAt:c.updatedAt||0};S=normalize(n);ui.pins=r.pins||null;
+  n.teams=(c.teamOrder||[]).map(function(id){return (d.teams||{})[id]}).filter(Boolean);n.sched=d.sched||{};n.handbook=d.handbook||{items:[]};n.meta={configAt:c.updatedAt||0};S=normalize(n);ui.pins=r.pins||null;
   if(ui.auth&&ui.auth.role==='leader'&&!teamById(ui.auth.teamId)){ui.auth=null;clearAuth()}rebuildTypes()}
 function saveServer(){var pin=pinArg(),steps=[];
   if(ui.dirty.config&&isAdmin())steps.push(function(){return api('saveConfig',{pin:pin,base:S.meta.configAt||0,config:{clinic:S.clinic,holidayCredit:S.holidayCredit,labels:S.labels,rules:S.rules,groups:S.groups,hours:S.hours,dateHours:S.dateHours,types:S.types,teams:S.teams.map(function(t){return {id:t.id,name:t.name,leader:t.leader}})}}).then(function(r){
