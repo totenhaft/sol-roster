@@ -1679,8 +1679,10 @@ function moveStaff(L,tid){var to=teamById(tid);if(!to||to.id===L.team.id||!isAdm
   dTeam(from.id);dTeam(to.id);toast(L.p.name+' 님을 '+to.name+'(으)로 옮겼어요.')}
 
 /* ---------- server (Google Apps Script) ---------- */
-function api(action,payload){var body=JSON.stringify(Object.assign({action:action},payload||{}));
-  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:body,redirect:'follow'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})}
+function api(action,payload,again){var body=JSON.stringify(Object.assign({action:action},payload||{}));
+  /* reading calls try once more: right after a server update Google can answer with a page instead of data for a few seconds */
+  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:body,redirect:'follow'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).catch(function(e){
+    if(!again&&(action==='status'||action==='load'||action==='login'))return new Promise(function(res){setTimeout(res,1500)}).then(function(){return api(action,payload,true)});throw e})}
 function pinArg(){return ui.auth?ui.auth.pin:''}
 function readAuth(){var raw=ssGet(KEYS.auth)||lsGet(KEYS.auth);try{return raw?JSON.parse(raw):null}catch(e){return null}}
 function writeAuth(rem){var v=JSON.stringify({pin:ui.auth.pin,remember:!!rem});ssSet(KEYS.auth,v);if(rem)lsSet(KEYS.auth,v);else lsDel(KEYS.auth)}
@@ -1699,7 +1701,7 @@ function claim(){var a=(document.getElementById('setPin1')||{}).value||'',b=(doc
   if(a.length<4||a.length>12){ui.loginErr='PIN은 4~12자로 정하세요.';render();return}if(a!==b){ui.loginErr='두 번 입력한 PIN이 달라요.';render();return}
   api('claimAdmin',{pin:a}).then(function(r){if(!r.ok){ui.loginErr=errMsg(r);render();return}ui.status.hasAdmin=true;doLogin(a,false,false)}).catch(netFail)}
 function doLogin(pin,rem,silent){return api('login',{pin:pin}).then(function(r){
-  if(!r.ok){if(silent){clearAuth();if(ui.status&&ui.status.viewPin){ui.view='login';ui.loginErr='다시 로그인해 주세요.';render();return}return loadData()}ui.loginErr=errMsg(r);render();return}
+  if(!r.ok){if(silent&&r.error!=='pin')throw new Error('로그인을 확인하는 중에 서버가 잠시 응답하지 않았어요');if(silent){clearAuth();if(ui.status&&ui.status.viewPin){ui.view='login';ui.loginErr='다시 로그인해 주세요.';render();return}return loadData()}ui.loginErr=errMsg(r);render();return}
   ui.auth={role:r.role,teamId:r.teamId||null,leaderId:r.leaderId||null,name:r.name||'',pin:pin};writeAuth(rem);ui.loginErr='';ui.team=r.role==='leader'?r.teamId:'all';ui.tab='roster';return loadData()}).catch(netFail)}
 function loadData(){ui.view=ui.view==='app'?'app':'loading';if(ui.view==='loading')render();
   return api('load',{pin:pinArg()}).then(function(r){
