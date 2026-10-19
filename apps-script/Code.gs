@@ -191,7 +191,7 @@ function pinsInfo_(d) {
 function status_() {
   var p = props_().getProperties(), d = readData_();
   return {
-    ok: true, version: 2, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
+    ok: true, version: 3, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
     teams: (d.config.teamOrder || []).map(function (id) { return { id: id, name: (d.teams[id] || {}).name || '' }; })
   };
 }
@@ -254,6 +254,14 @@ function cleanRules_(r) {
     effort: pick_(r.effort, ['fast', 'normal', 'thorough'], 'normal')
   };
 }
+function cleanGroups_(a) {
+  return (Array.isArray(a) ? a : []).slice(0, 50).map(function (g) {
+    g = g || {};
+    var mem = [];
+    (g.members || []).slice(0, 10).forEach(function (x) { x = str_(x, 20); if (x && mem.indexOf(x) < 0) mem.push(x); });
+    return { id: str_(g.id, 20), label: str_(g.label, 20), members: mem, max: int_(g.max || 1, 1, 9) };
+  }).filter(function (g) { return g.id; });
+}
 function cleanAdj_(a, ids, ym) {
   var outv = {};
   Object.keys(a || {}).forEach(function (sid) {
@@ -302,7 +310,7 @@ function saveConfig_(req) {
     Object.keys(d.sched).forEach(function (ym) { delete d.sched[ym][id]; });
   });
   saveLeaders_(leaders_().filter(function (l) { return keep[l.teamId]; }));
-  d.config = { clinic: str_(c.clinic, 40), holidayCredit: c.holidayCredit !== false, rules: cleanRules_(c.rules), hours: hours, dateHours: dateHours, types: types, teamOrder: order, updatedAt: now };
+  d.config = { clinic: str_(c.clinic, 40), holidayCredit: c.holidayCredit !== false, rules: cleanRules_(c.rules), groups: cleanGroups_(c.groups), hours: hours, dateHours: dateHours, types: types, teamOrder: order, updatedAt: now };
   writeData_(d);
   var teamTimes = {};
   order.forEach(function (id) { teamTimes[id] = d.teams[id].updatedAt; });
