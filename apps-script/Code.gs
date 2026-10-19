@@ -42,6 +42,7 @@ function handle_(req) {
     case 'addLeader': return withLock_(function () { return addLeader_(req); });
     case 'updateLeader': return withLock_(function () { return updateLeader_(req); });
     case 'deleteLeader': return withLock_(function () { return deleteLeader_(req); });
+    case 'handbook': return handbook_(req);
     case 'saveArticle': return withLock_(function () { return saveArticle_(req); });
     case 'addArticles': return withLock_(function () { return addArticles_(req); });
     case 'deleteArticle': return withLock_(function () { return deleteArticle_(req); });
@@ -191,13 +192,15 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-function status_() {
-  var p = props_().getProperties(), d = readData_();
+var VERSION = 11;
+function statusOf_(d, p) {
   return {
-    ok: true, version: 10, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
+    ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
     teams: (d.config.teamOrder || []).map(function (id) { return { id: id, name: (d.teams[id] || {}).name || '' }; })
   };
 }
+function status_() { return statusOf_(readData_(), props_().getProperties()); }
+function meOf_(a) { return { role: a.role, teamId: a.teamId || null, leaderId: a.leaderId || null, name: a.name || '' }; }
 
 function claimAdmin_(req) {
   var p = props_();
@@ -215,19 +218,35 @@ function login_(req) {
   return { ok: true, role: a.role, teamId: a.teamId || null, leaderId: a.leaderId || null, name: a.name || '' };
 }
 
+/**
+ * 근무표를 여는 요청 한 번으로 서버 상태 + PIN 주인 + 데이터를 함께 보내요.
+ * (예전에는 status → login → load 세 번 오갔어요)
+ */
 function load_(req) {
-  var d = readData_(), viewPin = !!props_().getProperty('VIEW_PIN'), a = null;
+  var d = readData_(), p = props_().getProperties(), st = statusOf_(d, p), a = null;
   if (req.pin) {
     a = auth_(req.pin);
-    if (a.error) return { ok: false, error: a.error };
-  } else if (viewPin) {
-    return { ok: false, error: 'auth' };
+    if (a.error) return { ok: false, error: a.error, status: st };
+  } else if (p.VIEW_PIN) {
+    return { ok: false, error: 'auth', status: st };
   }
-  // 취업규칙 중 '관리자·팀장만'으로 정한 글은 관리자·팀장에게만 보내요
-  var items = hb_(d).items;
-  if (!a || (a.role !== 'admin' && a.role !== 'leader')) d.handbook = { items: items.filter(function (x) { return x.vis !== 'mgr'; }) };
-  return { ok: true, data: d, pins: pinsInfo_(d), serverTime: Date.now() };
+  delete d.handbook;   // 취업규칙은 rules.html에서 따로 불러와요
+  return { ok: true, data: d, pins: pinsInfo_(d), me: a ? meOf_(a) : null, status: st, serverTime: Date.now() };
 }
+
+/** 취업규칙 페이지(rules.html)용: '관리자·팀장만' 글은 관리자·팀장에게만 보내요 */
+function handbook_(req) {
+  var d = readData_(), viewPin = !!props_().getProperty('VIEW_PIN'), a = null, base = { clinic: d.config.clinic, viewPin: viewPin };
+  if (req.pin) {
+    a = auth_(req.pin);
+    if (a.error) return mix_({ ok: false, error: a.error }, base);
+  } else if (viewPin) {
+    return mix_({ ok: false, error: 'auth' }, base);
+  }
+  var mgr = !!a && (a.role === 'admin' || a.role === 'leader');
+  return mix_({ ok: true, me: a ? meOf_(a) : null, items: hb_(d).items.filter(function (x) { return mgr || x.vis !== 'mgr'; }) }, base);
+}
+function mix_(o, b) { Object.keys(b).forEach(function (k) { o[k] = b[k]; }); return o; }
 
 function requireAdmin_(pin) {
   var a = auth_(pin);
