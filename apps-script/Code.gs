@@ -191,7 +191,7 @@ function pinsInfo_(d) {
 function status_() {
   var p = props_().getProperties(), d = readData_();
   return {
-    ok: true, version: 8, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
+    ok: true, version: 9, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
     teams: (d.config.teamOrder || []).map(function (id) { return { id: id, name: (d.teams[id] || {}).name || '' }; })
   };
 }
@@ -290,6 +290,7 @@ function cleanAdj_(a, ids, ym) {
       var c = a[sid][iso] || {}, x = {};
       if (c.e !== undefined) x.e = half30_(c.e);
       if (c.l !== undefined) x.l = half30_(c.l);
+      if (c.ot && (x.e || x.l)) x.ot = 1;   // 오버타임으로 쓴 조퇴·늦은 출근
       if (Object.keys(x).length) row[iso] = x;
     });
     if (Object.keys(row).length) outv[sid] = row;
@@ -343,6 +344,32 @@ function cleanLabels_(o) {
   return r;
 }
 
+// 연도별 총 연차 { "2026": 15 }
+function cleanLt_(o) {
+  var r = {};
+  Object.keys(o || {}).forEach(function (y) {
+    if (!/^\d{4}$/.test(y)) return;
+    var v = Math.round(Number(o[y]) * 2) / 2;
+    if (v > 0 && v <= 400) r[y] = v;
+  });
+  return r;
+}
+// OT 적립 { sid: { 'YYYY-MM-DD': 분 } }
+function cleanOt_(a, ids, ym) {
+  var r = {};
+  Object.keys(a || {}).forEach(function (sid) {
+    if (!ids[sid]) return;
+    var row = {};
+    Object.keys(a[sid] || {}).forEach(function (iso) {
+      if (iso.indexOf(ym) !== 0) return;
+      var v = half30_(a[sid][iso]);
+      if (v > 0) row[iso] = v;
+    });
+    if (Object.keys(row).length) r[sid] = row;
+  });
+  return r;
+}
+
 // leave of absence (육아휴직 등): { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' or '', why }
 function cleanAbs_(a) {
   var re = /^\d{4}-\d{2}-\d{2}$/;
@@ -365,7 +392,8 @@ function saveTeam_(req) {
       avail: (p.avail || []).map(Number).filter(function (x) { return x >= 0 && x <= 6; }), night: !!p.night,
       early: half30_(p.early), late: half30_(p.late),
       leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 2) / 2)) } : null,
-      abs: cleanAbs_(p.abs), post: str_(p.post, 20) };
+      abs: cleanAbs_(p.abs), post: str_(p.post, 20),
+      lt: cleanLt_(p.lt), ot0: int_(p.ot0, -60000, 60000) };
   });
   // 근무 배치 자리 (1번 진료실, 데스크 …): 팀장이 정해요
   tm.posts = (Array.isArray(t.posts) ? t.posts : []).slice(0, 30).map(function (x) {
@@ -412,7 +440,7 @@ function saveRoster_(req) {
     });
     return outv;
   }
-  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), place: cleanNotes_(r.place, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
+  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), place: cleanNotes_(r.place, ids, ym), ot: cleanOt_(r.ot, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
   writeData_(d);
   return { ok: true, updatedAt: m[tid].updatedAt, updatedBy: m[tid].updatedBy };
 }
