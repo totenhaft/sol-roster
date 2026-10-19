@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>연세솔안과 취업규칙</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}/* layout: app bar (clinic, month, login, save) + team bar under the clinic name; numbered tabs by role; the roster grid is the working surface and scrolls sideways inside its own frame */
+:root{
+  --bg:#F2F5F3;--surface:#FFFFFF;--surface-2:#EAF0ED;--ink:#17211E;--ink-2:#3A4642;--muted:#64716C;--line:#D8E0DC;
+  --accent:#1C6A56;--accent-ink:#FFFFFF;--accent-soft:#DCEEE7;--work-ink:#155240;
+  --sat:#2352B0;--sun:#C2392D;--leave:#94600A;--leave-soft:#FAEDD2;--night:#3B468E;--night-soft:#E3E5F6;
+  --pref:#B1356D;--danger:#C2392D;--danger-soft:#FBE2DE;--warn:#94600A;--warn-soft:#FAEDD2;--hatch:rgba(23,33,30,.07);
+  --cu-blue-bg:#DDE8FA;--cu-blue-fg:#1F4E9C;--cu-violet-bg:#ECE2F7;--cu-violet-fg:#5A3590;--cu-rose-bg:#F8DFE6;--cu-rose-fg:#982B4A;
+  --cu-cyan-bg:#D6EEF4;--cu-cyan-fg:#105D70;--cu-lime-bg:#E7EFD0;--cu-lime-fg:#4C5E12;--cu-slate-bg:#E3E7EA;--cu-slate-fg:#3D4A55;
+  --dayhead:#FCE7DA;--titleband:#FFF200;--titleink:#17211E;--sec-night:#2352B0;--sec-leave:#A86A00;--sec-etc:#3B7A2A;
+  --font:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1412;--surface:#151D1A;--surface-2:#1B2521;--ink:#E2EAE7;--ink-2:#C0CCC7;--muted:#8D9B96;--line:#28342F;
+  --accent:#58BD9C;--accent-ink:#0B1914;--accent-soft:#19382E;--work-ink:#A6E0CC;
+  --sat:#84A7F1;--sun:#EF867B;--leave:#E4AE4C;--leave-soft:#392C13;--night:#A2ABF1;--night-soft:#24294B;
+  --pref:#EC85B4;--danger:#EF867B;--danger-soft:#3C1E1B;--warn:#E4AE4C;--warn-soft:#392C13;--hatch:rgba(226,234,231,.06);
+  --cu-blue-bg:#1D2D4A;--cu-blue-fg:#9EBEF2;--cu-violet-bg:#2E2442;--cu-violet-fg:#C9B2EE;--cu-rose-bg:#3E1E28;--cu-rose-fg:#F0A6BC;
+  --cu-cyan-bg:#143440;--cu-cyan-fg:#8ED4E4;--cu-lime-bg:#283019;--cu-lime-fg:#C3D387;--cu-slate-bg:#252C31;--cu-slate-fg:#B7C2CB;--dayhead:#3A2B22;--titleband:#4A4517;--titleink:#F4F0C8;--sec-night:#93B4F4;--sec-leave:#E7B355;--sec-etc:#9BD383;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1412;--surface:#151D1A;--surface-2:#1B2521;--ink:#E2EAE7;--ink-2:#C0CCC7;--muted:#8D9B96;--line:#28342F;
+  --accent:#58BD9C;--accent-ink:#0B1914;--accent-soft:#19382E;--work-ink:#A6E0CC;
+  --sat:#84A7F1;--sun:#EF867B;--leave:#E4AE4C;--leave-soft:#392C13;--night:#A2ABF1;--night-soft:#24294B;
+  --pref:#EC85B4;--danger:#EF867B;--danger-soft:#3C1E1B;--warn:#E4AE4C;--warn-soft:#392C13;--hatch:rgba(226,234,231,.06);
+  --cu-blue-bg:#1D2D4A;--cu-blue-fg:#9EBEF2;--cu-violet-bg:#2E2442;--cu-violet-fg:#C9B2EE;--cu-rose-bg:#3E1E28;--cu-rose-fg:#F0A6BC;
+  --cu-cyan-bg:#143440;--cu-cyan-fg:#8ED4E4;--cu-lime-bg:#283019;--cu-lime-fg:#C3D387;--cu-slate-bg:#252C31;--cu-slate-fg:#B7C2CB;--dayhead:#3A2B22;--titleband:#4A4517;--titleink:#F4F0C8;--sec-night:#93B4F4;--sec-leave:#E7B355;--sec-etc:#9BD383;color-scheme:dark}
+*{box-sizing:border-box}
+body{overflow-anchor:none;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+.wrap{max-width:1560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar-top{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;padding-block:12px 8px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.mark{width:30px;height:30px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.clinic{font-weight:600;font-size:16px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub{font-size:12px;color:var(--muted);line-height:1.2}
+.month{display:flex;align-items:center;gap:6px}
+.mlabel{font-size:18px;font-weight:600;min-width:128px;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:18px;cursor:pointer;display:grid;place-items:center}
+.icon-btn:hover{border-color:var(--ink-2)}
+.authbox,.savebox{display:flex;align-items:center;gap:8px}
+.authbox select{height:34px}
+.who{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-size:12.5px;font-weight:500;white-space:nowrap}
+.savestate{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.dot.warn{background:var(--warn)}.dot.ok{background:var(--accent)}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-bottom:-1px}
+.tab{appearance:none;border:0;background:none;font:inherit;color:var(--muted);padding:10px 14px 11px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px;font-weight:500}
+.tab .num{width:20px;height:20px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;font-size:11px;font-weight:600}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.tab[aria-selected="true"] .num{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.teambar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-block:12px 0}
+.teambar .lbl{font-size:12px;color:var(--muted);margin-right:4px}
+.tchip{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font:inherit;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tchip small{font-size:11.5px;color:var(--muted);font-weight:400}
+.tchip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tchip[aria-pressed="true"] small{color:inherit;opacity:.75}
+.mine{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--work-ink);font-weight:600}
+.tab:focus-visible,.btn:focus-visible,.brush:focus-visible,.icon-btn:focus-visible,.day:focus-visible,.calc:focus-visible,.tchip:focus-visible,.seg button:focus-visible,.swatch:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.main{padding-block:16px 56px;display:flex;flex-direction:column;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}
+.panel h2{margin:0 0 4px;font-size:16px;font-weight:600;text-wrap:balance;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.panel h3{margin:0;font-size:15px;font-weight:600}
+.panel>p,.lead{margin:0 0 14px;color:var(--muted);max-width:72ch}
+.fine{font-size:12.5px;color:var(--muted);margin:12px 0 0;max-width:86ch}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:500;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--ink-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.danger{background:var(--danger-soft);border-color:transparent;color:var(--danger)}
+.btn.small{height:30px;padding:0 10px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.note{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:12px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.note.info{background:var(--accent-soft);border-color:transparent;color:var(--work-ink)}
+.note.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.note.bad{background:var(--danger-soft);border-color:transparent;color:var(--danger)}
+.note .grow{flex:1 1 280px;min-width:0}
+/* rules.html · law.html: the roster's look (tokens and header are copied from app.css at build time) */
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.hint{font-size:13px;color:var(--muted);margin:0;max-width:120ch}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+input[type=text],input[type=password],input[type=date],select{height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;padding:0 8px;min-width:0}
+input[type=date]{font-variant-numeric:tabular-nums}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-right:8px}
+.chk input{width:16px;height:16px;accent-color:var(--accent)}
+.authpanel{max-width:440px;margin:12px auto;display:flex;flex-direction:column;gap:12px}
+.authpanel input.pin{width:100%;height:44px;font-size:18px;letter-spacing:.2em}
+.err{color:var(--danger);font-size:13px;margin:0}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-size:13.5px;max-width:min(92vw,560px);z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.18);opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--muted)}
+.empty{padding:28px 18px;text-align:center;color:var(--muted)}
+a.btn{text-decoration:none}
+.pg-nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pg-nav .who{max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.pg-nav a.sib{color:var(--accent);font-weight:500;text-underline-offset:3px;font-size:13.5px}
+@media (max-width:640px){.pg-nav .who{display:none}}
+/* 7. 취업규칙 · 8. 근로기준법: search first, then cards grouped by category */
+.hb-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start}
+.hb-head .grow{flex:1 1 320px;min-width:0}
+.hb-head .lead{margin-bottom:0}
+.searchbox{margin-top:14px}
+input[type=search]{width:100%;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);font:inherit;font-size:15px;padding:0 14px;min-width:0}
+input[type=search]:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent;background:var(--surface)}
+textarea{width:100%;min-height:180px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;line-height:1.65;padding:10px 12px;resize:vertical;display:block}
+textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+mark{background:#FFF200;color:#17211E;border-radius:2px;padding:0 1px}
+.quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;font-size:13px}
+.quick .muted{margin-right:2px}
+.qchip{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font:inherit;font-size:13px;cursor:pointer}
+.qchip:hover{border-color:var(--ink-2)}
+.qchip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--work-ink)}
+.hb-res,.law-list{display:flex;flex-direction:column;gap:14px;min-width:0}
+.hb-group,.law-group{display:flex;flex-direction:column;gap:8px}
+.grp-h{margin:4px 0 0;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.hb-card,.qa{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
+.hb-q{appearance:none;width:100%;display:flex;align-items:center;gap:8px;padding:14px 16px;border:0;background:none;color:var(--ink);font:inherit;font-size:15px;font-weight:600;text-align:left;cursor:pointer;border-radius:12px}
+.hb-q:hover{background:var(--surface-2)}
+.hb-t{flex:1 1 auto;min-width:0;text-wrap:pretty}
+.chev{flex:none;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.hb-card.open .chev{transform:rotate(-135deg) translateY(-2px)}
+.badge{flex:none;font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.badge.mgr{background:var(--night-soft);color:var(--night)}
+.badge.blank-b{background:var(--warn-soft);color:var(--warn)}
+.hb-body{padding:0 16px 14px}
+.hb-text{white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;line-height:1.75;color:var(--ink-2);max-width:80ch}
+.blank{background:var(--warn-soft);color:var(--warn);border-radius:4px;padding:0 3px;font-weight:500}
+.hb-meta{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px}
+.ask-t{color:var(--danger);font-weight:500;align-self:center}
+.hb-ed{display:flex;flex-direction:column;gap:12px;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.hb-form{display:flex;flex-wrap:wrap;gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld.grow{flex:1 1 260px}
+.fld label,.hb-vis legend{font-size:13px;font-weight:500;color:var(--ink-2)}
+.fld input[type=text]{width:100%}
+.fld .fine{margin-top:2px}
+.hb-vis{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.hb-vis legend{float:left;margin-right:8px;padding:0}
+.theirs{background:var(--surface-2);border-radius:8px;padding:8px 12px}
+.theirs summary{cursor:pointer;font-weight:500;font-size:13px}
+.theirs .hb-text{margin-top:6px;font-size:13px}
+.hb-empty p{margin:0 auto 10px;max-width:60ch}
+.row.center{justify-content:center}
+.linkbtn{appearance:none;border:0;background:none;padding:0;color:var(--accent);font:inherit;font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-align:left}
+.qa{padding:14px 16px}
+.qa-q{margin:0 0 4px;font-size:15px;font-weight:600;text-wrap:pretty}
+.qa-a{margin:0;color:var(--ink-2);line-height:1.7;word-break:keep-all;overflow-wrap:anywhere}
+.qa-more{margin-top:8px}
+.qa-more ul{margin:0;padding-left:20px;color:var(--ink-2);display:flex;flex-direction:column;gap:4px;line-height:1.65;word-break:keep-all;overflow-wrap:anywhere}
+.qa-law{margin:8px 0 0;font-size:12.5px;color:var(--muted)}
+.qa-law a{color:var(--accent);text-underline-offset:2px}
+.qa-more .linkbtn{margin-top:8px;font-size:13.5px}
+.qa-tog{appearance:none;margin-top:8px;height:28px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;cursor:pointer}
+.qa-tog:hover{border-color:var(--ink-2)}
+.lawgrid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);grid-template-areas:"calc" "list" "help"}
+.law-calc{grid-area:calc;min-width:0}.law-list{grid-area:list}.law-help{grid-area:help;min-width:0}
+@media (max-width:999.98px){.lawgrid.searching{grid-template-areas:"list" "calc" "help"}}
+@media (min-width:1000px){.lawgrid{grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto 1fr;grid-template-areas:"list calc" "list help";align-items:start}}
+.lvcalc .row{gap:8px}
+.lvcalc label{font-weight:500}
+.lc-out{margin:12px 0;padding:12px 14px;border-radius:10px;background:var(--accent-soft);color:var(--work-ink)}
+.lc-out p{margin:0}
+.lc-out .muted{color:var(--work-ink);opacity:.8}
+.lc-big{font-size:15px}
+.lc-big b{font-size:18px}
+.lc-ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:3px;font-size:13.5px;line-height:1.6}
+.lc-t{width:100%;border-collapse:collapse;font-size:13px}
+.lc-t caption{text-align:left;font-weight:600;font-size:13px;margin-bottom:4px;color:var(--ink-2)}
+.lc-t th,.lc-t td{border-top:1px solid var(--line);padding:6px 4px;text-align:left;font-weight:400}
+.lc-t th{color:var(--muted);width:42%;white-space:nowrap}
+.lc-t td{font-variant-numeric:tabular-nums}
+.helplist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.helplist li{display:flex;flex-direction:column;gap:1px}
+.helplist a{color:var(--accent);font-weight:500;text-underline-offset:3px}
+.helplist .muted{font-size:12.5px}
+@media print{.law-calc,.law-help,.quick,.searchbox{display:none}}
+</style>
+</head>
+<body>
+<header class="bar"><div class="wrap"><div class="bar-top"><div class="brand"><div class="mark" aria-hidden="true">근</div><div style="min-width:0"><div class="clinic" id="clinic">연세솔안과</div><div class="sub">취업규칙 · 복지</div></div></div><nav class="pg-nav" aria-label="이동"><span id="who" class="pg-nav"></span><a class="sib" href="law.html">근로기준법</a><a class="btn small" href="./" id="backRoster">← 근무표로</a></nav></div></div></header>
+<main class="wrap main" id="app"></main>
+<script src="config.js"></script>
+<script>(function(){
+'use strict';
+/* 7. 취업규칙 — 우리 병원 규칙·복지. 관리자와 팀장이 쓰고, 직원은 찾아봐요.
+   근무표와 같은 서버(구글 드라이브)에 저장돼요. 근무표를 열 때는 불러오지 않아서 근무표 속도에 영향이 없어요. */
+var API=String(window.SOL_ROSTER_API||'').trim();
+var AUTH='solroster2-auth';
+var HB_CATS=['근무시간','휴가·휴일','급여·수당','복지','복무·규정','기타'];
+var HB_SEED=[
+  ['근무시간','근무 시간과 점심시간','평일: [09:00 ~ 18:00]\n토요일: [09:00 ~ 13:00]\n점심시간: [13:00 ~ 14:00] (근무시간에 들어가지 않아요)\n야간 진료: [월요일 ~ 20:00]\n\n내 근무 날짜와 시간은 근무표에서 확인하세요.'],
+  ['근무시간','오버타임(OT) 기록과 사용','진료가 끝난 뒤 남아서 일한 시간은 팀장이 근무표 아래 ‘연차·OT 현황’에 30분 단위로 기록해요.\n쌓인 OT는 30분 단위로 일찍 퇴근하거나 늦게 출근하는 데 쓸 수 있어요. 하루를 통째로 쉬는 ‘오버타임 사용’도 할 수 있어요.\nOT 1시간 = 쉬는 시간 [   ]\nOT를 쓰려면 [   ]일 전까지 팀장에게 말해요.\n남은 OT가 궁금하면 팀장에게 물어보세요.'],
+  ['휴가·휴일','연차 신청 방법','연차는 쓰려는 날 [   ]일 전까지 팀장에게 말해요.\n오전 반차·오후 반차(0.5일)도 쓸 수 있어요. 오전 반차는 [   ]시 출근, 오후 반차는 [   ]시 퇴근이에요.\n희망 휴무는 매달 [   ]일까지 팀장에게 알려 주세요.\n연차 계산 기준: [입사일 / 1월 1일]'],
+  ['휴가·휴일','경조사 휴가','본인 결혼: [   ]일\n자녀 결혼: [   ]일\n배우자·부모(배우자의 부모 포함) 사망: [   ]일\n조부모·형제자매 사망: [   ]일\n경조금: [   ]\n\n경조사 휴가는 [연차와 따로 줘요 / 연차에서 빼요]. 근무표에는 ‘경조사’로 넣어요.'],
+  ['휴가·휴일','여름휴가·명절','여름휴가: [   ]일 ([연차에서 빼요 / 따로 줘요])\n설·추석 연휴: [   ]\n공휴일에 진료하는 날: [다른 날 쉬어요 / 휴일근로수당]'],
+  ['급여·수당','급여일과 수당','급여일: 매월 [   ]일 (주말·공휴일이면 [그 전날])\n야간 진료 수당: [   ]\n식대: [   ]\n임금명세서는 [   ](으)로 받아요.'],
+  ['복지','직원 복지','본인·가족 진료비 할인: [   ]\n생일: [   ]\n명절 선물: [   ]\n건강검진: [   ]'],
+  ['복지','교육·학회·자격증 지원','외부 교육·학회 참가: [   ]\n자격증 취득 지원: [   ]\n근무표에는 ‘교육’으로 넣어요.'],
+  ['복무·규정','지각·조퇴·결근','늦을 것 같으면 [   ]시 전까지 팀장에게 연락해요.\n갑자기 아파서 못 나오면 [   ]에게 바로 알려요.\n[   ]'],
+  ['복무·규정','근무 바꾸기','동료와 근무 날을 바꾸려면 두 사람이 함께 팀장에게 말해요. 팀장이 근무표를 고치면 확정이에요.\n같은 날 함께 쉴 수 없는 사람(예: 접수 담당)끼리는 근무표에서 경고가 떠요.'],
+  ['복무·규정','환자 정보 보호','환자 정보는 업무 밖에서 보거나 말하지 않아요.\n근무표 같은 사내 프로그램에도 환자 이름이나 진료 내용을 적지 않아요.\n[   ]'],
+  ['기타','그만둘 때','그만두려면 [30]일 전까지 원장님께 말해요.\n남은 연차와 OT는 [   ](으)로 정산해요.\n퇴직금은 [퇴직금 / 퇴직연금]으로 받아요.']
+];
+var app=document.getElementById('app');
+var st={loading:!!API,items:[],me:null,pin:'',clinic:'',viewPin:false,err:'',needPin:false};
+var ui={q:'',cat:'all',open:{},edit:null,saving:false,confirm:null,login:false,loginErr:'',busy:false};
+try{ui.q=new URLSearchParams(location.search).get('q')||''}catch(e){}
+
+/* ---------- small utils ---------- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function fmtDate(ts){var d=new Date(ts);return d.getFullYear()+'. '+(d.getMonth()+1)+'. '+d.getDate()+'.'}
+function terms(q){return String(q||'').toLowerCase().split(/\s+/).filter(Boolean)}
+function hit(hay,ts){hay=String(hay).toLowerCase();return ts.every(function(t){return hay.indexOf(t)>=0})}
+function mark(s,ts){s=String(s==null?'':s);if(!ts||!ts.length)return esc(s);var low=s.toLowerCase(),out='',i=0;
+  while(i<s.length){var best=-1,bl=0;ts.forEach(function(t){var j=low.indexOf(t,i);if(j>=0&&(best<0||j<best||(j===best&&t.length>bl))){best=j;bl=t.length}});
+    if(best<0){out+=esc(s.slice(i));break}out+=esc(s.slice(i,best))+'<mark>'+esc(s.slice(best,best+bl))+'</mark>';i=best+bl}
+  return out}
+function hbText(body,ts){var h=mark(body,ts);return ts.length?h:h.replace(/\[[^\]\n<>]{0,40}\]/g,function(m){return '<span class="blank">'+m+'</span>'})}
+function hasBlank(body){return /\[[^\]\n]{0,40}\]/.test(body)}
+function ss(k,v){try{if(v===undefined)return sessionStorage.getItem(k);if(v===null)sessionStorage.removeItem(k);else sessionStorage.setItem(k,v)}catch(e){return null}}
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
+function readAuth(){var raw=ss(AUTH)||ls(AUTH);try{return raw?JSON.parse(raw):null}catch(e){return null}}
+function writeAuth(pin,rem){var v=JSON.stringify({pin:pin,remember:!!rem});ss(AUTH,v);if(rem)ls(AUTH,v);else ls(AUTH,null)}
+function clearAuth(){ss(AUTH,null);ls(AUTH,null)}
+var toastT=null;
+function toast(msg){var el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';el.className='toast';el.setAttribute('role','status');document.body.appendChild(el)}
+  el.textContent=msg;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('on')},3200)}
+function errMsg(r){var e=r&&r.error;return e==='pin'?'PIN이 맞지 않아요.':e==='locked'?'PIN을 여러 번 틀려서 10분 동안 잠겼어요. 잠시 뒤 다시 시도하세요.':e==='forbidden'?'이 작업을 할 권한이 없어요.':e==='title'?'제목을 적어 주세요.':e==='full'?'항목은 200개까지 쓸 수 있어요.':e==='unknown_action'?'근무표 서버가 아직 예전 버전이에요. 관리자에게 알려 주세요.':(r&&r.message)||'처리하지 못했어요.'}
+function api(action,payload){return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action:action},payload||{})),redirect:'follow'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})}
+
+/* ---------- who can do what ---------- */
+function canWrite(){return !!st.me&&(st.me.role==='admin'||st.me.role==='leader')}
+function ownKey(){return st.me?(st.me.role==='admin'?'admin':'L:'+st.me.leaderId):''}
+function can(it){return canWrite()&&(st.me.role==='admin'||it.own===ownKey())}
+function byId(id){return st.items.filter(function(x){return x.id===id})[0]}
+function put(it){var i=st.items.findIndex(function(x){return x.id===it.id});if(i>=0)st.items[i]=it;else st.items.push(it)}
+function whoText(){if(!st.me)return '';return st.me.role==='admin'?'관리자':st.me.role==='leader'?(st.me.name||'팀장'):'직원(보기)'}
+
+/* ---------- loading ---------- */
+function load(pin,silent){st.loading=true;st.err='';render();
+  return api('handbook',{pin:pin||''}).then(function(r){r=r||{};st.loading=false;if(r.clinic)st.clinic=r.clinic;st.viewPin=!!r.viewPin;
+    if(!r.ok){
+      if(r.error==='pin'&&silent&&pin){clearAuth();return load('',true)}
+      if(r.error==='auth'){st.needPin=true;ui.login=true;render();return}
+      if(r.error==='pin'||r.error==='locked'){ui.login=true;ui.loginErr=errMsg(r);render();return}
+      st.err=errMsg(r);render();return}
+    st.items=Array.isArray(r.items)?r.items:[];st.me=r.me||null;st.pin=r.me?pin:'';st.needPin=false;ui.login=false;ui.loginErr='';render()})
+  .catch(function(){st.loading=false;st.err='서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도하세요.';render()})}
+function login(){var pin=(document.getElementById('loginPin')||{}).value||'',rem=!!(document.getElementById('loginRemember')||{}).checked;
+  if(!pin){ui.loginErr='PIN을 입력하세요.';render();return}ui.busy=true;render();
+  api('handbook',{pin:pin}).then(function(r){ui.busy=false;r=r||{};
+    if(!r.ok){ui.loginErr=errMsg(r);render();return}
+    writeAuth(pin,rem);st.items=r.items||[];st.me=r.me||null;st.pin=pin;st.needPin=false;ui.login=false;ui.loginErr='';render();
+    toast(canWrite()?whoText()+'(으)로 로그인했어요. 이제 항목을 쓰고 고칠 수 있어요.':'로그인했어요.')})
+  .catch(function(){ui.busy=false;ui.loginErr='서버에 연결하지 못했어요.';render()})}
+
+/* ---------- render ---------- */
+function render(){var fid=document.activeElement&&document.activeElement.id,h='';
+  var cn=document.getElementById('clinic');if(cn&&st.clinic)cn.textContent=st.clinic;
+  if(st.clinic)document.title=st.clinic+' 취업규칙';
+  var nav=document.getElementById('who');if(nav)nav.innerHTML=st.me?'<span class="who">'+esc(whoText())+'</span><button class="btn small" data-act="logout">로그아웃</button>':(API&&!st.loading&&!ui.login?'<button class="btn small" data-act="openLogin">관리자·팀장 로그인</button>':'');
+  if(!API)h='<section class="panel empty"><p><b>근무표 서버에 연결된 사이트에서 쓸 수 있어요.</b></p><p>config.js에 Apps Script 주소를 넣은 근무표 사이트에서 열어 주세요.</p></section>';
+  else if(st.loading)h='<section class="panel empty">취업규칙을 불러오는 중이에요…</section>';
+  else if(st.err)h='<div class="note bad"><div class="grow">'+esc(st.err)+'</div><button class="btn small" data-act="retry">다시 시도</button></div>';
+  else if(st.needPin&&!st.me)h=loginPanel(true);
+  else h=mainView();
+  app.innerHTML=h;
+  if(fid){var el=document.getElementById(fid);if(el&&el.focus)try{el.focus({preventScroll:true})}catch(e){el.focus()}}}
+function loginPanel(required){return '<section class="panel authpanel" aria-labelledby="lgH"><h2 id="lgH">'+(required?'PIN을 입력하세요':'관리자·팀장 로그인')+'</h2><p class="lead">'+(required?'직원은 열람 PIN, 팀장은 팀장 PIN, 관리자는 관리자 PIN을 넣으세요.':'근무표에서 쓰는 PIN을 넣으면 항목을 쓰고 고칠 수 있어요.')+'</p>'+
+  '<label for="loginPin">PIN</label><input type="password" class="pin" id="loginPin" autocomplete="current-password" inputmode="numeric">'+
+  '<label class="chk"><input type="checkbox" id="loginRemember">이 기기에서 로그인 유지 (개인 기기에서만)</label>'+(ui.loginErr?'<p class="err">'+esc(ui.loginErr)+'</p>':'')+
+  '<div class="row"><button class="btn primary" data-act="login"'+(ui.busy?' disabled':'')+'>'+(ui.busy?'확인 중…':'로그인')+'</button>'+(required?'':'<button class="btn" data-act="closeLogin">닫기</button>')+'</div></section>'}
+function mainView(){var w=canWrite(),items=st.items,h='';
+  h+='<section class="panel hb-top"><div class="hb-head"><div class="grow"><h2>취업규칙 · 복지</h2><p class="lead">'+
+    (w?'우리 병원에서 실제로 시행 중인 규칙과 복지를 적어 두는 곳이에요. 직원들도 궁금할 때 여기서 찾아봐요.':'우리 병원의 규칙과 복지예요. 더 궁금한 점은 팀장님께 물어보세요.')+'</p></div>'+
+    '<div class="acts">'+(w?'<button class="btn primary" data-act="new">+ 새 항목</button>':'')+(items.length?'<button class="btn" data-act="print">인쇄하기</button>':'')+'</div></div>'+
+    (items.length?'<div class="searchbox"><label class="vh" for="hbQ">취업규칙에서 찾기</label><input type="search" id="hbQ" placeholder="찾을 말을 넣어 보세요 (예: 경조사, 급여일, OT)" value="'+esc(ui.q)+'" autocomplete="off" enterkeyhint="search"></div>':'')+'</section>';
+  if(ui.login)h+=loginPanel(false);
+  if(ui.edit&&!ui.edit.id)h+=editor();
+  h+='<div id="hbRes" class="hb-res">'+results()+'</div>';
+  if(w)h+='<p class="fine">'+(st.me.role==='admin'?'관리자는 모든 항목을 고치고 지울 수 있어요. 팀장은 새 항목을 쓰고, 자기가 쓴 항목만 고치고 지울 수 있어요. 이곳은 직원 안내용이에요. 직원이 상시 10명 이상이면 취업규칙을 고용노동부에 신고해야 하고, 직원에게 불리하게 바꿀 때는 직원 과반수의 동의가 필요해요.':'새 항목을 쓰고, 내가 쓴 항목은 고치고 지울 수 있어요. 다른 사람이 쓴 항목은 원장님(관리자)께 말씀해 주세요.')+
+    ' ‘관리자·팀장만’으로 정한 항목은 직원 화면에 보이지 않아요. 직원 개인의 급여·연락처 같은 개인정보는 적지 마세요. 저장하면 바로 모든 사람에게 보여요.</p>';
+  return h}
+function results(){var ts=terms(ui.q),all=st.items,cat=ui.cat,w=canWrite();
+  if(!all.length){if(ui.edit&&!ui.edit.id)return '';
+    return '<section class="panel empty hb-empty"><p><b>아직 적어 둔 규칙이 없어요.</b></p>'+(w?'<p>처음이라면 병원에서 자주 쓰는 항목 틀 '+HB_SEED.length+'개를 넣고, <span class="blank">[ ]</span> 칸만 우리 병원에 맞게 채우면 돼요. 필요 없는 항목은 지우면 돼요.</p><div class="row center"><button class="btn primary" data-act="seed"'+(ui.saving?' disabled':'')+'>자주 쓰는 항목 틀 넣기</button><button class="btn" data-act="new">직접 쓰기</button></div>':
+      '<p>관리자나 팀장이 규칙과 복지를 적으면 여기에 보여요.</p>')+'</section>'}
+  var found=all.filter(function(it){return !ts.length||hit(it.cat+' '+it.title+' '+it.body,ts)}),cnt={};
+  found.forEach(function(it){cnt[it.cat]=(cnt[it.cat]||0)+1});
+  var h='<div class="chips catchips" role="group" aria-label="분류"><button class="tchip" data-act="cat" data-k="all" aria-pressed="'+(cat==='all')+'">전체 <small>'+found.length+'</small></button>'+
+    HB_CATS.filter(function(c){return cnt[c]||cat===c}).map(function(c){return '<button class="tchip" data-act="cat" data-k="'+esc(c)+'" aria-pressed="'+(cat===c)+'">'+esc(c)+' <small>'+(cnt[c]||0)+'</small></button>'}).join('')+'</div>';
+  var list=found.filter(function(it){return cat==='all'||it.cat===cat});
+  if(!list.length)return h+'<section class="panel empty"><p>‘'+esc(ui.q)+'’'+(cat!=='all'?' (분류: '+esc(cat)+')':'')+'에 맞는 항목이 없어요.</p><p class="muted">다른 말로 찾아보거나, 법에 정한 내용은 <a class="linkbtn" href="law.html?q='+encodeURIComponent(ui.q)+'">근로기준법 안내에서 찾아보세요</a>.</p></section>';
+  HB_CATS.forEach(function(c){var g=list.filter(function(it){return it.cat===c});if(!g.length)return;
+    h+='<section class="hb-group" aria-label="'+esc(c)+'"><h3 class="grp-h">'+esc(c)+'</h3>'+g.map(function(it){return card(it,ts)}).join('')+'</section>'});
+  return h}
+function card(it,ts){if(ui.edit&&ui.edit.id===it.id)return editor();
+  var open=ts.length>0||!!ui.open[it.id],c=can(it),blank=canWrite()&&hasBlank(it.body);
+  var h='<article class="hb-card'+(open?' open':'')+'" id="hb-'+esc(it.id)+'"><button class="hb-q" data-act="open" data-k="'+esc(it.id)+'" aria-expanded="'+open+'"><span class="hb-t">'+mark(it.title,ts)+'</span>'+
+    (it.vis==='mgr'?'<span class="badge mgr">관리자·팀장만</span>':'')+(blank?'<span class="badge blank-b">채울 칸 있음</span>':'')+'<span class="chev" aria-hidden="true"></span></button>';
+  if(open){h+='<div class="hb-body"><div class="hb-text">'+(String(it.body||'').trim()?hbText(it.body,ts):'<span class="muted">내용이 비어 있어요.</span>')+'</div><div class="hb-meta"><span class="muted">'+(it.updatedAt?fmtDate(it.updatedAt)+(it.updatedBy?' · '+esc(it.updatedBy):'')+' 고침':'')+'</span>';
+    if(c)h+='<span class="acts">'+(ui.confirm==='del:'+it.id?'<span class="ask-t">이 항목을 지울까요?</span><button class="btn small danger" data-act="del" data-k="'+esc(it.id)+'">지우기</button><button class="btn small" data-act="cancel">취소</button>':
+      '<button class="btn small" data-act="edit" data-k="'+esc(it.id)+'">고치기</button><button class="btn small" data-act="ask" data-k="'+esc(it.id)+'">지우기</button>')+'</span>';
+    h+='</div></div>'}
+  return h+'</article>'}
+function editor(){var e=ui.edit,isNew=!e.id;
+  return '<section class="panel hb-ed" id="hbEd" aria-label="'+(isNew?'새 항목 쓰기':'항목 고치기')+'"><h3>'+(isNew?'새 항목 쓰기':'항목 고치기')+'</h3>'+
+    (e.warn?'<div class="note warn"><div class="grow">'+esc(e.warn)+'</div></div>':'')+
+    (e.theirs?'<details class="theirs"><summary>방금 저장된 다른 사람의 내용 보기</summary><div class="hb-text">'+esc(e.theirs)+'</div></details>':'')+
+    '<div class="hb-form"><div class="fld"><label for="hbe-cat">분류</label><select id="hbe-cat" data-hb="cat">'+HB_CATS.map(function(c){return '<option'+(e.cat===c?' selected':'')+'>'+esc(c)+'</option>'}).join('')+'</select></div>'+
+    '<div class="fld grow"><label for="hbe-title">제목</label><input type="text" id="hbe-title" data-hb="title" maxlength="80" value="'+esc(e.title||'')+'" placeholder="예: 경조사 휴가"></div></div>'+
+    '<div class="fld"><label for="hbe-body">내용</label><textarea id="hbe-body" data-hb="body" maxlength="4000" rows="9" placeholder="직원들이 읽기 쉽게 한 줄에 하나씩 적어 주세요.&#10;예: 본인 결혼 5일, 부모 사망 5일">'+esc(e.body||'')+'</textarea><span class="fine">[ ]처럼 대괄호로 적은 곳은 ‘채울 칸’으로 표시돼요.</span></div>'+
+    '<fieldset class="hb-vis"><legend>누가 볼 수 있나요?</legend><label class="chk"><input type="radio" name="hbvis" data-hb="vis" value="all"'+(e.vis!=='mgr'?' checked':'')+'>모든 직원</label><label class="chk"><input type="radio" name="hbvis" data-hb="vis" value="mgr"'+(e.vis==='mgr'?' checked':'')+'>관리자·팀장만</label></fieldset>'+
+    '<div class="row"><button class="btn primary" data-act="save"'+(ui.saving?' disabled':'')+'>'+(ui.saving?'저장 중…':'저장')+'</button><button class="btn" data-act="cancelEdit">취소</button></div></section>'}
+
+/* ---------- actions ---------- */
+function start(it){ui.edit=it?{id:it.id,cat:it.cat,title:it.title,body:it.body,vis:it.vis,base:it.updatedAt||0}:{id:'',cat:ui.cat!=='all'?ui.cat:HB_CATS[0],title:'',body:'',vis:'all',base:0};ui.confirm=null;render();
+  var f=document.getElementById(it?'hbe-body':'hbe-title');if(f)try{f.focus({preventScroll:true});var ed=document.getElementById('hbEd');if(ed&&ed.scrollIntoView)ed.scrollIntoView({block:'nearest'})}catch(x){}}
+function done(it){ui.edit=null;ui.open[it.id]=true;if(ui.cat!=='all'&&ui.cat!==it.cat)ui.cat='all';if(ui.q&&!hit(it.cat+' '+it.title+' '+it.body,terms(ui.q)))ui.q='';render();
+  var c=document.getElementById('hb-'+it.id);if(c&&c.scrollIntoView)try{c.scrollIntoView({block:'nearest'})}catch(x){}}
+function lost(){clearAuth();st.me=null;st.pin='';ui.edit=null;ui.login=true;ui.loginErr='PIN이 바뀌었거나 팀장 등록이 삭제됐어요. 다시 로그인해 주세요.';render()}
+function save(){var e=ui.edit;if(!e||ui.saving||!canWrite())return;
+  var x={id:e.id||'',cat:HB_CATS.indexOf(e.cat)>=0?e.cat:'기타',title:String(e.title||'').trim().slice(0,80),body:String(e.body||'').replace(/\s+$/,'').slice(0,4000),vis:e.vis==='mgr'?'mgr':'all'};
+  if(!x.title){toast('제목을 적어 주세요.');var t=document.getElementById('hbe-title');if(t)t.focus();return}
+  ui.saving=true;render();
+  api('saveArticle',{pin:st.pin,article:x,base:e.base||0}).then(function(r){ui.saving=false;r=r||{};
+    if(r.ok){put(r.item);done(r.item);toast((x.id?'고쳤어요.':'올렸어요.')+(x.vis==='mgr'?' 관리자·팀장에게만 보여요.':' 직원들에게 바로 보여요.'));return}
+    if(r.error==='conflict'&&r.item){put(r.item);e.base=r.item.updatedAt||0;e.theirs=r.item.title+'\n\n'+r.item.body;e.warn=(r.item.updatedBy||'다른 사람')+' 님이 방금 이 항목을 고쳤어요. 아래에서 그 내용을 확인하세요. 내 내용으로 바꾸려면 한 번 더 저장하세요.';render();return}
+    if(r.error==='gone'){st.items=st.items.filter(function(y){return y.id!==e.id});e.id='';e.base=0;e.warn='다른 사람이 이 항목을 지웠어요. 저장하면 새 항목으로 올라가요.';render();return}
+    if(r.error==='pin'){lost();return}
+    toast(errMsg(r));render()}).catch(function(){ui.saving=false;toast('서버에 연결하지 못했어요. 쓴 내용은 그대로 있어요. 잠시 뒤 다시 저장하세요.');render()})}
+function del(id){var it=byId(id);if(!it||!can(it))return;
+  api('deleteArticle',{pin:st.pin,id:id}).then(function(r){if(!r.ok){if(r.error==='pin'){lost();return}toast(errMsg(r));return}
+    st.items=st.items.filter(function(y){return y.id!==id});ui.confirm=null;if(ui.edit&&ui.edit.id===id)ui.edit=null;render();toast('지웠어요.')}).catch(function(){toast('서버에 연결하지 못했어요.')})}
+function seed(){if(!canWrite()||ui.saving)return;ui.saving=true;render();
+  api('addArticles',{pin:st.pin,items:HB_SEED.map(function(x){return {cat:x[0],title:x[1],body:x[2],vis:'all'}})}).then(function(r){ui.saving=false;
+    if(!r.ok){if(r.error==='pin'){lost();return}toast(errMsg(r));render();return}
+    (r.items||[]).forEach(put);ui.cat='all';ui.q='';ui.open={};render();toast('항목 틀 '+(r.items||[]).length+'개를 넣었어요. 노란 [ ] 칸을 우리 병원에 맞게 고쳐 주세요.')})
+  .catch(function(){ui.saving=false;toast('서버에 연결하지 못했어요.');render()})}
+function printView(){var css='@page{size:A4;margin:14mm}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;font-size:12px;line-height:1.65;margin:0}h1{font-size:18px;margin:0 0 4px}p.d{color:#64716C;margin:0 0 14px}h2{font-size:14px;margin:18px 0 6px;padding:3px 8px;background:#FFF200}h3{font-size:12.5px;margin:10px 0 2px}div.b{white-space:pre-wrap;margin:0 0 6px}small{color:#64716C;font-weight:400}';
+  var name=st.clinic||'우리 병원',h='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(name+' 취업규칙·복지')+'</title><style>'+css+'</style></head><body><h1>'+esc(name)+' 취업규칙 · 복지</h1><p class="d">'+fmtDate(Date.now())+' 기준</p>';
+  HB_CATS.forEach(function(c){var g=st.items.filter(function(it){return it.cat===c});if(!g.length)return;h+='<h2>'+esc(c)+'</h2>'+g.map(function(it){return '<h3>'+esc(it.title)+(it.vis==='mgr'?' <small>(관리자·팀장만)</small>':'')+'</h3><div class="b">'+esc(it.body)+'</div>'}).join('')});
+  h+='<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},400)})<\/script></body></html>';
+  try{var url=URL.createObjectURL(new Blob([h],{type:'text/html'})),w=window.open(url,'_blank');if(!w){location.href=url}setTimeout(function(){URL.revokeObjectURL(url)},60000)}catch(e){toast('인쇄 화면을 열지 못했어요.')}}
+
+app.addEventListener('click',function(e){var t=e.target.closest('[data-act]');if(!t)return;var a=t.dataset.act,k=t.dataset.k;
+  switch(a){
+  case 'new':if(canWrite())start(null);break;
+  case 'edit':(function(){var it=byId(k);if(it&&can(it))start(it)})();break;
+  case 'cancelEdit':ui.edit=null;render();break;
+  case 'save':save();break;
+  case 'ask':ui.confirm='del:'+k;render();break;
+  case 'del':del(k);break;
+  case 'cancel':ui.confirm=null;render();break;
+  case 'seed':seed();break;
+  case 'open':if(terms(ui.q).length)break;ui.open[k]=!ui.open[k];render();break;
+  case 'cat':ui.cat=k;render();break;
+  case 'print':printView();break;
+  case 'login':login();break;
+  case 'closeLogin':ui.login=false;ui.loginErr='';render();break;
+  case 'retry':var s0=readAuth();load(s0&&s0.pin,true);break;
+  }});
+document.addEventListener('click',function(e){var t=e.target.closest('#who [data-act]');if(!t)return;
+  if(t.dataset.act==='openLogin'){ui.login=true;ui.loginErr='';render();var p=document.getElementById('loginPin');if(p)p.focus()}
+  if(t.dataset.act==='logout'){clearAuth();st.me=null;st.pin='';ui.edit=null;load('',true)}});
+app.addEventListener('input',function(e){var t=e.target;
+  if(t.id==='hbQ'){ui.q=t.value;var r=document.getElementById('hbRes');if(r)r.innerHTML=results();return}
+  if(t.dataset.hb&&ui.edit){ui.edit.dirty=true;if(t.dataset.hb==='vis'){if(t.checked)ui.edit.vis=t.value}else ui.edit[t.dataset.hb]=t.value}});
+app.addEventListener('change',function(e){var t=e.target;if(t.dataset.hb&&ui.edit){ui.edit.dirty=true;if(t.dataset.hb==='vis'){if(t.checked)ui.edit.vis=t.value}else ui.edit[t.dataset.hb]=t.value}});
+app.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target&&e.target.id==='loginPin'){e.preventDefault();login()}});
+window.addEventListener('beforeunload',function(e){if(ui.edit&&ui.edit.dirty&&!ui.saving){e.preventDefault();e.returnValue=''}});
+
+if(API){var s0=readAuth();load(s0&&s0.pin,true)}else render();
+})();
+</script>
+<script>(function(){var b=document.getElementById('backRoster');if(b)b.addEventListener('click',function(e){if(window.opener&&history.length<=1){e.preventDefault();try{window.close()}catch(x){}setTimeout(function(){location.href='./'},300)}})})();</script>
+</body>
+</html>

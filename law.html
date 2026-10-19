@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>근로기준법 쉽게 보기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}/* layout: app bar (clinic, month, login, save) + team bar under the clinic name; numbered tabs by role; the roster grid is the working surface and scrolls sideways inside its own frame */
+:root{
+  --bg:#F2F5F3;--surface:#FFFFFF;--surface-2:#EAF0ED;--ink:#17211E;--ink-2:#3A4642;--muted:#64716C;--line:#D8E0DC;
+  --accent:#1C6A56;--accent-ink:#FFFFFF;--accent-soft:#DCEEE7;--work-ink:#155240;
+  --sat:#2352B0;--sun:#C2392D;--leave:#94600A;--leave-soft:#FAEDD2;--night:#3B468E;--night-soft:#E3E5F6;
+  --pref:#B1356D;--danger:#C2392D;--danger-soft:#FBE2DE;--warn:#94600A;--warn-soft:#FAEDD2;--hatch:rgba(23,33,30,.07);
+  --cu-blue-bg:#DDE8FA;--cu-blue-fg:#1F4E9C;--cu-violet-bg:#ECE2F7;--cu-violet-fg:#5A3590;--cu-rose-bg:#F8DFE6;--cu-rose-fg:#982B4A;
+  --cu-cyan-bg:#D6EEF4;--cu-cyan-fg:#105D70;--cu-lime-bg:#E7EFD0;--cu-lime-fg:#4C5E12;--cu-slate-bg:#E3E7EA;--cu-slate-fg:#3D4A55;
+  --dayhead:#FCE7DA;--titleband:#FFF200;--titleink:#17211E;--sec-night:#2352B0;--sec-leave:#A86A00;--sec-etc:#3B7A2A;
+  --font:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1412;--surface:#151D1A;--surface-2:#1B2521;--ink:#E2EAE7;--ink-2:#C0CCC7;--muted:#8D9B96;--line:#28342F;
+  --accent:#58BD9C;--accent-ink:#0B1914;--accent-soft:#19382E;--work-ink:#A6E0CC;
+  --sat:#84A7F1;--sun:#EF867B;--leave:#E4AE4C;--leave-soft:#392C13;--night:#A2ABF1;--night-soft:#24294B;
+  --pref:#EC85B4;--danger:#EF867B;--danger-soft:#3C1E1B;--warn:#E4AE4C;--warn-soft:#392C13;--hatch:rgba(226,234,231,.06);
+  --cu-blue-bg:#1D2D4A;--cu-blue-fg:#9EBEF2;--cu-violet-bg:#2E2442;--cu-violet-fg:#C9B2EE;--cu-rose-bg:#3E1E28;--cu-rose-fg:#F0A6BC;
+  --cu-cyan-bg:#143440;--cu-cyan-fg:#8ED4E4;--cu-lime-bg:#283019;--cu-lime-fg:#C3D387;--cu-slate-bg:#252C31;--cu-slate-fg:#B7C2CB;--dayhead:#3A2B22;--titleband:#4A4517;--titleink:#F4F0C8;--sec-night:#93B4F4;--sec-leave:#E7B355;--sec-etc:#9BD383;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1412;--surface:#151D1A;--surface-2:#1B2521;--ink:#E2EAE7;--ink-2:#C0CCC7;--muted:#8D9B96;--line:#28342F;
+  --accent:#58BD9C;--accent-ink:#0B1914;--accent-soft:#19382E;--work-ink:#A6E0CC;
+  --sat:#84A7F1;--sun:#EF867B;--leave:#E4AE4C;--leave-soft:#392C13;--night:#A2ABF1;--night-soft:#24294B;
+  --pref:#EC85B4;--danger:#EF867B;--danger-soft:#3C1E1B;--warn:#E4AE4C;--warn-soft:#392C13;--hatch:rgba(226,234,231,.06);
+  --cu-blue-bg:#1D2D4A;--cu-blue-fg:#9EBEF2;--cu-violet-bg:#2E2442;--cu-violet-fg:#C9B2EE;--cu-rose-bg:#3E1E28;--cu-rose-fg:#F0A6BC;
+  --cu-cyan-bg:#143440;--cu-cyan-fg:#8ED4E4;--cu-lime-bg:#283019;--cu-lime-fg:#C3D387;--cu-slate-bg:#252C31;--cu-slate-fg:#B7C2CB;--dayhead:#3A2B22;--titleband:#4A4517;--titleink:#F4F0C8;--sec-night:#93B4F4;--sec-leave:#E7B355;--sec-etc:#9BD383;color-scheme:dark}
+*{box-sizing:border-box}
+body{overflow-anchor:none;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+.wrap{max-width:1560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar-top{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;padding-block:12px 8px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.mark{width:30px;height:30px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.clinic{font-weight:600;font-size:16px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub{font-size:12px;color:var(--muted);line-height:1.2}
+.month{display:flex;align-items:center;gap:6px}
+.mlabel{font-size:18px;font-weight:600;min-width:128px;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:18px;cursor:pointer;display:grid;place-items:center}
+.icon-btn:hover{border-color:var(--ink-2)}
+.authbox,.savebox{display:flex;align-items:center;gap:8px}
+.authbox select{height:34px}
+.who{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-size:12.5px;font-weight:500;white-space:nowrap}
+.savestate{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.dot.warn{background:var(--warn)}.dot.ok{background:var(--accent)}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-bottom:-1px}
+.tab{appearance:none;border:0;background:none;font:inherit;color:var(--muted);padding:10px 14px 11px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px;font-weight:500}
+.tab .num{width:20px;height:20px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;font-size:11px;font-weight:600}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.tab[aria-selected="true"] .num{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.teambar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-block:12px 0}
+.teambar .lbl{font-size:12px;color:var(--muted);margin-right:4px}
+.tchip{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font:inherit;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tchip small{font-size:11.5px;color:var(--muted);font-weight:400}
+.tchip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tchip[aria-pressed="true"] small{color:inherit;opacity:.75}
+.mine{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--work-ink);font-weight:600}
+.tab:focus-visible,.btn:focus-visible,.brush:focus-visible,.icon-btn:focus-visible,.day:focus-visible,.calc:focus-visible,.tchip:focus-visible,.seg button:focus-visible,.swatch:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.main{padding-block:16px 56px;display:flex;flex-direction:column;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}
+.panel h2{margin:0 0 4px;font-size:16px;font-weight:600;text-wrap:balance;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.panel h3{margin:0;font-size:15px;font-weight:600}
+.panel>p,.lead{margin:0 0 14px;color:var(--muted);max-width:72ch}
+.fine{font-size:12.5px;color:var(--muted);margin:12px 0 0;max-width:86ch}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:500;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--ink-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.danger{background:var(--danger-soft);border-color:transparent;color:var(--danger)}
+.btn.small{height:30px;padding:0 10px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.note{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:12px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.note.info{background:var(--accent-soft);border-color:transparent;color:var(--work-ink)}
+.note.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.note.bad{background:var(--danger-soft);border-color:transparent;color:var(--danger)}
+.note .grow{flex:1 1 280px;min-width:0}
+/* rules.html · law.html: the roster's look (tokens and header are copied from app.css at build time) */
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.hint{font-size:13px;color:var(--muted);margin:0;max-width:120ch}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+input[type=text],input[type=password],input[type=date],select{height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;padding:0 8px;min-width:0}
+input[type=date]{font-variant-numeric:tabular-nums}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-right:8px}
+.chk input{width:16px;height:16px;accent-color:var(--accent)}
+.authpanel{max-width:440px;margin:12px auto;display:flex;flex-direction:column;gap:12px}
+.authpanel input.pin{width:100%;height:44px;font-size:18px;letter-spacing:.2em}
+.err{color:var(--danger);font-size:13px;margin:0}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-size:13.5px;max-width:min(92vw,560px);z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.18);opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--muted)}
+.empty{padding:28px 18px;text-align:center;color:var(--muted)}
+a.btn{text-decoration:none}
+.pg-nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pg-nav .who{max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.pg-nav a.sib{color:var(--accent);font-weight:500;text-underline-offset:3px;font-size:13.5px}
+@media (max-width:640px){.pg-nav .who{display:none}}
+/* 7. 취업규칙 · 8. 근로기준법: search first, then cards grouped by category */
+.hb-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start}
+.hb-head .grow{flex:1 1 320px;min-width:0}
+.hb-head .lead{margin-bottom:0}
+.searchbox{margin-top:14px}
+input[type=search]{width:100%;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);font:inherit;font-size:15px;padding:0 14px;min-width:0}
+input[type=search]:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent;background:var(--surface)}
+textarea{width:100%;min-height:180px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;line-height:1.65;padding:10px 12px;resize:vertical;display:block}
+textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+mark{background:#FFF200;color:#17211E;border-radius:2px;padding:0 1px}
+.quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;font-size:13px}
+.quick .muted{margin-right:2px}
+.qchip{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font:inherit;font-size:13px;cursor:pointer}
+.qchip:hover{border-color:var(--ink-2)}
+.qchip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--work-ink)}
+.hb-res,.law-list{display:flex;flex-direction:column;gap:14px;min-width:0}
+.hb-group,.law-group{display:flex;flex-direction:column;gap:8px}
+.grp-h{margin:4px 0 0;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.hb-card,.qa{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
+.hb-q{appearance:none;width:100%;display:flex;align-items:center;gap:8px;padding:14px 16px;border:0;background:none;color:var(--ink);font:inherit;font-size:15px;font-weight:600;text-align:left;cursor:pointer;border-radius:12px}
+.hb-q:hover{background:var(--surface-2)}
+.hb-t{flex:1 1 auto;min-width:0;text-wrap:pretty}
+.chev{flex:none;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.hb-card.open .chev{transform:rotate(-135deg) translateY(-2px)}
+.badge{flex:none;font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.badge.mgr{background:var(--night-soft);color:var(--night)}
+.badge.blank-b{background:var(--warn-soft);color:var(--warn)}
+.hb-body{padding:0 16px 14px}
+.hb-text{white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;line-height:1.75;color:var(--ink-2);max-width:80ch}
+.blank{background:var(--warn-soft);color:var(--warn);border-radius:4px;padding:0 3px;font-weight:500}
+.hb-meta{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px}
+.ask-t{color:var(--danger);font-weight:500;align-self:center}
+.hb-ed{display:flex;flex-direction:column;gap:12px;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.hb-form{display:flex;flex-wrap:wrap;gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld.grow{flex:1 1 260px}
+.fld label,.hb-vis legend{font-size:13px;font-weight:500;color:var(--ink-2)}
+.fld input[type=text]{width:100%}
+.fld .fine{margin-top:2px}
+.hb-vis{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.hb-vis legend{float:left;margin-right:8px;padding:0}
+.theirs{background:var(--surface-2);border-radius:8px;padding:8px 12px}
+.theirs summary{cursor:pointer;font-weight:500;font-size:13px}
+.theirs .hb-text{margin-top:6px;font-size:13px}
+.hb-empty p{margin:0 auto 10px;max-width:60ch}
+.row.center{justify-content:center}
+.linkbtn{appearance:none;border:0;background:none;padding:0;color:var(--accent);font:inherit;font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-align:left}
+.qa{padding:14px 16px}
+.qa-q{margin:0 0 4px;font-size:15px;font-weight:600;text-wrap:pretty}
+.qa-a{margin:0;color:var(--ink-2);line-height:1.7;word-break:keep-all;overflow-wrap:anywhere}
+.qa-more{margin-top:8px}
+.qa-more ul{margin:0;padding-left:20px;color:var(--ink-2);display:flex;flex-direction:column;gap:4px;line-height:1.65;word-break:keep-all;overflow-wrap:anywhere}
+.qa-law{margin:8px 0 0;font-size:12.5px;color:var(--muted)}
+.qa-law a{color:var(--accent);text-underline-offset:2px}
+.qa-more .linkbtn{margin-top:8px;font-size:13.5px}
+.qa-tog{appearance:none;margin-top:8px;height:28px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;cursor:pointer}
+.qa-tog:hover{border-color:var(--ink-2)}
+.lawgrid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);grid-template-areas:"calc" "list" "help"}
+.law-calc{grid-area:calc;min-width:0}.law-list{grid-area:list}.law-help{grid-area:help;min-width:0}
+@media (max-width:999.98px){.lawgrid.searching{grid-template-areas:"list" "calc" "help"}}
+@media (min-width:1000px){.lawgrid{grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto 1fr;grid-template-areas:"list calc" "list help";align-items:start}}
+.lvcalc .row{gap:8px}
+.lvcalc label{font-weight:500}
+.lc-out{margin:12px 0;padding:12px 14px;border-radius:10px;background:var(--accent-soft);color:var(--work-ink)}
+.lc-out p{margin:0}
+.lc-out .muted{color:var(--work-ink);opacity:.8}
+.lc-big{font-size:15px}
+.lc-big b{font-size:18px}
+.lc-ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:3px;font-size:13.5px;line-height:1.6}
+.lc-t{width:100%;border-collapse:collapse;font-size:13px}
+.lc-t caption{text-align:left;font-weight:600;font-size:13px;margin-bottom:4px;color:var(--ink-2)}
+.lc-t th,.lc-t td{border-top:1px solid var(--line);padding:6px 4px;text-align:left;font-weight:400}
+.lc-t th{color:var(--muted);width:42%;white-space:nowrap}
+.lc-t td{font-variant-numeric:tabular-nums}
+.helplist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.helplist li{display:flex;flex-direction:column;gap:1px}
+.helplist a{color:var(--accent);font-weight:500;text-underline-offset:3px}
+.helplist .muted{font-size:12.5px}
+@media print{.law-calc,.law-help,.quick,.searchbox{display:none}}
+</style>
+</head>
+<body>
+<header class="bar"><div class="wrap"><div class="bar-top"><div class="brand"><div class="mark" aria-hidden="true">근</div><div style="min-width:0"><div class="clinic" id="clinic">연세솔안과</div><div class="sub">근로기준법 쉽게 보기</div></div></div><nav class="pg-nav" aria-label="이동"><a class="sib" href="rules.html">우리 병원 취업규칙</a><a class="btn small" href="./" id="backRoster">← 근무표로</a></nav></div></div></header>
+<main class="wrap main" id="app"></main>
+<script>(function(){
+'use strict';
+/* 8. 근로기준법 쉽게 보기 — 서버 없이 이 페이지 안에서 바로 열려요. 내용은 law_data.js(빌드 때 합쳐짐)에 있어요. */
+var LAW_CATS=[['leave','연차'],['rest','휴가·휴일'],['birth','임신·출산'],['child','육아'],['hours','근로시간·OT'],['pay','임금·퇴직'],['work','직장생활']];
+var LAW_ASOF='2026년 10월';
+var LAW=[
+ {id:'l1',c:'leave',q:'연차는 며칠 생기나요?',a:'입사 첫해에는 한 달 개근할 때마다 1일씩(최대 11일) 생기고, 1년을 채우고 80% 이상 출근했다면 15일이 생겨요.',
+  p:['3년 이상 일하면 2년마다 1일씩 늘어요. 3·4년차 16일, 5·6년차 17일 … 최대 25일이에요.','입사 첫해에 생긴 연차(최대 11일)는 입사하고 1년 안에 써야 해요.','출산전후휴가·육아휴직, 일하다 다쳐서 쉰 기간은 출근한 것으로 쳐요.','‘내 연차 계산기’에 입사일을 넣으면 바로 계산돼요.'],
+  law:[['근로기준법','제60조']],t:'연차일수 휴가 15일 11일 25일 가산 1년 미만 신입 출근율',hb:'연차'},
+ {id:'l2',c:'leave',q:'반차(0.5일)도 쓸 수 있나요?',a:'법에 반차가 따로 정해져 있지는 않지만, 병원과 직원이 정하면 쓸 수 있어요. 이 근무표에서는 오전 반차·오후 반차를 0.5일로 계산해요.',
+  p:['반차 두 번이 연차 1일이에요.','반차를 몇 시까지로 보는지는 우리 병원 취업규칙에서 확인하세요.'],ref:'고용노동부 해석: 노사가 정하면 반일 단위로 쓸 수 있어요.',t:'반차 반일 오전반차 오후반차 0.5',hb:'반차'},
+ {id:'l3',c:'leave',q:'연차를 다 못 쓰면 어떻게 되나요?',a:'쓸 수 있는 기간(보통 1년) 안에 못 쓴 연차는 돈(연차수당)으로 받아요. 단, 병원이 법에 정한 ‘연차 사용 촉진’을 했다면 수당이 없을 수 있어요.',
+  p:['연차 사용 촉진: 쓸 수 있는 기간이 끝나기 약 6개월 전에 병원이 남은 일수를 서면으로 알리고, 쓸 날을 정하라고 요청하는 절차예요.','퇴사할 때 남은 연차는 수당으로 정산해요.','연차수당은 보통 하루치 통상임금 × 남은 일수예요.'],
+  law:[['근로기준법','제60조'],['근로기준법','제61조']],t:'연차수당 미사용 소멸 사용촉진 정산 퇴사 돈'},
+ {id:'l4',c:'leave',q:'연차는 원하는 날 쓸 수 있나요?',a:'원칙적으로 직원이 원하는 날 쓸 수 있어요. 다만 그날 쉬면 병원 운영에 큰 지장이 있을 때는 병원이 날짜를 바꿔 달라고 할 수 있어요.',
+  p:['미리 팀장에게 말하고 근무표에 넣어 두면 좋아요.','신청 방법과 기한은 우리 병원 취업규칙에서 확인하세요.'],law:[['근로기준법','제60조']],t:'연차 신청 날짜 시기 변경 희망휴무',hb:'연차'},
+ {id:'r1',c:'rest',q:'주휴일(주휴수당)이 뭔가요?',a:'1주일 동안 정해진 날을 모두 출근하면 1주에 하루, 쉬어도 돈을 받는 날(보통 일요일)이 생겨요.',
+  p:['일주일에 15시간 미만으로 일하면 주휴일이 없어요.','월급제는 보통 주휴수당이 월급에 들어 있어요. 최저임금 월 환산액(209시간)에도 주휴시간이 들어가 있어요.'],
+  law:[['근로기준법','제55조'],['근로기준법','제18조']],t:'주휴 주휴수당 유급휴일 일요일 개근'},
+ {id:'r2',c:'rest',q:'공휴일(빨간 날)은 쉬는 날인가요?',a:'직원이 5명 이상인 병원은 공휴일과 대체공휴일이 유급휴일이에요. 쉬어도 월급이 깎이지 않아요.',
+  p:['공휴일에 진료하면, 근로자대표와 서면으로 합의해 다른 근무일과 바꿔 쉬거나(휴일 대체), 휴일근로수당(8시간까지 1.5배)을 받아요.','공휴일을 연차에서 빼는 건 안 돼요.'],
+  law:[['근로기준법','제55조']],t:'공휴일 빨간날 대체공휴일 휴일대체 명절 설날 추석 휴일근로',hb:'공휴일'},
+ {id:'r3',c:'rest',q:'생리휴가가 있나요?',a:'여성 직원이 청구하면 한 달에 하루 생리휴가를 줘야 해요. 법으로는 무급이에요.',p:['병원이 유급으로 정했다면 취업규칙을 따라요.'],law:[['근로기준법','제73조']],t:'생리휴가 보건휴가 여성'},
+ {id:'r4',c:'rest',q:'경조사 휴가·여름휴가는 며칠인가요?',a:'경조사 휴가와 여름휴가는 법으로 정한 휴가가 아니라 병원이 정해요. 우리 병원 기준은 우리 병원 취업규칙에서 확인하세요.',
+  p:['병원마다 연차와 따로 주기도 하고, 연차에서 빼기도 해요.'],ref:'법에 정한 휴가가 아니라 취업규칙·근로계약으로 정해요.',t:'경조사 결혼 장례 사망 상 여름휴가 하계휴가 휴가',hb:'경조사'},
+ {id:'r5',c:'rest',q:'가족을 돌봐야 할 때 쉴 수 있나요?',a:'가족이 아프거나 다쳤을 때, 또는 자녀를 돌봐야 할 때 가족돌봄휴가(1년에 10일, 하루 단위)를 쓸 수 있어요. 오래 돌봐야 하면 가족돌봄휴직(1년에 최대 90일)도 있어요.',
+  p:['가족: 부모, 배우자, 자녀, 배우자의 부모, 조부모, 손자녀.','가족돌봄휴가 10일은 가족돌봄휴직 90일 안에 들어가요.','휴직은 한 번에 30일 이상 써야 해요.','법으로는 무급이에요. 병원이 따로 정했다면 취업규칙을 따라요.'],
+  law:[['남녀고용평등법','제22조의2']],t:'가족돌봄 가족 간병 병간호 부모님 자녀 아이 아플 때 휴직'},
+ {id:'b1',c:'birth',q:'출산휴가는 얼마나 쓸 수 있나요?',a:'출산 전후로 90일(쌍둥이 이상 120일, 미숙아를 낳으면 100일)을 쓸 수 있어요. 출산 뒤에 45일(쌍둥이 이상 60일) 이상이 남도록 나눠야 해요.',
+  p:['처음 60일(쌍둥이 이상 75일)은 병원이 유급으로 줘야 해요. 고용보험에서도 출산전후휴가 급여를 지원해요(상한 있음, 고용24에서 신청).','유산·사산 경험이 있거나 만 40세 이상이거나 의사 진단이 있으면 출산 전에도 나눠 쓸 수 있어요.','출산휴가 기간과 그 뒤 30일 동안은 해고할 수 없어요.'],
+  law:[['근로기준법','제74조'],['근로기준법','제23조']],t:'출산휴가 출산전후휴가 산휴 산전후 출산 쌍둥이 미숙아 임신'},
+ {id:'b2',c:'birth',q:'임신 중에 일하는 시간을 줄일 수 있나요?',a:'임신 12주 이내이거나 32주 이후라면 하루 2시간 줄여 일할 수 있어요. 월급은 깎이지 않아요.',
+  p:['의사가 고위험 임신이라고 진단하면 임신 기간 내내 줄일 수 있어요.','임신 중에는 연장근로(시간 외 근무)를 할 수 없어요.','하루 근무시간은 그대로 두고 출근·퇴근 시간을 바꿔 달라고 할 수 있어요.','정기 검진(태아 검진)에 필요한 시간을 받을 수 있고, 그 시간도 월급에서 빼지 않아요.'],
+  law:[['근로기준법','제74조'],['근로기준법','제74조의2']],t:'임신 근로시간 단축 임산부 검진 태아검진 출퇴근 시간 변경 연장근로 금지'},
+ {id:'b3',c:'birth',q:'배우자가 출산하면 휴가가 있나요?',a:'배우자 출산휴가 20일(유급)을 쓸 수 있어요. 출산한 날부터 120일 안에, 4번까지 나눠 쓸 수 있어요.',
+  p:['고용보험에서 배우자 출산휴가 급여를 지원해요(고용24에서 신청).','휴가를 썼다고 불이익을 주면 안 돼요.'],law:[['남녀고용평등법','제18조의2']],t:'배우자 출산휴가 아빠 남편 출산'},
+ {id:'b4',c:'birth',q:'난임 치료를 받을 때 쉴 수 있나요?',a:'난임치료휴가를 1년에 6일 쓸 수 있어요. 처음 2일은 유급이에요.',p:['시술 같은 치료를 받으려고 쓰는 휴가예요. 업무 사정이 있으면 병원이 날짜를 바꿔 달라고 할 수 있어요.'],law:[['남녀고용평등법','제18조의3']],t:'난임 시술 치료 휴가 임신 준비'},
+ {id:'b5',c:'birth',q:'유산·사산했을 때 휴가가 있나요?',a:'임신 기간에 따라 유산·사산휴가를 받을 수 있어요. 15주 이내 10일, 16~21주 30일, 22~27주 60일, 28주 이상 90일이에요.',
+  p:['직원이 청구하면 병원은 꼭 줘야 해요.','출산휴가처럼 처음 60일까지는 유급이고, 고용보험 급여도 지원돼요.'],law:[['근로기준법','제74조']],t:'유산 사산 휴가 임신'},
+ {id:'c1',c:'child',q:'육아휴직은 누가, 얼마나 쓸 수 있나요?',a:'만 8세 이하(또는 초등학교 2학년 이하) 자녀가 있으면 엄마·아빠가 각각 1년씩 쓸 수 있어요. 부모가 각각 3개월 이상 쓰면 1년 6개월까지 늘어나요.',
+  p:['한부모, 중증 장애아동의 부모도 1년 6개월까지 쓸 수 있어요.','4번까지 나눠 쓸 수 있어요.','시작하려는 날 30일 전까지 병원에 신청해요.','입사한 지 6개월이 안 됐으면 병원이 거절할 수 있어요.','휴직 기간도 근속기간에 들어가고, 연차를 계산할 때 출근한 것으로 쳐요.','끝나면 전과 같은 일이나 같은 수준의 임금을 받는 자리로 돌아와요. 육아휴직을 이유로 해고하거나 불이익을 주면 안 돼요.'],
+  law:[['남녀고용평등법','제19조']],t:'육아휴직 육휴 휴직 아이 자녀 1년6개월 분할 복직'},
+ {id:'c2',c:'child',q:'육아휴직 중에 돈은 얼마나 받나요?',a:'고용보험에서 육아휴직 급여를 받아요. 1~3개월은 통상임금의 100%(월 최대 250만 원), 4~6개월은 100%(월 최대 200만 원), 7개월부터는 80%(월 최대 160만 원)예요.',
+  p:['최소 금액은 월 70만 원이에요.','휴직을 시작하고 1개월이 지난 뒤부터, 끝난 뒤 12개월 안에 고용24에서 신청해요.','예전처럼 일부를 복직한 뒤에 나눠 주지 않고, 휴직하는 동안 다 받아요.','생후 18개월 안의 자녀를 두고 부모가 모두 육아휴직을 쓰면(6+6 부모육아휴직제) 첫 6개월은 상한이 더 높아요(최대 월 450만 원).','고용보험에 180일 이상 가입돼 있어야 받을 수 있어요.'],
+  law:[['고용보험법','제70조']],t:'육아휴직 급여 돈 수당 고용24 6+6 상한 통상임금 얼마'},
+ {id:'c3',c:'child',q:'아이를 키우면서 일하는 시간을 줄일 수 있나요?',a:'만 12세 이하(또는 초등학교 6학년 이하) 자녀가 있으면 육아기 근로시간 단축을 쓸 수 있어요. 주 15~35시간으로 줄여 일해요.',
+  p:['기간은 1년이고, 육아휴직을 다 쓰지 않았다면 남은 기간의 2배만큼 더 쓸 수 있어요(최대 3년).','1개월 단위로 나눠 쓸 수 있어요.','줄어든 시간만큼 고용보험에서 급여를 받아요(고용24에서 신청).','단축을 이유로 불이익을 주면 안 되고, 끝나면 원래 근무로 돌아와요.'],
+  law:[['남녀고용평등법','제19조의2']],t:'육아기 근로시간 단축 단축근무 아이 자녀 초등학생'},
+ {id:'h1',c:'hours',q:'하루·일주일에 몇 시간까지 일할 수 있나요?',a:'기본은 하루 8시간, 일주일 40시간이에요. 직원이 동의하면 일주일에 12시간까지 더 일할 수 있어서, 최대 주 52시간이에요.',
+  p:['휴게시간(점심시간 등)은 근무시간에 들어가지 않아요.'],law:[['근로기준법','제50조'],['근로기준법','제53조']],t:'근로시간 52시간 40시간 8시간 연장근로 한도'},
+ {id:'h2',c:'hours',q:'휴게시간은 얼마나 있어야 하나요?',a:'4시간 일하면 30분 이상, 8시간 일하면 1시간 이상 쉬어야 해요. 일하는 중간에 주고, 자유롭게 쓸 수 있어야 해요.',p:['보통 점심시간이 이 휴게시간이에요.'],law:[['근로기준법','제54조']],t:'휴게 점심 쉬는시간 휴식'},
+ {id:'h3',c:'hours',q:'연장·야간·휴일에 일하면 수당이 더 붙나요?',a:'네. 하루 8시간·주 40시간을 넘긴 시간(연장), 밤 10시~아침 6시(야간), 휴일에 일한 시간은 통상임금의 50%를 더 받아요. 휴일에 8시간을 넘긴 시간은 100%를 더 받아요.',
+  p:['병원의 ‘야간 진료’(예: 저녁 8시까지)는 법에서 말하는 야간근로(밤 10시 이후)가 아니에요. 대신 하루 8시간이나 주 40시간을 넘기면 연장근로예요.','하루 8시간·주 40시간을 넘지 않는 추가 근무는 50%가 붙지 않고 일한 시간만큼 받아요.','연장과 야간이 겹치면 각각 더해요.'],
+  law:[['근로기준법','제56조']],t:'연장근로 야간 휴일 수당 가산 1.5배 OT 오버타임 초과근무 야근 야간진료'},
+ {id:'h4',c:'hours',q:'OT(초과근무) 대신 쉬는 시간으로 받을 수 있나요?',a:'네. 근로자대표와 서면으로 합의하면 연장·야간·휴일근로 수당 대신 휴가로 줄 수 있어요(보상휴가제). 이때 휴가는 수당만큼이어야 해서, 연장 1시간이면 보통 1시간 30분이에요.',
+  p:['쓰지 못한 보상휴가는 수당으로 받아야 해요.','하루 8시간·주 40시간 안의 추가 근무는 50%가 붙지 않아서 일한 만큼(1:1) 쉬어도 돼요.','우리 병원의 OT 사용 방법은 우리 병원 취업규칙에서 확인하세요. 남은 OT는 팀장이 근무표에서 관리해요.'],
+  law:[['근로기준법','제57조']],t:'OT 오버타임 보상휴가 대체휴가 초과근무 조기퇴근 일찍 퇴근 늦게 출근 30분',hb:'OT'},
+ {id:'p1',c:'pay',q:'최저임금은 얼마인가요?',a:'2026년은 시간당 10,320원(주 40시간이면 월 2,156,880원)이에요. 2027년 1월 1일부터는 시간당 10,700원(월 2,236,300원)이에요.',
+  p:['월 환산액은 주휴시간을 넣은 월 209시간 기준이에요.'],law:[['최저임금법','제6조']],t:'최저임금 최저시급 시급 월급 2026 2027 10320 10700'},
+ {id:'p2',c:'pay',q:'월급은 어떻게 받아야 하나요?',a:'매달 1번 이상 정해진 날에, 돈으로, 직접, 전액을 받아야 해요. 임금명세서도 받아야 해요.',
+  p:['임금명세서에는 기본급·수당·공제 내역과 계산 방법이 들어가요.','우리 병원 급여일은 우리 병원 취업규칙에서 확인하세요.'],law:[['근로기준법','제43조'],['근로기준법','제48조']],t:'월급 급여일 월급날 임금 명세서 지급',hb:'급여'},
+ {id:'p3',c:'pay',q:'퇴직금은 언제, 얼마나 받나요?',a:'1년 이상 일하고 일주일에 15시간 이상 일했다면 퇴직금을 받아요. 일한 1년마다 30일분의 평균임금이에요.',
+  p:['퇴사하고 14일 안에 받아야 해요(서로 합의하면 늦출 수 있어요).','퇴직연금에 가입돼 있으면 연금 계좌로 받아요.','평균임금은 퇴사 전 3개월 동안 받은 임금을 그 기간의 날수로 나눈 금액이에요.'],
+  law:[['근로자퇴직급여보장법','제8조'],['근로기준법','제36조']],t:'퇴직금 퇴사 퇴직연금 평균임금 그만둘 때'},
+ {id:'p4',c:'pay',q:'해고되거나 그만둘 때 알아둘 것은?',a:'병원이 해고하려면 정당한 이유가 있어야 하고, 이유와 날짜를 서면으로 알려야 해요. 30일 전에 미리 알리지 않았다면 30일분 통상임금을 줘야 해요.',
+  p:['직원이 그만둘 때는 근무표를 다시 짜야 하니, 취업규칙·근로계약서에서 정한 기간 전에 미리 알려 주세요.','부당하게 해고됐다고 생각하면 3개월 안에 노동위원회에 구제 신청을 할 수 있어요.'],
+  law:[['근로기준법','제23조'],['근로기준법','제26조'],['근로기준법','제27조'],['근로기준법','제28조']],t:'해고 퇴사 사직 그만둘 때 해고예고 부당해고',hb:'그만둘'},
+ {id:'w1',c:'work',q:'근로계약서는 꼭 받아야 하나요?',a:'네. 일을 시작할 때 임금, 근로시간, 휴일, 연차 같은 내용이 적힌 근로계약서를 서면으로 받아야 해요.',p:['임금 같은 중요한 내용이 바뀌면 바뀐 내용도 서면으로 받아요.'],law:[['근로기준법','제17조']],t:'근로계약서 계약서 서면 입사'},
+ {id:'w2',c:'work',q:'직장 내 괴롭힘을 당하면 어떻게 하나요?',a:'직장에서 지위나 관계를 이용해 업무 범위를 넘어 괴롭히는 것은 법으로 금지돼 있어요. 병원(원장님)에 알리면 병원은 바로 조사하고 보호해야 해요.',
+  p:['신고했다는 이유로 불이익을 주면 안 돼요.','병원 안에서 해결하기 어려우면 고용노동부(☎ 1350)에 신고할 수 있어요.'],law:[['근로기준법','제76조의2'],['근로기준법','제76조의3']],t:'괴롭힘 갑질 폭언 신고 따돌림'},
+ {id:'w3',c:'work',q:'직장 내 성희롱은 어떻게 예방하고 신고하나요?',a:'병원은 1년에 1번 이상 성희롱 예방교육을 해야 하고, 신고가 들어오면 조사하고 피해자를 보호해야 해요.',
+  p:['신고했다는 이유로 불이익을 주면 안 돼요.','고용노동부(☎ 1350)에도 신고할 수 있어요.'],law:[['남녀고용평등법','제13조'],['남녀고용평등법','제14조']],t:'성희롱 예방교육 신고'},
+ {id:'w4',c:'work',q:'일하다 다치거나 병이 나면요?',a:'일 때문에 다치거나 병이 나면 산재보험으로 치료비와, 쉬는 동안 휴업급여(평균임금의 70%)를 받을 수 있어요.',
+  p:['근로복지공단(☎ 1588-0075)에 신청해요. 병원이 산재 신청을 막으면 안 돼요.','출퇴근길 사고도 산재가 될 수 있어요.'],law:[['산업재해보상보험법','제37조']],t:'산재 다침 부상 사고 치료 출퇴근 근로복지공단'}
+];
+
+var app=document.getElementById('app');
+var ui={q:'',cat:'all',open:{},join:''};
+try{ui.q=new URLSearchParams(location.search).get('q')||''}catch(e){}
+try{ui.join=localStorage.getItem('solroster2-join')||''}catch(e){}
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function pad(n){return String(n).padStart(2,'0')}
+function isoOf(y,m,d){return y+'-'+pad(m)+'-'+pad(d)}
+function parts(iso){return iso.split('-').map(Number)}
+function isISO(x){return /^\d{4}-\d{2}-\d{2}$/.test(String(x||''))}
+function terms(q){return String(q||'').toLowerCase().split(/\s+/).filter(Boolean)}
+function hit(hay,ts){hay=String(hay).toLowerCase();return ts.every(function(t){return hay.indexOf(t)>=0})}
+function mark(s,ts){s=String(s==null?'':s);if(!ts||!ts.length)return esc(s);var low=s.toLowerCase(),out='',i=0;
+  while(i<s.length){var best=-1,bl=0;ts.forEach(function(t){var j=low.indexOf(t,i);if(j>=0&&(best<0||j<best||(j===best&&t.length>bl))){best=j;bl=t.length}});
+    if(best<0){out+=esc(s.slice(i));break}out+=esc(s.slice(i,best))+'<mark>'+esc(s.slice(best,best+bl))+'</mark>';i=best+bl}
+  return out}
+function lawHay(x){return x.q+' '+x.a+' '+(x.p||[]).join(' ')+' '+(x.t||'')+' '+(x.law||[]).map(function(l){return l[0]+' '+l[1]}).join(' ')}
+function lawLink(l){var url='https://www.law.go.kr/법령/'+encodeURIComponent(l[0])+(l[1]?'/'+encodeURIComponent(l[1]):'');return '<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(l[0]+(l[1]?' '+l[1]:''))+'</a>'}
+
+function render(){var fid=document.activeElement&&document.activeElement.id;
+  var h='<section class="panel law-top"><div class="hb-head"><div class="grow"><h2>근로기준법 쉽게 보기</h2><p class="lead">연차·휴가·출산·육아휴직처럼 자주 궁금한 것을 쉬운 말로 정리했어요. <b>'+LAW_ASOF+' 기준</b>이고, 직원이 5명 이상인 병원 기준이에요.</p></div></div>'+
+    '<div class="searchbox"><label class="vh" for="lawQ">궁금한 것 찾기</label><input type="search" id="lawQ" placeholder="궁금한 말을 넣어 보세요 (예: 연차, 출산, 퇴직금)" value="'+esc(ui.q)+'" autocomplete="off" enterkeyhint="search"></div>'+
+    '<div class="quick"><span class="muted">자주 찾는 말</span>'+['연차','반차','출산휴가','육아휴직','OT','공휴일','퇴직금','최저임금'].map(function(w){return '<button class="qchip" data-act="find" data-k="'+esc(w)+'" aria-pressed="'+(ui.q.trim()===w)+'">'+esc(w)+'</button>'}).join('')+'</div></section>';
+  h+='<div class="lawgrid'+(terms(ui.q).length?' searching':'')+'" id="lawGrid"><div class="law-calc">'+calcPanel()+'</div><div class="law-list" id="lawRes">'+results()+'</div><div class="law-help">'+helpPanel()+'</div></div>';
+  app.innerHTML=h;
+  if(fid){var el=document.getElementById(fid);if(el&&el.focus)try{el.focus({preventScroll:true})}catch(e){el.focus()}}}
+function results(){var ts=terms(ui.q),cat=ui.cat,found=LAW.filter(function(x){return !ts.length||hit(lawHay(x),ts)}),cnt={};
+  found.forEach(function(x){cnt[x.c]=(cnt[x.c]||0)+1});
+  var h='<div class="chips catchips" role="group" aria-label="분류"><button class="tchip" data-act="cat" data-k="all" aria-pressed="'+(cat==='all')+'">전체 <small>'+found.length+'</small></button>'+
+    LAW_CATS.filter(function(c){return cnt[c[0]]||cat===c[0]}).map(function(c){return '<button class="tchip" data-act="cat" data-k="'+c[0]+'" aria-pressed="'+(cat===c[0])+'">'+c[1]+' <small>'+(cnt[c[0]]||0)+'</small></button>'}).join('')+'</div>';
+  var list=found.filter(function(x){return cat==='all'||x.c===cat});
+  if(!list.length)return h+'<section class="panel empty"><p>‘'+esc(ui.q)+'’에 맞는 내용을 찾지 못했어요.</p><p class="muted">다른 말로 찾아보거나 고용노동부 상담센터(☎ 1350)에 물어보세요. <a class="linkbtn" href="rules.html?q='+encodeURIComponent(ui.q)+'">우리 병원 취업규칙에서 찾아보기 →</a></p></section>';
+  LAW_CATS.forEach(function(c){var g=list.filter(function(x){return x.c===c[0]});if(!g.length)return;
+    h+='<section class="law-group" aria-label="'+c[1]+'"><h3 class="grp-h">'+c[1]+'</h3>'+g.map(function(x){return card(x,ts)}).join('')+'</section>'});
+  return h}
+function card(x,ts){var open=ts.length>0||!!ui.open[x.id],more=(x.p&&x.p.length)||x.law||x.ref;
+  var h='<article class="qa" id="law-'+x.id+'"><h4 class="qa-q">'+mark(x.q,ts)+'</h4><p class="qa-a">'+mark(x.a,ts)+'</p>';
+  if(more){if(open){h+='<div class="qa-more">'+(x.p&&x.p.length?'<ul>'+x.p.map(function(s){return '<li>'+mark(s,ts)+'</li>'}).join('')+'</ul>':'')+
+      '<p class="qa-law">'+(x.law?'근거: '+x.law.map(lawLink).join(', '):'')+(x.ref?(x.law?' · ':'')+esc(x.ref):'')+'</p>'+
+      (x.hb?'<a class="linkbtn" href="rules.html?q='+encodeURIComponent(x.hb)+'">우리 병원 취업규칙에서 ‘'+esc(x.hb)+'’ 찾기 →</a>':'')+'</div>'}
+    if(!ts.length)h+='<button class="qa-tog" data-act="open" data-k="'+x.id+'" aria-expanded="'+open+'">'+(open?'접기':'자세히 보기')+'</button>'}
+  return h+'</article>'}
+function todayISO(){var t=new Date();return isoOf(t.getFullYear(),t.getMonth()+1,t.getDate())}
+function annOf(j,n){var a=parts(j),y=a[0]+n;return isoOf(y,a[1],Math.min(a[2],new Date(y,a[1],0).getDate()))}
+/* 법정 연차 (입사일 기준, 1년 80% 이상 출근 가정) */
+function leaveCalc(j,at){if(!isISO(j))return null;if(j>at)return {future:true};var a=parts(j),b=parts(at),m=(b[0]-a[0])*12+(b[1]-a[1])-(b[2]<a[2]?1:0),y=Math.floor(m/12);
+  return {months:m,years:y,rest:m-y*12,first:Math.min(11,m),days:y>=1?Math.min(25,15+Math.floor((y-1)/2)):0,since:annOf(j,y),next:annOf(j,y+1),nextDays:Math.min(25,15+Math.floor(y/2))}}
+function isoText(iso){var p=parts(iso);return p[0]+'년 '+p[1]+'월 '+p[2]+'일'}
+function calcOut(){var j=ui.join;if(!j)return '<p class="muted">입사일을 고르면 결과가 여기에 보여요.</p>';var r=leaveCalc(j,todayISO());if(!r)return '';
+  if(r.future)return '<p class="muted">입사일이 오늘보다 뒤예요.</p>';
+  if(r.years<1)return '<p class="lc-big">입사 <b>'+r.months+'개월</b>째</p><ul class="lc-ul"><li>'+(r.months?'한 달 개근할 때마다 1일씩 생겨서 지금까지 <b>최대 '+r.first+'일</b>이에요(11일까지).':'아직 생긴 연차가 없어요. 한 달 개근하면 1일이 생겨요.')+'</li><li>이 연차는 입사하고 1년 안에 써야 해요.</li><li><b>'+isoText(r.next)+'</b>에 1년을 채우면(80% 이상 출근) <b>15일</b>이 새로 생겨요.</li></ul>';
+  return '<p class="lc-big">근속 <b>'+r.years+'년'+(r.rest?' '+r.rest+'개월':'')+'</b></p><ul class="lc-ul"><li>지금 쓰는 연차: <b>'+r.days+'일</b> ('+isoText(r.since)+'에 생겼고, 1년 동안 써요)</li><li>다음 연차: <b>'+isoText(r.next)+'</b>에 <b>'+r.nextDays+'일</b></li></ul>'}
+function calcPanel(){return '<section class="panel lvcalc" aria-labelledby="calcH"><h2 id="calcH">내 연차 계산기</h2><p class="lead">입사일을 넣으면 법으로 생기는 연차를 알려 줘요. 입사일은 이 기기에만 기억해요.</p>'+
+  '<div class="row"><label for="lawJoin">입사일</label><input type="date" id="lawJoin" value="'+esc(ui.join)+'" max="'+todayISO()+'"></div><div id="calcOut" class="lc-out" aria-live="polite">'+calcOut()+'</div>'+
+  '<table class="lc-t"><caption>근속 기간별 연차</caption><tbody><tr><th scope="row">1년 미만</th><td>한 달 개근마다 1일 (최대 11일)</td></tr><tr><th scope="row">1년 · 2년</th><td>15일</td></tr><tr><th scope="row">3년 · 4년</th><td>16일</td></tr><tr><th scope="row">5년 · 6년</th><td>17일</td></tr><tr><th scope="row">10년</th><td>19일</td></tr><tr><th scope="row">21년 이상</th><td>25일 (최대)</td></tr></tbody></table>'+
+  '<p class="fine">1년 동안 80% 이상 출근했을 때 기준이에요. 병원이 1월 1일(회계연도) 기준으로 계산하면 일수가 다를 수 있어요. 그래도 퇴사할 때 입사일 기준보다 적게 받았다면 차이만큼 정산해요.</p></section>'}
+function helpPanel(){return '<section class="panel lawhelp"><h2>더 궁금하면</h2><ul class="helplist">'+
+  '<li><b>고용노동부 고객상담센터 ☎ 1350</b><span class="muted">평일 9~18시 · 노동 상담 무료</span></li>'+
+  '<li><a href="https://www.work24.go.kr" target="_blank" rel="noopener noreferrer">고용24</a><span class="muted">출산전후휴가·육아휴직 급여 신청</span></li>'+
+  '<li><a href="https://www.law.go.kr" target="_blank" rel="noopener noreferrer">국가법령정보센터</a><span class="muted">법 조문 원문</span></li>'+
+  '<li><a href="https://www.moel.go.kr" target="_blank" rel="noopener noreferrer">고용노동부</a><span class="muted">제도 안내·민원 신청</span></li>'+
+  '<li><a href="rules.html">우리 병원 취업규칙</a><span class="muted">우리 병원에서 정한 규칙·복지</span></li></ul>'+
+  '<p class="fine">이 내용은 이해를 돕기 위해 쉽게 줄여 쓴 안내라 법적인 효력은 없어요. 법과 금액은 바뀔 수 있으니, 내 상황에 맞는 정확한 답은 ☎ 1350이나 노무사에게 확인하세요. ('+LAW_ASOF+' 기준)</p></section>'}
+function refresh(){var r=document.getElementById('lawRes');if(r)r.innerHTML=results();var g=document.getElementById('lawGrid');if(g)g.classList.toggle('searching',terms(ui.q).length>0);
+  [].forEach.call(document.querySelectorAll('.qchip'),function(b){b.setAttribute('aria-pressed',String(ui.q.trim()===b.dataset.k))})}
+
+app.addEventListener('click',function(e){var t=e.target.closest('[data-act]');if(!t)return;var a=t.dataset.act,k=t.dataset.k;
+  if(a==='find'){ui.q=ui.q.trim()===k?'':k;ui.cat='all';render();try{window.scrollTo(0,0)}catch(x){}}
+  else if(a==='cat'){ui.cat=k;refresh()}
+  else if(a==='open'){ui.open[k]=!ui.open[k];refresh()}});
+app.addEventListener('input',function(e){var t=e.target;
+  if(t.id==='lawQ'){ui.q=t.value;refresh()}
+  if(t.id==='lawJoin'){ui.join=t.value;try{if(t.value)localStorage.setItem('solroster2-join',t.value);else localStorage.removeItem('solroster2-join')}catch(x){}var c=document.getElementById('calcOut');if(c)c.innerHTML=calcOut()}});
+app.addEventListener('change',function(e){if(e.target.id==='lawJoin'){var ev=new Event('input',{bubbles:true});e.target.dispatchEvent(ev)}});
+render();
+})();
+</script>
+<script>(function(){var b=document.getElementById('backRoster');if(b)b.addEventListener('click',function(e){if(window.opener&&history.length<=1){e.preventDefault();try{window.close()}catch(x){}setTimeout(function(){location.href='./'},300)}})})();</script>
+</body>
+</html>
