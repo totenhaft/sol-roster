@@ -191,7 +191,7 @@ function pinsInfo_(d) {
 function status_() {
   var p = props_().getProperties(), d = readData_();
   return {
-    ok: true, version: 3, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
+    ok: true, version: 4, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
     teams: (d.config.teamOrder || []).map(function (id) { return { id: id, name: (d.teams[id] || {}).name || '' }; })
   };
 }
@@ -253,6 +253,24 @@ function cleanRules_(r) {
     partial: pick_(r.partial, ['half', 'any', 'full'], 'half'),
     effort: pick_(r.effort, ['fast', 'normal', 'thorough'], 'normal')
   };
+}
+function cleanMemo_(o, ym, max) {
+  var r = {};
+  Object.keys(o || {}).forEach(function (iso) {
+    if (iso.indexOf(ym) !== 0) return;
+    var v = str_(o[iso], max);
+    if (v) r[iso] = v;
+  });
+  return r;
+}
+function cleanNotes_(a, ids, ym) {
+  var r = {};
+  Object.keys(a || {}).forEach(function (sid) {
+    if (!ids[sid]) return;
+    var row = cleanMemo_(a[sid], ym, 30);
+    if (Object.keys(row).length) r[sid] = row;
+  });
+  return r;
 }
 function cleanGroups_(a) {
   return (Array.isArray(a) ? a : []).slice(0, 50).map(function (g) {
@@ -329,7 +347,8 @@ function saveTeam_(req) {
   tm.staff = (t.staff || []).slice(0, 80).map(function (p) {
     return { id: str_(p.id, 20), name: str_(p.name, 30), weekDays: int_(p.weekDays, 1, 7),
       avail: (p.avail || []).map(Number).filter(function (x) { return x >= 0 && x <= 6; }), night: !!p.night,
-      early: half30_(p.early), late: half30_(p.late) };
+      early: half30_(p.early), late: half30_(p.late),
+      leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 2) / 2)) } : null };
   });
   tm.updatedAt = Date.now();
   tm.updatedBy = actorName_(a);
@@ -361,7 +380,7 @@ function saveRoster_(req) {
     });
     return outv;
   }
-  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
+  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
   writeData_(d);
   return { ok: true, updatedAt: m[tid].updatedAt, updatedBy: m[tid].updatedBy };
 }
