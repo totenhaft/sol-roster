@@ -191,7 +191,7 @@ function pinsInfo_(d) {
 function status_() {
   var p = props_().getProperties(), d = readData_();
   return {
-    ok: true, version: 6, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
+    ok: true, version: 7, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
     teams: (d.config.teamOrder || []).map(function (id) { return { id: id, name: (d.teams[id] || {}).name || '' }; })
   };
 }
@@ -366,6 +366,13 @@ function saveTeam_(req) {
       early: half30_(p.early), late: half30_(p.late),
       leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 2) / 2)) } : null,
       abs: cleanAbs_(p.abs) };
+  });
+  var sids = {};
+  tm.staff.forEach(function (p) { sids[p.id] = 1; });
+  // 같은 팀 안의 '함께 쉬지 않기' 묶음 (팀장도 정할 수 있어요)
+  tm.groups = cleanGroups_(t.groups).map(function (g) {
+    g.members = g.members.filter(function (x) { return sids[x]; });
+    return g;
   });
   tm.updatedAt = Date.now();
   tm.updatedBy = actorName_(a);
