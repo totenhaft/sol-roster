@@ -191,7 +191,7 @@ function pinsInfo_(d) {
 function status_() {
   var p = props_().getProperties(), d = readData_();
   return {
-    ok: true, version: 7, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
+    ok: true, version: 8, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
     teams: (d.config.teamOrder || []).map(function (id) { return { id: id, name: (d.teams[id] || {}).name || '' }; })
   };
 }
@@ -365,8 +365,16 @@ function saveTeam_(req) {
       avail: (p.avail || []).map(Number).filter(function (x) { return x >= 0 && x <= 6; }), night: !!p.night,
       early: half30_(p.early), late: half30_(p.late),
       leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 2) / 2)) } : null,
-      abs: cleanAbs_(p.abs) };
+      abs: cleanAbs_(p.abs), post: str_(p.post, 20) };
   });
+  // 근무 배치 자리 (1번 진료실, 데스크 …): 팀장이 정해요
+  tm.posts = (Array.isArray(t.posts) ? t.posts : []).slice(0, 30).map(function (x) {
+    x = x || {};
+    return { id: str_(x.id, 20), name: str_(x.name, 20), need: int_(x.need, 0, 9) };
+  }).filter(function (x) { return x.id; });
+  var postIds = {};
+  tm.posts.forEach(function (x) { postIds[x.id] = 1; });
+  tm.staff.forEach(function (p) { if (!postIds[p.post]) p.post = ''; });
   var sids = {};
   tm.staff.forEach(function (p) { sids[p.id] = 1; });
   // 같은 팀 안의 '함께 쉬지 않기' 묶음 (팀장도 정할 수 있어요)
@@ -404,7 +412,7 @@ function saveRoster_(req) {
     });
     return outv;
   }
-  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
+  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), place: cleanNotes_(r.place, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
   writeData_(d);
   return { ok: true, updatedAt: m[tid].updatedAt, updatedBy: m[tid].updatedBy };
 }
