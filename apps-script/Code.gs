@@ -191,7 +191,7 @@ function pinsInfo_(d) {
 function status_() {
   var p = props_().getProperties(), d = readData_();
   return {
-    ok: true, version: 4, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
+    ok: true, version: 5, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
     teams: (d.config.teamOrder || []).map(function (id) { return { id: id, name: (d.teams[id] || {}).name || '' }; })
   };
 }
@@ -335,6 +335,14 @@ function saveConfig_(req) {
   return { ok: true, updatedAt: now, teams: teamTimes };
 }
 
+// leave of absence (육아휴직 등): { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' or '', why }
+function cleanAbs_(a) {
+  var re = /^\d{4}-\d{2}-\d{2}$/;
+  if (!a || !re.test(String(a.from || ''))) return null;
+  var to = re.test(String(a.to || '')) && a.to >= a.from ? a.to : '';
+  return { from: a.from, to: to, why: str_(a.why || '휴직', 12) || '휴직' };
+}
+
 function saveTeam_(req) {
   var a = auth_(req.pin);
   if (a.error) return { ok: false, error: a.error };
@@ -348,7 +356,8 @@ function saveTeam_(req) {
     return { id: str_(p.id, 20), name: str_(p.name, 30), weekDays: int_(p.weekDays, 1, 7),
       avail: (p.avail || []).map(Number).filter(function (x) { return x >= 0 && x <= 6; }), night: !!p.night,
       early: half30_(p.early), late: half30_(p.late),
-      leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 2) / 2)) } : null };
+      leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 2) / 2)) } : null,
+      abs: cleanAbs_(p.abs) };
   });
   tm.updatedAt = Date.now();
   tm.updatedBy = actorName_(a);
