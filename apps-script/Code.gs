@@ -42,6 +42,9 @@ function handle_(req) {
     case 'addLeader': return withLock_(function () { return addLeader_(req); });
     case 'updateLeader': return withLock_(function () { return updateLeader_(req); });
     case 'deleteLeader': return withLock_(function () { return deleteLeader_(req); });
+    case 'saveArticle': return withLock_(function () { return saveArticle_(req); });
+    case 'addArticles': return withLock_(function () { return addArticles_(req); });
+    case 'deleteArticle': return withLock_(function () { return deleteArticle_(req); });
   }
   return { ok: false, error: 'unknown_action' };
 }
@@ -191,7 +194,7 @@ function pinsInfo_(d) {
 function status_() {
   var p = props_().getProperties(), d = readData_();
   return {
-    ok: true, version: 9, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
+    ok: true, version: 10, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
     teams: (d.config.teamOrder || []).map(function (id) { return { id: id, name: (d.teams[id] || {}).name || '' }; })
   };
 }
@@ -213,13 +216,16 @@ function login_(req) {
 }
 
 function load_(req) {
-  var d = readData_(), viewPin = !!props_().getProperty('VIEW_PIN');
+  var d = readData_(), viewPin = !!props_().getProperty('VIEW_PIN'), a = null;
   if (req.pin) {
-    var a = auth_(req.pin);
+    a = auth_(req.pin);
     if (a.error) return { ok: false, error: a.error };
   } else if (viewPin) {
     return { ok: false, error: 'auth' };
   }
+  // 취업규칙 중 '관리자·팀장만'으로 정한 글은 관리자·팀장에게만 보내요
+  var items = hb_(d).items;
+  if (!a || (a.role !== 'admin' && a.role !== 'leader')) d.handbook = { items: items.filter(function (x) { return x.vis !== 'mgr'; }) };
   return { ok: true, data: d, pins: pinsInfo_(d), serverTime: Date.now() };
 }
 
@@ -526,4 +532,82 @@ function deleteLeader_(req) {
 function resetAdminPin() {
   props_().deleteProperty('ADMIN_PIN');
   CacheService.getScriptCache().remove('fails');
+}
+
+/* ---------- 7. 취업규칙: 관리자와 팀장이 우리 병원 규칙·복지를 적어 두는 곳 ---------- */
+var HB_CATS = ['근무시간', '휴가·휴일', '급여·수당', '복지', '복무·규정', '기타'];
+var HB_MAX = 200;
+
+function hb_(d) {
+  var h = d.handbook || (d.handbook = { items: [] });
+  if (!Array.isArray(h.items)) h.items = [];
+  return h;
+}
+/** 관리자나 팀장만 글을 쓸 수 있어요 */
+function writer_(pin) {
+  var a = auth_(pin);
+  if (a.error) return a;
+  if (a.role !== 'admin' && a.role !== 'leader') return { error: 'forbidden' };
+  return a;
+}
+function ownKey_(a) { return a.role === 'admin' ? 'admin' : 'L:' + a.leaderId; }
+/** 관리자는 모든 글을, 팀장은 자기가 쓴 글만 고치고 지울 수 있어요 */
+function canArticle_(a, it) { return a.role === 'admin' || it.own === ownKey_(a); }
+function cleanArticle_(x) {
+  x = x || {};
+  return { cat: pick_(x.cat, HB_CATS, '기타'), title: str_(x.title, 80).trim(), body: str_(x.body, 4000), vis: x.vis === 'mgr' ? 'mgr' : 'all' };
+}
+function newArticle_(a, x, now) {
+  return { id: 'a' + Utilities.getUuid().replace(/-/g, '').slice(0, 10), cat: x.cat, title: x.title, body: x.body, vis: x.vis,
+    own: ownKey_(a), createdAt: now, updatedAt: now, updatedBy: actorName_(a) };
+}
+
+function saveArticle_(req) {
+  var a = writer_(req.pin);
+  if (a.error) return { ok: false, error: a.error };
+  var x = cleanArticle_(req.article);
+  if (!x.title) return { ok: false, error: 'title' };
+  var d = readData_(), h = hb_(d), id = str_((req.article || {}).id, 20), now = Date.now(), it;
+  if (id) {
+    it = h.items.filter(function (y) { return y.id === id; })[0];
+    if (!it) return { ok: false, error: 'gone' };
+    if (!canArticle_(a, it)) return { ok: false, error: 'forbidden' };
+    if ((req.base || 0) !== (it.updatedAt || 0)) return { ok: false, error: 'conflict', item: it };
+    it.cat = x.cat; it.title = x.title; it.body = x.body; it.vis = x.vis;
+    it.updatedAt = now; it.updatedBy = actorName_(a);
+  } else {
+    if (h.items.length >= HB_MAX) return { ok: false, error: 'full' };
+    it = newArticle_(a, x, now);
+    h.items.push(it);
+  }
+  writeData_(d);
+  return { ok: true, item: it };
+}
+
+/** 처음 쓸 때 '자주 쓰는 항목 틀'을 한 번에 넣어요 */
+function addArticles_(req) {
+  var a = writer_(req.pin);
+  if (a.error) return { ok: false, error: a.error };
+  var d = readData_(), h = hb_(d), now = Date.now(), added = [];
+  (Array.isArray(req.items) ? req.items : []).slice(0, 30).forEach(function (raw) {
+    var x = cleanArticle_(raw);
+    if (!x.title || h.items.length >= HB_MAX) return;
+    var it = newArticle_(a, x, now);
+    h.items.push(it);
+    added.push(it);
+  });
+  writeData_(d);
+  return { ok: true, items: added };
+}
+
+function deleteArticle_(req) {
+  var a = writer_(req.pin);
+  if (a.error) return { ok: false, error: a.error };
+  var d = readData_(), h = hb_(d), id = str_(req.id, 20);
+  var it = h.items.filter(function (y) { return y.id === id; })[0];
+  if (!it) return { ok: true };
+  if (!canArticle_(a, it)) return { ok: false, error: 'forbidden' };
+  h.items = h.items.filter(function (y) { return y.id !== id; });
+  writeData_(d);
+  return { ok: true };
 }
