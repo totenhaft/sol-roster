@@ -518,6 +518,18 @@ a.tab{text-decoration:none}
 .att-months{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin-top:12px}
 .att-months .muted{font-size:12.5px;margin-left:6px}
 .att-months .tchip{height:30px}
+/* 달 바꾸기 (근무표) · 저장 기록 */
+.mstep{display:inline-flex;align-items:center;gap:6px}
+.mstep b{min-width:38px;text-align:center;font-variant-numeric:tabular-nums}
+.hist{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.histlist{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.histlist li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.hl-main{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;min-width:0}
+.hl-main .muted{font-size:12.5px}
+.hl-sub{grid-column:1;font-size:13px;color:var(--ink-2)}
+.hl-act{grid-column:2;grid-row:1 / span 2;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:640px){.histlist li{grid-template-columns:1fr}.hl-act{grid-column:1;grid-row:auto;justify-content:flex-start}}
+.ask-t{color:var(--danger);font-weight:500;font-size:13px}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
@@ -863,7 +875,7 @@ function render(){
   else if(ui.view==='setup')body=setupView();
   else if(ui.view==='login')body=loginView();
   else if(ui.view==='error')body=errorView();
-  else body=banners()+(ui.tab==='hours'?hoursTab():ui.tab==='types'?typesTab():ui.tab==='rules'?rulesTab():ui.tab==='teams'?teamsTab():ui.tab==='place'?placeTab():ui.tab==='att'?attTab():rosterTab());
+  else body=banners()+histPanel()+(ui.tab==='hours'?hoursTab():ui.tab==='types'?typesTab():ui.tab==='rules'?rulesTab():ui.tab==='teams'?teamsTab():ui.tab==='place'?placeTab():ui.tab==='att'?attTab():rosterTab());
   var showTeams=ui.view==='app'&&(ui.tab==='roster'||ui.tab==='teams'||ui.tab==='place'||ui.tab==='att')&&S.teams.length>0&&!(role()==='leader'&&ui.tab==='teams');
   var de0=document.getElementById('dayed'),dsc=de0?de0.scrollTop:0,dday=ui.shownDay,sy=window.scrollY||0,anc=app.querySelector('.cd-date.sel'),aiso=anc&&anc.dataset.day,at=anc?anc.getBoundingClientRect().top:0;
   app.innerHTML=header()+'<main class="wrap main">'+(showTeams?teamBar():'')+body+'</main>';
@@ -887,7 +899,7 @@ function header(){
       S.teams.map(function(t){return '<option value="'+t.id+'"'+(ui.preview===t.id?' selected':'')+'>'+esc(t.name)+' 팀장 화면</option>'}).join('')+'<option value="viewer"'+(ui.preview==='viewer'?' selected':'')+'>직원(보기) 화면</option></select>';
   }
   var save='';
-  if(ui.view==='app'&&(canEditAny()||MODE!=='server')&&!ui.ro)save='<span class="savestate" id="savestate">'+saveState()+'</span><button class="btn primary" id="saveBtn" data-act="save"'+(ui.saving?' disabled':'')+'>'+(ui.saving?'저장 중…':'저장')+'</button>';
+  if(ui.view==='app'&&(canEditAny()||MODE!=='server')&&!ui.ro)save='<span class="savestate" id="savestate">'+saveState()+'</span>'+(MODE==='server'&&canEditAny()?'<button class="btn" data-act="histOpen" aria-expanded="'+!!ui.histOpen+'" title="저장하기 전 상태로 되돌려요">되돌리기</button>':'')+'<button class="btn primary" id="saveBtn" data-act="save"'+(ui.saving?' disabled':'')+'>'+(ui.saving?'저장 중…':'저장')+'</button>';
   return '<header class="bar"><div class="wrap"><div class="bar-top">'+
     '<div class="brand"><div class="mark" aria-hidden="true">근</div><div style="min-width:0"><div class="clinic">'+esc(S.clinic||'근무표')+'</div><div class="sub">직원 근무표</div></div></div>'+
     (ui.view==='app'?'<div class="month"><button class="icon-btn" id="prevM" data-act="month" data-k="-1" aria-label="이전 달">‹</button><div class="mlabel" aria-live="polite">'+ymLabel(ui.ym)+'</div><button class="icon-btn" id="nextM" data-act="month" data-k="1" aria-label="다음 달">›</button></div>':'')+
@@ -932,7 +944,7 @@ function rosterTab(){
     if(tbl)h+='<p class="hint">칠할 근무 형태를 고른 뒤 칸을 <b>누르거나 끌어서</b> 여러 칸을 한 번에 칠하세요(터치 화면은 옆으로 끌기). <b>같은 형태로 칠한 칸을 다시 누르면 지워져요.</b> 아무것도 칠하지 않은 칸(흐린 ‘근’)은 근무로 계산해요. 일찍 퇴근·늦게 출근은 <b>시간 조정</b>에서 30분 단위로 고른 뒤 칠하세요. 직접 칠한 칸(왼쪽 위 ◤)은 자동 생성을 다시 해도 그대로 남아요.</p>';
     h+='</section>';
   }
-  h+='<div class="viewbar"><div class="seg" role="group" aria-label="보기 방식"><button data-act="rv" data-k="cal" aria-pressed="'+(ui.rv==='cal')+'">달력</button><button data-act="rv" data-k="table" aria-pressed="'+(ui.rv==='table')+'">표</button></div><div class="chips" id="chips" aria-live="polite"></div></div>';
+  h+='<div class="viewbar"><div class="mstep" role="group" aria-label="달 바꾸기"><button class="btn small" data-act="month" data-k="-1" title="이전 달">‹ '+(+shiftYM(ym,-1).slice(5))+'월</button><b>'+(+ym.slice(5))+'월</b><button class="btn small" data-act="month" data-k="1" title="다음 달">'+(+shiftYM(ym,1).slice(5))+'월 ›</button></div><div class="seg" role="group" aria-label="보기 방식"><button data-act="rv" data-k="cal" aria-pressed="'+(ui.rv==='cal')+'">달력</button><button data-act="rv" data-k="table" aria-pressed="'+(ui.rv==='table')+'">표</button></div><div class="chips" id="chips" aria-live="polite"></div></div>';
   if(ui.rv==='cal')h+=calendarView(ym,teams);else h+=tableView(ym,dates,teams);
   h+=legend();
   var notes=dates.filter(function(iso){var d=di(iso);return d.hol||d.ov});
@@ -1614,6 +1626,21 @@ function attPrint(ym){var teams=visibleTeams(),ppl=attPeople(ym,teams),rate=attR
     h+='<tr><th>'+esc(x.p.name)+'</th><td>'+hh(L.nightMin)+'</td><td>'+hh(L.dut+L.man)+'</td><td>'+hh(L.use)+'</td><td class="pay">'+(R.n?h2(R.n):'')+'</td><td>'+hh(R.H.total)+'</td><td>'+(R.H.subN||'')+'</td><td class="pay">'+(R.h?h2(R.h):'')+'</td></tr>'});
   return h+'</tbody></table><script>window.addEventListener("load",function(){setTimeout(function(){window.print()},400)})<\/script></body></html>'}
 
+/* ----- 저장 기록 · 되돌리기 (server keeps the state before each save) ----- */
+function histPanel(){if(!ui.histOpen||MODE!=='server'||!canEditAny())return '';var H=ui.hist||{loading:true,items:[]};
+  var h='<section class="panel hist" id="histPanel"><div class="hb-head"><div class="grow"><h2>저장 기록 · 되돌리기</h2><p class="lead">저장할 때마다 <b>저장하기 전 상태</b>가 남아요. 실수로 저장했다면 그 저장을 골라 되돌리세요.'+(isAdmin()?'':' 팀장은 자기 팀의 근무표와 직원 명단만 되돌릴 수 있어요.')+'</p></div><div class="acts"><button class="btn small" data-act="histLoad">새로 불러오기</button><button class="btn small" data-act="histClose">닫기</button></div></div>';
+  if(H.loading)return h+'<p class="muted">불러오는 중이에요…</p></section>';
+  if(H.err)return h+'<p class="err">'+esc(H.err)+'</p></section>';
+  if(!H.items.length)return h+'<p class="muted" style="margin:0">아직 저장 기록이 없어요. 지금부터 저장하는 것부터 남아요.</p></section>';
+  h+='<ul class="histlist">'+H.items.map(function(x){var ask=ui.confirm==='hist:'+x.id;
+    return '<li><div class="hl-main"><b>'+esc(x.label)+'</b><span class="muted">'+fmtTime(x.at)+(x.by?' · '+esc(x.by):'')+' 저장</span></div>'+
+      '<div class="hl-sub">'+(x.empty?'되돌리면 이 저장 전처럼 비어 있는 상태가 돼요.':'되돌리면 '+(x.prevAt?fmtTime(x.prevAt)+(x.prevBy?' '+esc(x.prevBy):'')+'에 저장한 상태':'그 전 상태')+'로 돌아가요.')+(x.later?' <span class="tag warn">이 뒤에 '+x.later+'번 더 저장됐어요 · 그 내용도 함께 되돌아가요</span>':'')+'</div>'+
+      '<div class="hl-act">'+(ask?'<span class="ask-t">정말 되돌릴까요?</span><button class="btn small danger" data-act="histDo" data-k="'+esc(x.id)+'">되돌리기</button><button class="btn small" data-act="cancel">취소</button>':'<button class="btn small" data-act="histAsk" data-k="'+esc(x.id)+'">이 저장 전으로 되돌리기</button>')+'</div></li>'}).join('')+'</ul>';
+  return h+'<p class="fine">되돌린 것도 기록에 남아서, 잘못 되돌렸으면 다시 되돌릴 수 있어요. 근무표는 팀·달마다, 직원 명단은 팀마다 최근 8번까지 남아요.</p></section>'}
+function histLoad(){ui.hist={loading:true,items:[]};render();
+  api('history',{pin:pinArg()}).then(function(r){ui.hist=r.ok?{items:r.items||[]}:{items:[],err:r.error==='unknown_action'?'근무표 서버가 아직 예전 버전이에요.':errMsg(r)};render()}).catch(function(){ui.hist={items:[],err:'서버에 연결하지 못했어요. 잠시 뒤 다시 불러오세요.'};render()})}
+function histDo(id){if(isDirty()){toast('저장하지 않은 변경이 있어요. 먼저 저장하거나 ↻로 버린 뒤 되돌리세요.');return}ui.confirm=null;ui.hist={loading:true,items:[]};render();
+  api('restore',{pin:pinArg(),id:id}).then(function(r){if(!r.ok){toast(errMsg(r));histLoad();return}toast('되돌렸어요: '+(r.label||'')+'.'+(r.noLeader?' 이 팀의 팀장 PIN은 팀·직원에서 다시 등록해 주세요.':' 다른 사람도 ↻을 누르면 보여요.'));return loadData().then(histLoad)}).catch(function(){toast('서버에 연결하지 못했어요.');histLoad()})}
 /* ----- hours tab ----- */
 function hoursRowInputs(h,prefix,attr,dis){
   var d=dis?' disabled':'',cl=h.type==='closed';
@@ -1874,6 +1901,11 @@ app.addEventListener('click',function(e){
   switch(act){
   case 'tab':ui.tab=k;ui.confirm=null;render();try{window.scrollTo(0,0)}catch(x){}break;
   case 'offKind':ui.offKind=k;render();break;
+  case 'histOpen':ui.histOpen=!ui.histOpen;ui.confirm=null;if(ui.histOpen)histLoad();else render();if(ui.histOpen)try{window.scrollTo(0,0)}catch(x){}break;
+  case 'histClose':ui.histOpen=false;ui.confirm=null;render();break;
+  case 'histLoad':histLoad();break;
+  case 'histAsk':ui.confirm='hist:'+k;render();break;
+  case 'histDo':histDo(k);break;
   case 'attGo':if(/^\d{4}-\d{2}$/.test(k)&&k!==ui.ym){ui.selDay=null;ui.selSec=null;ui.pw=null;ui.pday=null;ui.psel=null;ui.attEdit=null;ui.ym=k;ui.resetOpen=false;clearDI();exampleFill();render()}break;
   case 'attOpen':(function(){var f=document.getElementById('attFile');if(f)f.click()})();break;
   case 'attApply':attApply();break;
@@ -2118,7 +2150,7 @@ function buildDoc(){var json=JSON.stringify(S).replace(/</g,'\\u003c');
     '<title>'+TITLE+'</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n'+FONT_LINK+'\n<style id="app-style">'+styleEl.textContent+'</style>\n<div id="app"></div>\n'+CONFIG_TAG+'\n'+
     '<script id="app-state" type="application/json">'+json+'<'+'/script>\n<script id="app-script">'+scriptEl.textContent+'<'+'/script></body></html>'}
 function doSave(){if(ui.saving)return;ui.saving=true;render();
-  if(MODE==='server'){saveServer().then(function(){ui.saving=false;return loadData().then(function(){toast('저장했어요. 다른 사람도 ↻을 누르면 보여요.')})},function(r){ui.saving=false;
+  if(MODE==='server'){saveServer().then(function(){ui.saving=false;return loadData().then(function(){toast('저장했어요. 다른 사람도 ↻을 누르면 보여요. 실수했다면 위의 ‘되돌리기’로 저장 전으로 돌릴 수 있어요.');if(ui.histOpen)histLoad()})},function(r){ui.saving=false;
       if(r&&r.error==='conflict')ui.conflict='다른 사람이 먼저 저장한 내용이 있어요'+(r.what?' ('+r.what+')':'')+'.';
       else if(r&&r.error==='pin'){clearAuth();ui.auth=null;ui.dirty=freshDirty();ui.view='login';ui.loginErr='PIN이 바뀌었거나 팀장 등록이 삭제됐어요. 다시 로그인해 주세요.'}
       else if(r&&r.error==='forbidden')toast(errMsg(r));
