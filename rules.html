@@ -96,7 +96,7 @@ input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0;border
 .err{color:var(--danger);font-size:13px;margin:0}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-size:13.5px;max-width:min(92vw,560px);z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.18);opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
-.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.vh{position:absolute!important;left:0;top:0;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .muted{color:var(--muted)}
 .empty{padding:28px 18px;text-align:center;color:var(--muted)}
 a.btn{text-decoration:none}
@@ -191,7 +191,7 @@ mark{background:#FFF200;color:#17211E;border-radius:2px;padding:0 1px}
 <script src="config.js"></script>
 <script>(function(){
 'use strict';
-/* 7. 취업규칙 — 우리 병원 규칙·복지. 관리자와 팀장이 쓰고, 직원은 찾아봐요.
+/* 취업규칙 — 우리 병원 규칙·복지. 관리자(원장님)만 쓰고 고치고, 팀장과 직원은 찾아봐요.
    근무표와 같은 서버(구글 드라이브)에 저장돼요. 근무표를 열 때는 불러오지 않아서 근무표 속도에 영향이 없어요. */
 var API=String(window.SOL_ROSTER_API||'').trim();
 var AUTH='solroster2-auth';
@@ -238,9 +238,9 @@ function errMsg(r){var e=r&&r.error;return e==='pin'?'PIN이 맞지 않아요.':
 function api(action,payload){return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action:action},payload||{})),redirect:'follow'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})}
 
 /* ---------- who can do what ---------- */
-function canWrite(){return !!st.me&&(st.me.role==='admin'||st.me.role==='leader')}
+function canWrite(){return !!st.me&&st.me.role==='admin'}
 function ownKey(){return st.me?(st.me.role==='admin'?'admin':'L:'+st.me.leaderId):''}
-function can(it){return canWrite()&&(st.me.role==='admin'||it.own===ownKey())}
+function can(it){return canWrite()}
 function byId(id){return st.items.filter(function(x){return x.id===id})[0]}
 function put(it){var i=st.items.findIndex(function(x){return x.id===it.id});if(i>=0)st.items[i]=it;else st.items.push(it)}
 function whoText(){if(!st.me)return '';return st.me.role==='admin'?'관리자':st.me.role==='leader'?(st.me.name||'팀장'):'직원(보기)'}
@@ -260,14 +260,14 @@ function login(){var pin=(document.getElementById('loginPin')||{}).value||'',rem
   api('handbook',{pin:pin}).then(function(r){ui.busy=false;r=r||{};
     if(!r.ok){ui.loginErr=errMsg(r);render();return}
     writeAuth(pin,rem);st.items=r.items||[];st.me=r.me||null;st.pin=pin;st.needPin=false;ui.login=false;ui.loginErr='';render();
-    toast(canWrite()?whoText()+'(으)로 로그인했어요. 이제 항목을 쓰고 고칠 수 있어요.':'로그인했어요.')})
+    toast(canWrite()?'관리자로 로그인했어요. 이제 항목을 쓰고 고칠 수 있어요.':'로그인했어요. 취업규칙은 관리자만 고칠 수 있어요.')})
   .catch(function(){ui.busy=false;ui.loginErr='서버에 연결하지 못했어요.';render()})}
 
 /* ---------- render ---------- */
 function render(){var fid=document.activeElement&&document.activeElement.id,h='';
   var cn=document.getElementById('clinic');if(cn&&st.clinic)cn.textContent=st.clinic;
   if(st.clinic)document.title=st.clinic+' 취업규칙';
-  var nav=document.getElementById('who');if(nav)nav.innerHTML=st.me?'<span class="who">'+esc(whoText())+'</span><button class="btn small" data-act="logout">로그아웃</button>':(API&&!st.loading&&!ui.login?'<button class="btn small" data-act="openLogin">관리자·팀장 로그인</button>':'');
+  var nav=document.getElementById('who');if(nav)nav.innerHTML=st.me?'<span class="who">'+esc(whoText())+'</span><button class="btn small" data-act="logout">로그아웃</button>':(API&&!st.loading&&!ui.login?'<button class="btn small" data-act="openLogin">관리자 로그인</button>':'');
   if(!API)h='<section class="panel empty"><p><b>근무표 서버에 연결된 사이트에서 쓸 수 있어요.</b></p><p>config.js에 Apps Script 주소를 넣은 근무표 사이트에서 열어 주세요.</p></section>';
   else if(st.loading)h='<section class="panel empty">취업규칙을 불러오는 중이에요…</section>';
   else if(st.err)h='<div class="note bad"><div class="grow">'+esc(st.err)+'</div><button class="btn small" data-act="retry">다시 시도</button></div>';
@@ -275,25 +275,25 @@ function render(){var fid=document.activeElement&&document.activeElement.id,h=''
   else h=mainView();
   app.innerHTML=h;
   if(fid){var el=document.getElementById(fid);if(el&&el.focus)try{el.focus({preventScroll:true})}catch(e){el.focus()}}}
-function loginPanel(required){return '<section class="panel authpanel" aria-labelledby="lgH"><h2 id="lgH">'+(required?'PIN을 입력하세요':'관리자·팀장 로그인')+'</h2><p class="lead">'+(required?'직원은 열람 PIN, 팀장은 팀장 PIN, 관리자는 관리자 PIN을 넣으세요.':'근무표에서 쓰는 PIN을 넣으면 항목을 쓰고 고칠 수 있어요.')+'</p>'+
+function loginPanel(required){return '<section class="panel authpanel" aria-labelledby="lgH"><h2 id="lgH">'+(required?'PIN을 입력하세요':'관리자 로그인')+'</h2><p class="lead">'+(required?'직원은 열람 PIN, 팀장은 팀장 PIN, 관리자는 관리자 PIN을 넣으세요.':'관리자 PIN을 넣으면 항목을 쓰고 고칠 수 있어요. 팀장과 직원은 보기만 해요.')+'</p>'+
   '<label for="loginPin">PIN</label><input type="password" class="pin" id="loginPin" autocomplete="current-password" inputmode="numeric">'+
   '<label class="chk"><input type="checkbox" id="loginRemember">이 기기에서 로그인 유지 (개인 기기에서만)</label>'+(ui.loginErr?'<p class="err">'+esc(ui.loginErr)+'</p>':'')+
   '<div class="row"><button class="btn primary" data-act="login"'+(ui.busy?' disabled':'')+'>'+(ui.busy?'확인 중…':'로그인')+'</button>'+(required?'':'<button class="btn" data-act="closeLogin">닫기</button>')+'</div></section>'}
 function mainView(){var w=canWrite(),items=st.items,h='';
   h+='<section class="panel hb-top"><div class="hb-head"><div class="grow"><h2>취업규칙 · 복지</h2><p class="lead">'+
-    (w?'우리 병원에서 실제로 시행 중인 규칙과 복지를 적어 두는 곳이에요. 직원들도 궁금할 때 여기서 찾아봐요.':'우리 병원의 규칙과 복지예요. 더 궁금한 점은 팀장님께 물어보세요.')+'</p></div>'+
+    (w?'우리 병원에서 실제로 시행 중인 규칙과 복지를 적어 두는 곳이에요. 직원들도 궁금할 때 여기서 찾아봐요.':'우리 병원의 규칙과 복지예요. 내용은 원장님(관리자)이 정해요. 더 궁금한 점은 팀장님께 물어보세요.')+'</p></div>'+
     '<div class="acts">'+(w?'<button class="btn primary" data-act="new">+ 새 항목</button>':'')+(items.length?'<button class="btn" data-act="print">인쇄하기</button>':'')+'</div></div>'+
     (items.length?'<div class="searchbox"><label class="vh" for="hbQ">취업규칙에서 찾기</label><input type="search" id="hbQ" placeholder="찾을 말을 넣어 보세요 (예: 경조사, 급여일, OT)" value="'+esc(ui.q)+'" autocomplete="off" enterkeyhint="search"></div>':'')+'</section>';
   if(ui.login)h+=loginPanel(false);
   if(ui.edit&&!ui.edit.id)h+=editor();
   h+='<div id="hbRes" class="hb-res">'+results()+'</div>';
-  if(w)h+='<p class="fine">'+(st.me.role==='admin'?'관리자는 모든 항목을 고치고 지울 수 있어요. 팀장은 새 항목을 쓰고, 자기가 쓴 항목만 고치고 지울 수 있어요. 이곳은 직원 안내용이에요. 직원이 상시 10명 이상이면 취업규칙을 고용노동부에 신고해야 하고, 직원에게 불리하게 바꿀 때는 직원 과반수의 동의가 필요해요.':'새 항목을 쓰고, 내가 쓴 항목은 고치고 지울 수 있어요. 다른 사람이 쓴 항목은 원장님(관리자)께 말씀해 주세요.')+
+  if(w)h+='<p class="fine">'+'관리자만 항목을 쓰고 고치고 지울 수 있어요. 팀장과 직원은 보기만 해요. 이곳은 직원 안내용이에요. 직원이 상시 10명 이상이면 취업규칙을 고용노동부에 신고해야 하고, 직원에게 불리하게 바꿀 때는 직원 과반수의 동의가 필요해요.'+
     ' ‘관리자·팀장만’으로 정한 항목은 직원 화면에 보이지 않아요. 직원 개인의 급여·연락처 같은 개인정보는 적지 마세요. 저장하면 바로 모든 사람에게 보여요.</p>';
   return h}
 function results(){var ts=terms(ui.q),all=st.items,cat=ui.cat,w=canWrite();
   if(!all.length){if(ui.edit&&!ui.edit.id)return '';
     return '<section class="panel empty hb-empty"><p><b>아직 적어 둔 규칙이 없어요.</b></p>'+(w?'<p>처음이라면 병원에서 자주 쓰는 항목 틀 '+HB_SEED.length+'개를 넣고, <span class="blank">[ ]</span> 칸만 우리 병원에 맞게 채우면 돼요. 필요 없는 항목은 지우면 돼요.</p><div class="row center"><button class="btn primary" data-act="seed"'+(ui.saving?' disabled':'')+'>자주 쓰는 항목 틀 넣기</button><button class="btn" data-act="new">직접 쓰기</button></div>':
-      '<p>관리자나 팀장이 규칙과 복지를 적으면 여기에 보여요.</p>')+'</section>'}
+      '<p>원장님(관리자)이 규칙과 복지를 적으면 여기에 보여요.</p>')+'</section>'}
   var found=all.filter(function(it){return !ts.length||hit(it.cat+' '+it.title+' '+it.body,ts)}),cnt={};
   found.forEach(function(it){cnt[it.cat]=(cnt[it.cat]||0)+1});
   var h='<div class="chips catchips" role="group" aria-label="분류"><button class="tchip" data-act="cat" data-k="all" aria-pressed="'+(cat==='all')+'">전체 <small>'+found.length+'</small></button>'+
