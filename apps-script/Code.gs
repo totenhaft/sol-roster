@@ -43,6 +43,8 @@ function handle_(req) {
     case 'updateLeader': return withLock_(function () { return updateLeader_(req); });
     case 'deleteLeader': return withLock_(function () { return deleteLeader_(req); });
     case 'handbook': return handbook_(req);
+    case 'att': return att_(req);
+    case 'saveAtt': return withLock_(function () { return saveAtt_(req); });
     case 'saveArticle': return withLock_(function () { return saveArticle_(req); });
     case 'addArticles': return withLock_(function () { return addArticles_(req); });
     case 'deleteArticle': return withLock_(function () { return deleteArticle_(req); });
@@ -192,7 +194,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 11;
+var VERSION = 12;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -231,7 +233,11 @@ function load_(req) {
     return { ok: false, error: 'auth', status: st };
   }
   delete d.handbook;   // 취업규칙은 rules.html에서 따로 불러와요
-  return { ok: true, data: d, pins: pinsInfo_(d), me: a ? meOf_(a) : null, status: st, serverTime: Date.now() };
+  // 근태(지문 기록)는 최근 몇 달만 함께 보내고, 나머지는 근태 탭에서 그 달을 열 때 따로 불러와요
+  var att = d.att || {}, months = Object.keys(att).sort(), cut = ymShift_(ymNow_(), -3), recent = {};
+  months.forEach(function (m) { if (m >= cut) recent[m] = att[m]; });
+  d.att = recent;
+  return { ok: true, data: d, pins: pinsInfo_(d), me: a ? meOf_(a) : null, status: st, attMonths: months, serverTime: Date.now() };
 }
 
 /** 취업규칙 페이지(rules.html)용: '관리자·팀장만' 글은 관리자·팀장에게만 보내요 */
@@ -266,6 +272,7 @@ function cleanHours_(h) {
 }
 
 function half30_(v) { return Math.round(int_(v, 0, 480) / 30) * 30; }
+function r5_(v, max) { return Math.round(int_(v, 0, max || 480) / 5) * 5; }
 function pick_(v, list, def) { return list.indexOf(v) >= 0 ? v : def; }
 function cleanRules_(r) {
   r = r || {};
@@ -313,8 +320,8 @@ function cleanAdj_(a, ids, ym) {
     Object.keys(a[sid] || {}).forEach(function (iso) {
       if (iso.indexOf(ym) !== 0) return;
       var c = a[sid][iso] || {}, x = {};
-      if (c.e !== undefined) x.e = half30_(c.e);
-      if (c.l !== undefined) x.l = half30_(c.l);
+      if (c.e !== undefined) x.e = r5_(c.e);
+      if (c.l !== undefined) x.l = r5_(c.l);
       if (c.ot && (x.e || x.l)) x.ot = 1;   // 오버타임으로 쓴 조퇴·늦은 출근
       if (Object.keys(x).length) row[iso] = x;
     });
@@ -354,7 +361,7 @@ function saveConfig_(req) {
     Object.keys(d.sched).forEach(function (ym) { delete d.sched[ym][id]; });
   });
   saveLeaders_(leaders_().filter(function (l) { return keep[l.teamId]; }));
-  d.config = { clinic: str_(c.clinic, 40), holidayCredit: c.holidayCredit !== false, labels: cleanLabels_(c.labels), rules: cleanRules_(c.rules), groups: cleanGroups_(c.groups), hours: hours, dateHours: dateHours, types: types, teamOrder: order, updatedAt: now };
+  d.config = { clinic: str_(c.clinic, 40), holidayCredit: c.holidayCredit !== false, labels: cleanLabels_(c.labels), attRule: cleanAttRule_(c.attRule), rules: cleanRules_(c.rules), groups: cleanGroups_(c.groups), hours: hours, dateHours: dateHours, types: types, teamOrder: order, updatedAt: now };
   writeData_(d);
   var teamTimes = {};
   order.forEach(function (id) { teamTimes[id] = d.teams[id].updatedAt; });
@@ -387,7 +394,7 @@ function cleanOt_(a, ids, ym) {
     var row = {};
     Object.keys(a[sid] || {}).forEach(function (iso) {
       if (iso.indexOf(ym) !== 0) return;
-      var v = half30_(a[sid][iso]);
+      var v = r5_(a[sid][iso], 600);
       if (v > 0) row[iso] = v;
     });
     if (Object.keys(row).length) r[sid] = row;
@@ -465,7 +472,7 @@ function saveRoster_(req) {
     });
     return outv;
   }
-  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), place: cleanNotes_(r.place, ids, ym), ot: cleanOt_(r.ot, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
+  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), place: cleanNotes_(r.place, ids, ym), ot: cleanOt_(r.ot, ids, ym), dut: cleanDut_(r.dut, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
   writeData_(d);
   return { ok: true, updatedAt: m[tid].updatedAt, updatedBy: m[tid].updatedBy };
 }
@@ -562,11 +569,11 @@ function hb_(d) {
   if (!Array.isArray(h.items)) h.items = [];
   return h;
 }
-/** 관리자나 팀장만 글을 쓸 수 있어요 */
+/** 취업규칙은 관리자만 쓰고 고쳐요 (팀장과 직원은 보기만) */
 function writer_(pin) {
   var a = auth_(pin);
   if (a.error) return a;
-  if (a.role !== 'admin' && a.role !== 'leader') return { error: 'forbidden' };
+  if (a.role !== 'admin') return { error: 'forbidden' };
   return a;
 }
 function ownKey_(a) { return a.role === 'admin' ? 'admin' : 'L:' + a.leaderId; }
@@ -629,4 +636,99 @@ function deleteArticle_(req) {
   h.items = h.items.filter(function (y) { return y.id !== id; });
   writeData_(d);
   return { ok: true };
+}
+
+/* ---------- 7. 근태: 지문 기록(달마다 하나), 직접 고친 값, 정산 수정값 ---------- */
+function ymNow_() { var t = new Date(); return t.getFullYear() + '-' + ('0' + (t.getMonth() + 1)).slice(-2); }
+function ymShift_(ym, k) { var p = ym.split('-'), y = +p[0], m = +p[1] + k; while (m < 1) { m += 12; y--; } while (m > 12) { m -= 12; y++; } return y + '-' + ('0' + m).slice(-2); }
+function hm_(v) { var m = /^(\d{1,2}):(\d{2})$/.exec(String(v || '')); return m && +m[1] < 48 && +m[2] < 60 ? ('0' + (+m[1])).slice(-2) + ':' + m[2] : ''; }
+function cleanAttRule_(r) {
+  r = r || {};
+  return { round: r.round === 'near' ? 'near' : 'up', bonus: int_(r.bonus === undefined ? 20 : r.bonus, 0, 120), rate: [1, 1.5, 2].indexOf(+r.rate) >= 0 ? +r.rate : 1.5,
+    wEnd: hm_(r.wEnd) || '18:00', nEnd: hm_(r.nEnd) || '20:00', sEnd: hm_(r.sEnd) || '15:00' };
+}
+// 수납 OT 당번: { 'YYYY-MM-DD': { t: '20:15', s: [직원 id] } }
+function cleanDut_(o, ids, ym) {
+  var r = {};
+  Object.keys(o || {}).forEach(function (iso) {
+    if (iso.indexOf(ym) !== 0 || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+    var x = o[iso] || {}, t = hm_(x.t), s = [];
+    (x.s || []).forEach(function (id) { id = str_(id, 20); if (ids[id] && s.indexOf(id) < 0) s.push(id); });
+    if (t && s.length) r[iso] = { t: t, s: s };
+  });
+  return r;
+}
+function attKeyOk_(k, ids) { return !!ids[k] || (String(k).indexOf('n:') === 0 && String(k).length <= 32); }
+function cleanAtt_(a, ids, ym) {
+  a = a || {};
+  var out = { rows: {}, fix: {}, fin: {}, map: {}, file: null };
+  Object.keys(a.rows || {}).slice(0, 200).forEach(function (k) {
+    if (!attKeyOk_(k, ids)) return;
+    var row = {};
+    Object.keys(a.rows[k] || {}).forEach(function (iso) {
+      if (iso.indexOf(ym) !== 0 || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+      var v = a.rows[k][iso] || [], i = hm_(v[0]), o = hm_(v[1]);
+      if (i || o) row[iso] = [i, o];
+    });
+    if (Object.keys(row).length) out.rows[k] = row;
+  });
+  Object.keys(a.fix || {}).slice(0, 200).forEach(function (k) {
+    if (!attKeyOk_(k, ids)) return;
+    var row = {};
+    Object.keys(a.fix[k] || {}).forEach(function (iso) {
+      if (iso.indexOf(ym) !== 0) return;
+      var f = a.fix[k][iso] || {}, x = {};
+      if (f.i !== undefined) x.i = hm_(f.i);
+      if (f.o !== undefined) x.o = hm_(f.o);
+      if (f.n !== undefined && f.n !== null && f.n !== '') x.n = int_(f.n, 0, 600);
+      if (f.h !== undefined && f.h !== null && f.h !== '') x.h = int_(f.h, 0, 1440);
+      if (f.x) x.x = str_(f.x, 60);
+      if (Object.keys(x).length) row[iso] = x;
+    });
+    if (Object.keys(row).length) out.fix[k] = row;
+  });
+  Object.keys(a.fin || {}).slice(0, 200).forEach(function (k) {
+    if (!attKeyOk_(k, ids)) return;
+    var f = a.fin[k] || {}, x = {};
+    ['n', 'h'].forEach(function (q) { var v = f[q]; if (v !== undefined && v !== null && v !== '' && !isNaN(+v)) x[q] = Math.max(0, Math.min(999, Math.round(+v * 100) / 100)); });
+    if (f.x) x.x = str_(f.x, 60);
+    if (Object.keys(x).length) out.fin[k] = x;
+  });
+  Object.keys(a.map || {}).slice(0, 200).forEach(function (n) { var v = str_(a.map[n], 40); if (v) out.map[str_(n, 30)] = v; });
+  if (a.file && a.file.name) out.file = { name: str_(a.file.name, 80), at: Number(a.file.at) || 0, by: str_(a.file.by, 30), n: int_(a.file.n, 0, 100000) };
+  return out;
+}
+function staffIds_(d, teamId) {
+  var ids = {};
+  Object.keys(d.teams).forEach(function (tid) { if (teamId && tid !== teamId) return; (d.teams[tid].staff || []).forEach(function (p) { ids[p.id] = 1; }); });
+  return ids;
+}
+/** 근태 탭에서 그 달을 열 때 */
+function att_(req) {
+  var d = readData_(), ym = String(req.ym || '');
+  if (req.pin) { var a = auth_(req.pin); if (a.error) return { ok: false, error: a.error }; }
+  else if (props_().getProperty('VIEW_PIN')) return { ok: false, error: 'auth' };
+  if (!/^\d{4}-\d{2}$/.test(ym)) return { ok: false, error: 'bad_request' };
+  return { ok: true, att: (d.att || {})[ym] || null };
+}
+/** 관리자: 지문 기록·정산값까지 전부 / 팀장: 자기 팀 직원의 날짜별 고친 값만 */
+function saveAtt_(req) {
+  var a = auth_(req.pin);
+  if (a.error) return { ok: false, error: a.error };
+  if (a.role !== 'admin' && a.role !== 'leader') return { ok: false, error: 'forbidden' };
+  var ym = String(req.ym || '');
+  if (!/^\d{4}-\d{2}$/.test(ym)) return { ok: false, error: 'bad_request' };
+  var d = readData_(), all = d.att || (d.att = {}), cur = all[ym] || null;
+  if ((req.base || 0) !== ((cur && cur.updatedAt) || 0)) return { ok: false, error: 'conflict' };
+  var x = cleanAtt_(req.att, staffIds_(d), ym);
+  if (a.role === 'leader') {
+    var mine = staffIds_(d, a.teamId), base = cur ? cleanAtt_(cur, staffIds_(d), ym) : { rows: {}, fix: {}, fin: {}, map: {}, file: null };
+    Object.keys(mine).forEach(function (sid) { if (x.fix[sid]) base.fix[sid] = x.fix[sid]; else delete base.fix[sid]; });
+    x = base;
+  }
+  x.updatedAt = Date.now();
+  x.updatedBy = actorName_(a);
+  all[ym] = x;
+  writeData_(d);
+  return { ok: true, updatedAt: x.updatedAt, updatedBy: x.updatedBy };
 }
