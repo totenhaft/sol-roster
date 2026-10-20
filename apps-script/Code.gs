@@ -44,6 +44,8 @@ function handle_(req) {
     case 'deleteLeader': return withLock_(function () { return deleteLeader_(req); });
     case 'handbook': return handbook_(req);
     case 'att': return att_(req);
+    case 'history': return history_(req);
+    case 'restore': return withLock_(function () { return restore_(req); });
     case 'saveAtt': return withLock_(function () { return saveAtt_(req); });
     case 'saveArticle': return withLock_(function () { return saveArticle_(req); });
     case 'addArticles': return withLock_(function () { return addArticles_(req); });
@@ -194,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 12;
+var VERSION = 13;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -346,7 +348,7 @@ function saveConfig_(req) {
   var types = (c.types || []).slice(0, 30).map(function (t) {
     return { id: str_(t.id, 20), name: str_(t.name, 20), short: str_(t.short, 2), color: str_(t.color, 10), kind: str_(t.kind, 5), time: str_(t.time, 5) };
   });
-  var order = [], keep = {};
+  var order = [], keep = {}, hist = [{ k: 'c', label: '진료 시간·근무 형태·팀 설정', prev: copy_(d.config), by: actorName_(a) }];
   (c.teams || []).slice(0, 30).forEach(function (t) {
     var id = str_(t.id, 20);
     if (!id || keep[id]) return;
@@ -357,11 +359,15 @@ function saveConfig_(req) {
   });
   Object.keys(d.teams).forEach(function (id) {
     if (keep[id]) return;
+    var nm = d.teams[id].name || '팀';
+    hist.push({ k: 't|' + id, team: id, label: nm + ' 직원 명단 (팀 삭제 전)', prev: d.teams[id], by: actorName_(a) });
+    Object.keys(d.sched).forEach(function (ym) { if (d.sched[ym][id]) hist.push({ k: 'r|' + ym + '|' + id, team: id, label: nm + ' ' + ymLabel_(ym) + ' 근무표 (팀 삭제 전)', prev: d.sched[ym][id], by: actorName_(a) }); });
     delete d.teams[id];
     Object.keys(d.sched).forEach(function (ym) { delete d.sched[ym][id]; });
   });
   saveLeaders_(leaders_().filter(function (l) { return keep[l.teamId]; }));
-  d.config = { clinic: str_(c.clinic, 40), holidayCredit: c.holidayCredit !== false, labels: cleanLabels_(c.labels), attRule: cleanAttRule_(c.attRule), rules: cleanRules_(c.rules), groups: cleanGroups_(c.groups), hours: hours, dateHours: dateHours, types: types, teamOrder: order, updatedAt: now };
+  d.config = { clinic: str_(c.clinic, 40), holidayCredit: c.holidayCredit !== false, labels: cleanLabels_(c.labels), attRule: cleanAttRule_(c.attRule), rules: cleanRules_(c.rules), groups: cleanGroups_(c.groups), hours: hours, dateHours: dateHours, types: types, teamOrder: order, updatedAt: now, updatedBy: actorName_(a) };
+  histAdd_(hist);
   writeData_(d);
   var teamTimes = {};
   order.forEach(function (id) { teamTimes[id] = d.teams[id].updatedAt; });
@@ -417,6 +423,7 @@ function saveTeam_(req) {
   if (!tm) return { ok: false, error: 'not_found', message: '팀을 찾을 수 없어요. 새로고침하세요.' };
   if (!canTeam_(a, tm.id)) return { ok: false, error: 'forbidden' };
   if ((req.base || 0) !== (tm.updatedAt || 0)) return { ok: false, error: 'conflict' };
+  var before = copy_(tm);
   var n = t.need || {};
   tm.need = { full: int_(n.full, 0, 30), half: int_(n.half, 0, 30), night: int_(n.night, 0, 30) };
   tm.staff = (t.staff || []).slice(0, 80).map(function (p) {
@@ -444,6 +451,7 @@ function saveTeam_(req) {
   });
   tm.updatedAt = Date.now();
   tm.updatedBy = actorName_(a);
+  histAdd_([{ k: 't|' + tm.id, team: tm.id, label: (tm.name || '팀') + ' 직원 명단', prev: before, by: actorName_(a) }]);
   writeData_(d);
   return { ok: true, updatedAt: tm.updatedAt, updatedBy: tm.updatedBy };
 }
@@ -472,6 +480,7 @@ function saveRoster_(req) {
     });
     return outv;
   }
+  histAdd_([{ k: 'r|' + ym + '|' + tid, team: tid, label: (d.teams[tid].name || '팀') + ' ' + ymLabel_(ym) + ' 근무표', prev: cur || null, by: actorName_(a) }]);
   m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), place: cleanNotes_(r.place, ids, ym), ot: cleanOt_(r.ot, ids, ym), dut: cleanDut_(r.dut, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
   writeData_(d);
   return { ok: true, updatedAt: m[tid].updatedAt, updatedBy: m[tid].updatedBy };
@@ -719,7 +728,8 @@ function saveAtt_(req) {
   var ym = String(req.ym || '');
   if (!/^\d{4}-\d{2}$/.test(ym)) return { ok: false, error: 'bad_request' };
   var d = readData_(), all = d.att || (d.att = {}), cur = all[ym] || null;
-  if ((req.base || 0) !== ((cur && cur.updatedAt) || 0)) return { ok: false, error: 'conflict' };
+  // 관리자는 달 전체를 바꾸니 겹침을 확인하고, 팀장은 자기 팀 줄만 합치니 다른 팀장과 겹치지 않아요
+  if (a.role === 'admin' && (req.base || 0) !== ((cur && cur.updatedAt) || 0)) return { ok: false, error: 'conflict' };
   var x = cleanAtt_(req.att, staffIds_(d), ym);
   if (a.role === 'leader') {
     var mine = staffIds_(d, a.teamId), base = cur ? cleanAtt_(cur, staffIds_(d), ym) : { rows: {}, fix: {}, fin: {}, map: {}, file: null };
@@ -728,7 +738,100 @@ function saveAtt_(req) {
   }
   x.updatedAt = Date.now();
   x.updatedBy = actorName_(a);
+  histAdd_([{ k: 'a|' + ym, label: ymLabel_(ym) + ' 근태', prev: cur, by: actorName_(a) }]);
   all[ym] = x;
   writeData_(d);
   return { ok: true, updatedAt: x.updatedAt, updatedBy: x.updatedBy };
+}
+
+/* ---------- 저장 기록과 되돌리기 ----------
+ * 저장할 때마다 '저장하기 전 상태'를 따로 만든 파일(솔안과_근무표_저장기록.json)에 남겨요.
+ * 근무표는 팀·달마다, 직원 명단은 팀마다 최근 8번, 근태는 달마다 최근 3번까지 남고, 전체 150개를 넘으면 오래된 것부터 지워요.
+ * 근무표 데이터 파일에는 넣지 않아서 근무표를 여는 속도에는 영향이 없어요. */
+var HIST_FILE_NAME = '솔안과_근무표_저장기록.json';
+var HIST_PER_KEY = 8, HIST_MAX = 150;
+function copy_(o) { return o === undefined || o === null ? null : JSON.parse(JSON.stringify(o)); }
+function ymLabel_(ym) { var p = String(ym).split('-'); return p[0] + '년 ' + (+p[1]) + '월'; }
+function histFile_() {
+  var p = props_(), id = p.getProperty('HIST_FILE_ID');
+  if (id) { try { return DriveApp.getFileById(id); } catch (err) { /* 지워졌으면 새로 만들어요 */ } }
+  var f = DriveApp.createFile(HIST_FILE_NAME, JSON.stringify({ items: [] }), 'application/json');
+  p.setProperty('HIST_FILE_ID', f.getId());
+  return f;
+}
+function readHist_() {
+  try { var h = JSON.parse(histFile_().getBlob().getDataAsString('UTF-8') || '{}'); if (!Array.isArray(h.items)) h.items = []; return h; }
+  catch (err) { return { items: [] }; }
+}
+function histAdd_(list) {
+  if (!list || !list.length) return;
+  var h = readHist_(), now = Date.now();
+  list.forEach(function (e) {
+    h.items.unshift({ id: 'h' + Utilities.getUuid().replace(/-/g, '').slice(0, 10), k: e.k, team: e.team || '', label: e.label, at: now, by: e.by || '',
+      prevAt: (e.prev && e.prev.updatedAt) || 0, prevBy: (e.prev && e.prev.updatedBy) || '', data: copy_(e.prev) });
+  });
+  var per = {};
+  h.items = h.items.filter(function (x) { per[x.k] = (per[x.k] || 0) + 1; return per[x.k] <= (x.k.charAt(0) === 'a' ? 3 : HIST_PER_KEY); }).slice(0, HIST_MAX);
+  histFile_().setContent(JSON.stringify(h));
+}
+/** 관리자는 모두, 팀장은 자기 팀의 근무표·직원 명단만 되돌릴 수 있어요 */
+function canHist_(a, x) {
+  if (a.role === 'admin') return true;
+  return a.role === 'leader' && (x.k.indexOf('r|') === 0 || x.k.indexOf('t|') === 0) && x.team === a.teamId;
+}
+function history_(req) {
+  var a = auth_(req.pin);
+  if (a.error) return { ok: false, error: a.error };
+  if (a.role !== 'admin' && a.role !== 'leader') return { ok: false, error: 'forbidden' };
+  var items = readHist_().items, seen = {}, out = [];
+  items.forEach(function (x) {
+    var later = seen[x.k] || 0;
+    seen[x.k] = later + 1;
+    if (out.length < 40 && canHist_(a, x)) out.push({ id: x.id, k: x.k, label: x.label, at: x.at, by: x.by, prevAt: x.prevAt, prevBy: x.prevBy, empty: !x.data, later: later });
+  });
+  return { ok: true, items: out };
+}
+function restore_(req) {
+  var a = auth_(req.pin);
+  if (a.error) return { ok: false, error: a.error };
+  if (a.role !== 'admin' && a.role !== 'leader') return { ok: false, error: 'forbidden' };
+  var h = readHist_(), it = h.items.filter(function (x) { return x.id === req.id; })[0];
+  if (!it) return { ok: false, error: 'not_found', message: '저장 기록을 찾을 수 없어요. 목록을 새로 불러오세요.' };
+  if (!canHist_(a, it)) return { ok: false, error: 'forbidden' };
+  var d = readData_(), p = it.k.split('|'), now = Date.now(), by = actorName_(a) + ' (되돌림)', back = [];
+  if (p[0] === 'r') {
+    var ym = p[1], tid = p[2];
+    if (!d.teams[tid]) return { ok: false, error: 'not_found', message: '이 팀이 지금은 없어요. 관리자가 팀 직원 명단을 먼저 되돌려야 해요.' };
+    var m = d.sched[ym] || (d.sched[ym] = {});
+    back.push({ k: it.k, team: tid, label: it.label.replace(/ \(팀 삭제 전\)$/, ''), prev: m[tid] || null, by: by });
+    if (it.data) { var x = copy_(it.data); x.updatedAt = now; x.updatedBy = by; m[tid] = x; } else delete m[tid];
+  } else if (p[0] === 't') {
+    var t2 = p[1], cur = d.teams[t2];
+    if (!cur && a.role !== 'admin') return { ok: false, error: 'forbidden' };
+    if (!it.data) return { ok: false, error: 'bad_request', message: '되돌릴 내용이 없어요.' };
+    back.push({ k: it.k, team: t2, label: it.label.replace(/ \(팀 삭제 전\)$/, ''), prev: cur || null, by: by });
+    var y = copy_(it.data);
+    if (cur) { y.name = cur.name; y.leader = cur.leader; }
+    y.updatedAt = now; y.updatedBy = by;
+    d.teams[t2] = y;
+    if ((d.config.teamOrder || []).indexOf(t2) < 0) { d.config.teamOrder.push(t2); d.config.updatedAt = now; }
+  } else if (p[0] === 'c') {
+    if (a.role !== 'admin') return { ok: false, error: 'forbidden' };
+    if (!it.data) return { ok: false, error: 'bad_request', message: '되돌릴 내용이 없어요.' };
+    back.push({ k: 'c', label: it.label, prev: d.config, by: by });
+    var c = copy_(it.data);
+    c.teamOrder = d.config.teamOrder;   // 팀 목록은 그대로 두고 설정만 되돌려요
+    c.updatedAt = now; c.updatedBy = by;
+    d.config = c;
+  } else if (p[0] === 'a') {
+    if (a.role !== 'admin') return { ok: false, error: 'forbidden' };
+    var ym2 = p[1], all = d.att || (d.att = {});
+    back.push({ k: it.k, label: it.label, prev: all[ym2] || null, by: by });
+    if (it.data) { var z = copy_(it.data); z.updatedAt = now; z.updatedBy = by; all[ym2] = z; } else delete all[ym2];
+  } else return { ok: false, error: 'bad_request' };
+  histAdd_(back);
+  writeData_(d);
+  // 팀을 지울 때 그 팀장 등록(PIN)도 지워져요. PIN은 저장 기록에 남기지 않으니 다시 등록해야 해요.
+  var noLeader = p[0] === 't' && !leaders_().some(function (l) { return l.teamId === p[1]; });
+  return { ok: true, label: it.label, noLeader: noLeader };
 }
