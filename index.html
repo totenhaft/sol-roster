@@ -515,6 +515,9 @@ a.tab{text-decoration:none}
 .att-rule-form label{display:inline-flex;align-items:center;gap:6px;font-size:13px}
 .att-tbl tbody th[scope=row],.att-tbl thead th:first-child,.att-tbl tfoot th,.att-day tbody th[scope=row],.att-day thead th:first-child{position:sticky;left:0;z-index:1;background:var(--surface)}
 .att-tbl .lg-team th{position:static}
+.att-months{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin-top:12px}
+.att-months .muted{font-size:12.5px;margin-left:6px}
+.att-months .tchip{height:30px}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
@@ -1508,6 +1511,10 @@ function attFetch(ym){if(MODE!=='server'||S.att[ym]||ui.attTried[ym])return;if(A
 function attTab(){var ym=ui.ym,A=attOf(ym),teams=visibleTeams(),adm=isAdmin()&&!ui.ro,ed=canEditAny()&&!ui.ro,h='';attFetch(ym);
   h+='<section class="panel att-top"><div class="hb-head"><div class="grow"><h2>근태 · '+ymLabel(ym)+'</h2><p class="lead">지문 기록과 근무표를 맞춰 보고, 야간·수납 OT와 공휴일 근무가 OT 휴무·대체휴무로 얼마나 상계됐는지, 남은 시간(1.5배 수당)을 계산해요.'+(ed?'':' 보기만 할 수 있어요.')+'</p></div>'+
     '<div class="acts">'+(adm?'<button class="btn primary" data-act="attOpen">지문 기록 올리기</button><input type="file" id="attFile" accept=".xlsx,.csv" hidden>':'')+'<button class="btn" data-act="attCsv">정산표 받기</button><button class="btn" data-act="attPrint">인쇄</button></div></div>';
+  var known={};(ui.attMonths||[]).forEach(function(m){known[m]=1});Object.keys(S.att).forEach(function(m){if(S.att[m]&&S.att[m].file)known[m]=1});
+  var mlist=Object.keys(known).sort(),pm=shiftYM(ym,-1),nm=shiftYM(ym,1);
+  h+='<div class="att-months" role="group" aria-label="달 바꾸기"><button class="btn small" data-act="month" data-k="-1">‹ '+(+pm.slice(5))+'월</button><button class="btn small" data-act="month" data-k="1">'+(+nm.slice(5))+'월 ›</button>'+
+    (mlist.length?'<span class="muted">지문 기록 있는 달</span>'+mlist.map(function(m){return '<button class="tchip" data-act="attGo" data-k="'+m+'" aria-pressed="'+(m===ym)+'">'+(m.slice(0,4)!==ym.slice(0,4)?m.slice(2,4)+'년 ':'')+(+m.slice(5))+'월</button>'}).join(''):'')+'</div>';
   if(ui.attBusy===ym)h+='<p class="hint">이 달 지문 기록을 불러오는 중이에요…</p>';
   else if(A&&A.file)h+='<p class="hint">지문 기록: <b>'+esc(A.file.name)+'</b> · '+A.file.n+'건 · '+fmtTime(A.file.at)+(A.file.by?' '+esc(A.file.by):'')+' 올림'+(ui.dirty.att[ym]?' · <b class="warn-t">아직 저장 안 됨</b>':'')+'</p>';
   else h+='<p class="hint">이 달 지문 기록이 아직 없어요. '+(adm?'지문 프로그램에서 받은 엑셀(.xlsx)을 <b>지문 기록 올리기</b>로 넣으세요. 그 전까지는 근무표(야간·공휴일 근무)로 미리 계산해요.':'관리자가 지문 기록을 올리면 실제 출퇴근으로 계산해요. 그 전까지는 근무표로 미리 계산해요.')+'</p>';
@@ -1867,6 +1874,7 @@ app.addEventListener('click',function(e){
   switch(act){
   case 'tab':ui.tab=k;ui.confirm=null;render();try{window.scrollTo(0,0)}catch(x){}break;
   case 'offKind':ui.offKind=k;render();break;
+  case 'attGo':if(/^\d{4}-\d{2}$/.test(k)&&k!==ui.ym){ui.selDay=null;ui.selSec=null;ui.pw=null;ui.pday=null;ui.psel=null;ui.attEdit=null;ui.ym=k;ui.resetOpen=false;clearDI();exampleFill();render()}break;
   case 'attOpen':(function(){var f=document.getElementById('attFile');if(f)f.click()})();break;
   case 'attApply':attApply();break;
   case 'attCancel':ui.attImp=null;render();break;
