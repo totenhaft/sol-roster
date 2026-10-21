@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 14;
+var VERSION = 15;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -749,7 +749,7 @@ function saveAtt_(req) {
  * 근무표는 팀·달마다, 직원 명단은 팀마다 최근 8번, 근태는 달마다 최근 3번까지 남고, 전체 150개를 넘으면 오래된 것부터 지워요.
  * 근무표 데이터 파일에는 넣지 않아서 근무표를 여는 속도에는 영향이 없어요. */
 var HIST_FILE_NAME = '솔안과_근무표_저장기록.json';
-var HIST_PER_KEY = 8, HIST_MAX = 150;
+var HIST_PER_KEY = 8, HIST_MAX = 150, HIST_MERGE_MS = 10 * 60 * 1000;
 function copy_(o) { return o === undefined || o === null ? null : JSON.parse(JSON.stringify(o)); }
 function ymLabel_(ym) { var p = String(ym).split('-'); return p[0] + '년 ' + (+p[1]) + '월'; }
 function histFile_() {
@@ -767,7 +767,17 @@ function histAdd_(list) {
   if (!list || !list.length) return;
   var h = readHist_(), now = Date.now();
   list.forEach(function (e) {
-    h.items.unshift({ id: 'h' + Utilities.getUuid().replace(/-/g, '').slice(0, 10), k: e.k, team: e.team || '', label: e.label, at: now, by: e.by || '',
+    // 자동 저장: 같은 사람이 같은 것을 10분 안에 이어서 저장하면 한 번으로 묶어요.
+    // 묶인 기록을 되돌리면 그 사람이 고치기 시작하기 전 상태로 돌아가요.
+    var idx = -1;
+    for (var i = 0; i < h.items.length; i++) if (h.items[i].k === e.k) { idx = i; break; }
+    var last = idx >= 0 ? h.items[idx] : null;
+    if (!e.nm && last && !last.nm && last.by === (e.by || '') && last.label === e.label && now - last.at < HIST_MERGE_MS) {
+      last.at = now; last.n = (last.n || 1) + 1;
+      h.items.splice(idx, 1); h.items.unshift(last);
+      return;
+    }
+    h.items.unshift({ id: 'h' + Utilities.getUuid().replace(/-/g, '').slice(0, 10), k: e.k, team: e.team || '', label: e.label, at: now, from: now, n: 1, nm: !!e.nm, by: e.by || '',
       prevAt: (e.prev && e.prev.updatedAt) || 0, prevBy: (e.prev && e.prev.updatedBy) || '', data: copy_(e.prev) });
   });
   var per = {};
@@ -787,7 +797,7 @@ function history_(req) {
   items.forEach(function (x) {
     var later = seen[x.k] || 0;
     seen[x.k] = later + 1;
-    if (out.length < 40 && canHist_(a, x)) out.push({ id: x.id, k: x.k, label: x.label, at: x.at, by: x.by, prevAt: x.prevAt, prevBy: x.prevBy, empty: !x.data, later: later });
+    if (out.length < 40 && canHist_(a, x)) out.push({ id: x.id, k: x.k, label: x.label, at: x.at, from: x.from || x.at, n: x.n || 1, by: x.by, prevAt: x.prevAt, prevBy: x.prevBy, empty: !x.data, later: later });
   });
   return { ok: true, items: out };
 }
@@ -803,13 +813,13 @@ function restore_(req) {
     var ym = p[1], tid = p[2];
     if (!d.teams[tid]) return { ok: false, error: 'not_found', message: '이 팀이 지금은 없어요. 관리자가 팀 직원 명단을 먼저 되돌려야 해요.' };
     var m = d.sched[ym] || (d.sched[ym] = {});
-    back.push({ k: it.k, team: tid, label: it.label.replace(/ \(팀 삭제 전\)$/, ''), prev: m[tid] || null, by: by });
+    back.push({ k: it.k, team: tid, label: it.label.replace(/ \(팀 삭제 전\)$/, ''), prev: m[tid] || null, by: by, nm: true });
     if (it.data) { var x = copy_(it.data); x.updatedAt = now; x.updatedBy = by; m[tid] = x; } else delete m[tid];
   } else if (p[0] === 't') {
     var t2 = p[1], cur = d.teams[t2];
     if (!cur && a.role !== 'admin') return { ok: false, error: 'forbidden' };
     if (!it.data) return { ok: false, error: 'bad_request', message: '되돌릴 내용이 없어요.' };
-    back.push({ k: it.k, team: t2, label: it.label.replace(/ \(팀 삭제 전\)$/, ''), prev: cur || null, by: by });
+    back.push({ k: it.k, team: t2, label: it.label.replace(/ \(팀 삭제 전\)$/, ''), prev: cur || null, by: by, nm: true });
     var y = copy_(it.data);
     if (cur) { y.name = cur.name; y.leader = cur.leader; }
     y.updatedAt = now; y.updatedBy = by;
@@ -818,7 +828,7 @@ function restore_(req) {
   } else if (p[0] === 'c') {
     if (a.role !== 'admin') return { ok: false, error: 'forbidden' };
     if (!it.data) return { ok: false, error: 'bad_request', message: '되돌릴 내용이 없어요.' };
-    back.push({ k: 'c', label: it.label, prev: d.config, by: by });
+    back.push({ k: 'c', label: it.label, prev: d.config, by: by, nm: true });
     var c = copy_(it.data);
     c.teamOrder = d.config.teamOrder;   // 팀 목록은 그대로 두고 설정만 되돌려요
     c.updatedAt = now; c.updatedBy = by;
@@ -826,7 +836,7 @@ function restore_(req) {
   } else if (p[0] === 'a') {
     if (a.role !== 'admin') return { ok: false, error: 'forbidden' };
     var ym2 = p[1], all = d.att || (d.att = {});
-    back.push({ k: it.k, label: it.label, prev: all[ym2] || null, by: by });
+    back.push({ k: it.k, label: it.label, prev: all[ym2] || null, by: by, nm: true });
     if (it.data) { var z = copy_(it.data); z.updatedAt = now; z.updatedBy = by; all[ym2] = z; } else delete all[ym2];
   } else return { ok: false, error: 'bad_request' };
   histAdd_(back);
