@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 13;
+var VERSION = 14;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -387,7 +387,7 @@ function cleanLt_(o) {
   var r = {};
   Object.keys(o || {}).forEach(function (y) {
     if (!/^\d{4}$/.test(y)) return;
-    var v = Math.round(Number(o[y]) * 2) / 2;
+    var v = Math.round(Number(o[y]) * 4) / 4; // 반반차(0.25일) 단위
     if (v > 0 && v <= 400) r[y] = v;
   });
   return r;
@@ -430,7 +430,7 @@ function saveTeam_(req) {
     return { id: str_(p.id, 20), name: str_(p.name, 30), weekDays: int_(p.weekDays, 1, 7),
       avail: (p.avail || []).map(Number).filter(function (x) { return x >= 0 && x <= 6; }), night: !!p.night,
       early: half30_(p.early), late: half30_(p.late),
-      leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 2) / 2)) } : null,
+      leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 4) / 4)) } : null,
       abs: cleanAbs_(p.abs), post: str_(p.post, 20),
       lt: cleanLt_(p.lt), ot0: int_(p.ot0, -60000, 60000) };
   });
