@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 15;
+var VERSION = 16;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -416,6 +416,24 @@ function cleanAbs_(a) {
   return { from: a.from, to: to, why: str_(a.why || '휴직', 12) || '휴직' };
 }
 
+// Weekday overrides: missing fields inherit the existing full/half/night defaults.
+// Preserve overrides when an older browser saves a payload without byDay.
+function cleanNeed_(n, previous) {
+  n = n || {};
+  var out = { full: int_(n.full, 0, 30), half: int_(n.half, 0, 30), night: int_(n.night, 0, 30), byDay: {} };
+  var days = Object.prototype.hasOwnProperty.call(n, 'byDay') ? n.byDay : (previous || {}).byDay;
+  for (var dw = 0; dw < 7; dw++) {
+    var row = (days || {})[dw], clean = {};
+    if (!row || typeof row !== 'object') continue;
+    ['am', 'pm', 'night'].forEach(function (k) {
+      var v = row[k];
+      if (v !== undefined && v !== null && String(v).trim() !== '' && isFinite(Number(v))) clean[k] = int_(v, 0, 30);
+    });
+    if (Object.keys(clean).length) out.byDay[dw] = clean;
+  }
+  return out;
+}
+
 function saveTeam_(req) {
   var a = auth_(req.pin);
   if (a.error) return { ok: false, error: a.error };
@@ -425,7 +443,7 @@ function saveTeam_(req) {
   if ((req.base || 0) !== (tm.updatedAt || 0)) return { ok: false, error: 'conflict' };
   var before = copy_(tm);
   var n = t.need || {};
-  tm.need = { full: int_(n.full, 0, 30), half: int_(n.half, 0, 30), night: int_(n.night, 0, 30) };
+  tm.need = cleanNeed_(n, tm.need);
   tm.staff = (t.staff || []).slice(0, 80).map(function (p) {
     return { id: str_(p.id, 20), name: str_(p.name, 30), weekDays: int_(p.weekDays, 1, 7),
       avail: (p.avail || []).map(Number).filter(function (x) { return x >= 0 && x <= 6; }), night: !!p.night,
