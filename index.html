@@ -458,6 +458,17 @@ input[type=date]{height:34px;border:1px solid var(--line);border-radius:8px;back
 a.tab{text-decoration:none}
 .tab{position:relative}
 .tab .ext-i{font-size:11px;margin-left:-3px;opacity:.65}
+/* Team staffing defaults and weekday overrides */
+.need-settings{margin-bottom:22px}
+.need-settings h3{margin:0 0 8px}
+.need-defaults{gap:10px 18px;margin-bottom:14px}
+.need-table{max-width:650px;table-layout:fixed}
+.need-table th:first-child{width:30%}
+.need-table th:not(:first-child),.need-table td{text-align:center}
+.need-table th small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:3px}
+.need-table input[type=number]{width:100%;max-width:108px;min-width:0;text-align:center}
+.need-table input::placeholder{font-size:12px;color:#6B7771}
+.need-settings>.fine{margin:10px 0 0;max-width:650px}
 /* 7. 근태 */
 .c-sub{background:var(--cu-cyan-bg);color:var(--cu-cyan-fg)}
 .hb-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start}
@@ -649,6 +660,11 @@ function cleanNotes(a){var o={};Object.keys(a||{}).forEach(function(sid){var r=c
 function cleanLeave0(x){if(!x||!x.y)return null;return {y:int(x.y,2000,2100),d:Math.max(0,Math.min(400,Math.round((parseFloat(x.d)||0)*4)/4))}}
 function cleanLt(o){var r={};Object.keys(o||{}).forEach(function(y){if(!/^\d{4}$/.test(y))return;var v=Math.round((parseFloat(o[y])||0)*4)/4;if(v>0&&v<=400)r[y]=v});return r}
 function cleanOt(a){var o={};Object.keys(a||{}).forEach(function(sid){var row={};Object.keys(a[sid]||{}).forEach(function(iso){var v=r5(a[sid][iso],600);if(v>0)row[iso]=v});if(Object.keys(row).length)o[sid]=row});return o}
+function cleanNeed(n){n=n||{};var out={full:int(n.full,0,30),half:int(n.half,0,30),night:int(n.night,0,30),byDay:{}};
+  for(var dw=0;dw<7;dw++){var row=(n.byDay||{})[dw],r={};if(!row||typeof row!=='object')continue;
+    ['am','pm','night'].forEach(function(k){var v=row[k];if(v!==undefined&&v!==null&&String(v).trim()!==''&&isFinite(Number(v)))r[k]=int(v,0,30)});
+    if(Object.keys(r).length)out.byDay[dw]=r}
+  return out}
 function cleanPosts(a){return (Array.isArray(a)?a:[]).slice(0,30).map(function(x){x=x||{};return {id:String(x.id||uid('p')).slice(0,20),name:String(x.name||'자리').slice(0,20),need:int(x.need,0,9)}})}
 function cleanLabels(o){o=o||{};var r={};['night','leave','etc'].forEach(function(k){var v=String(o[k]||'').trim().slice(0,12);if(v)r[k]=v});return r}
 function isISO(x){return /^\d{4}-\d{2}-\d{2}$/.test(String(x||''))}
@@ -660,7 +676,7 @@ function normalize(s){
   var dh=s.dateHours||{};s.dateHours={};Object.keys(dh).forEach(function(iso){var o=dh[iso];if(!o)return;s.dateHours[iso]=o.closed?{closed:true,note:o.note||''}:{closed:false,note:o.note||'',h:fixHours(o.h,dateOf(iso).getDay())}});
   var cIds={},kIds={},tIds={};COLORS.forEach(function(c){cIds[c[0]]=1});KINDS.forEach(function(c){kIds[c[0]]=1});TIMES.forEach(function(c){tIds[c[0]]=1});
   s.types=(s.types||[]).filter(function(t){return t&&t.id&&!BUILTIN_IDS[t.id]}).map(function(t){return {id:t.id,name:t.name||'근무 형태',short:String(t.short||t.name||'?').slice(0,2),color:cIds[t.color]?t.color:'slate',kind:kIds[t.kind]?t.kind:'out',time:tIds[t.time]?t.time:'full'}});
-  var h0=s.teams||[];s.teams=(s.teams||[]).map(function(t){var n=t.need||{};return {id:t.id,name:t.name||'팀',leader:t.leader||'',need:{full:int(n.full,0,30),half:int(n.half,0,30),night:int(n.night,0,30)},
+  var h0=s.teams||[];s.teams=(s.teams||[]).map(function(t){var n=t.need||{};return {id:t.id,name:t.name||'팀',leader:t.leader||'',need:cleanNeed(n),
     staff:(t.staff||[]).map(function(p){return {id:p.id,name:p.name||'',weekDays:int(p.weekDays||5,1,7),avail:(p.avail||[1,2,3,4,5,6]).map(Number),night:!!p.night,early:half30(p.early),late:half30(p.late),leave0:cleanLeave0(p.leave0),abs:cleanAbs(p.abs),post:String(p.post||'').slice(0,20),lt:cleanLt(p.lt),ot0:int(p.ot0,-60000,60000)}}),groups:[],posts:cleanPosts(t.posts),updatedAt:t.updatedAt||0,updatedBy:t.updatedBy||''}});
   (s.teams||[]).forEach(function(t,i){var raw=((h0[i]||{}).groups)||[],ids={};t.staff.forEach(function(p){ids[p.id]=1});
     t.groups=cleanGroups(raw).map(function(g){g.members=g.members.filter(function(x){return ids[x]});return g});
@@ -785,7 +801,11 @@ function nComp(l,n){return n?(l==='HA'?'HN':l+'N'):l}
 /* the leave part of a combined cell (HN → HA, Q1N → Q1), otherwise the code itself */
 function leavePart(v){var P=nPart(v);return P&&P.n&&P.l?P.l:v}
 function isCombo(v){var P=nPart(v);return !!(P&&P.n&&P.l)}
-function needOf(team,d){return d.type==='half'?team.need.half:d.type==='full'?team.need.full:0}
+function needOf(team,d,part){part=part||'am';
+  if(d.type==='closed'||(part==='am'&&!d.hasAM)||(part==='pm'&&!d.hasPM)||(part==='night'&&!d.night))return 0;
+  var n=team.need,row=n.byDay&&n.byDay[d.dow];
+  if(row&&row[part]!==undefined)return row[part];
+  return part==='night'?n.night:d.type==='half'?n.half:n.full}
 
 /* ---------- rosters ---------- */
 var EMPTY_RO={cells:{},locks:{},reqs:{},adj:{},memo:{},notes:{},place:{},ot:{},dut:{},gen:false,updatedAt:0};
@@ -850,13 +870,13 @@ function attempt(ctx){
   var halfElig=staff.filter(function(p){return p.avail.some(function(dw){return S.hours[dw].type==='half'})});
   function nightCap(iso){var c=0;staff.forEach(function(p){var v=cells[p.id][iso];if(p.night&&(v==='W'||isNightCode(v)))c++});return c}
   var R=ctx.R;
-  function offScore(p,iso){var d=di(iso),v=Math.random()*4,need=needOf(team,d),q=pres('W',d,adjOf(ro,p,iso,'W')),a=cnt[iso][0]-q[0],b=cnt[iso][1]-q[1],short=0,sur=99;
-    if(d.hasAM){short+=Math.max(0,need-a);sur=Math.min(sur,a-need)}
-    if(d.hasPM){short+=Math.max(0,need-b);sur=Math.min(sur,b-need)}
+  function offScore(p,iso){var d=di(iso),v=Math.random()*4,needAM=needOf(team,d,'am'),needPM=needOf(team,d,'pm'),q=pres('W',d,adjOf(ro,p,iso,'W')),a=cnt[iso][0]-q[0],b=cnt[iso][1]-q[1],short=0,sur=99;
+    if(d.hasAM){short+=Math.max(0,needAM-a);sur=Math.min(sur,a-needAM)}
+    if(d.hasPM){short+=Math.max(0,needPM-b);sur=Math.min(sur,b-needPM)}
     if(short)v-=1000*short;else v+=Math.min(sur,3)*6;
     if(gr(ro,p.id,iso)==='P')v+=400*R.pref;
     if(d.type==='half'&&halfElig.length){var avg=halfElig.reduce(function(s,x){return s+sat[x.id]},0)/halfElig.length;v+=(sat[p.id]-avg)*25*R.sat}
-    if(d.night&&p.night&&nightCap(iso)-1<team.need.night)v-=600;
+    if(d.night&&p.night&&nightCap(iso)-1<needOf(team,d,'night'))v-=600;
     var pv=cells[p.id][addDays(iso,-1)],nv=cells[p.id][addDays(iso,1)];if(pv==='O'||pv===''||nv==='O'||nv==='')v+=R.offAdj;
     if(R.run>0){var L=0,x=addDays(iso,-1);while(isWork(cells[p.id][x])){L++;x=addDays(x,-1)}var Rr=0;x=addDays(iso,1);while(isWork(cells[p.id][x])){Rr++;x=addDays(x,1)}if(L+1+Rr>S.rules.maxRun)v+=150*R.run}
     var gs=ctx.gOf[p.id];if(gs)gs.forEach(function(G){var ab=gAbs(G,iso,p.id,cells,ro);if((d.hasAM&&ab[0]+1>G.max)||(d.hasPM&&ab[1]+1>G.max))v-=1000});
@@ -872,15 +892,15 @@ function attempt(ctx){
       pl.cand.forEach(function(iso){if(cells[pl.p.id][iso]!=='W')return;var v=offScore(pl.p,iso);if(v>bs){bs=v;best=iso}});
       if(best===null){pl.left=0;return}var q=pres('W',di(best),adjOf(ro,pl.p,best,'W'));cnt[best][0]-=q[0];cnt[best][1]-=q[1];cells[pl.p.id][best]='O';pl.left--})}
     staff.forEach(function(p){w.days.forEach(function(iso){var d=di(iso);if(d.type==='half'&&isWork(cells[p.id][iso]))sat[p.id]++})})});
-  ctx.dates.forEach(function(iso){var d=di(iso);if(!d.night||!team.need.night)return;var have=cnt[iso][2];
+  ctx.dates.forEach(function(iso){var d=di(iso),nightNeed=needOf(team,d,'night');if(!nightNeed)return;var have=cnt[iso][2];
     var pool=staff.filter(function(p){return p.night&&cells[p.id][iso]==='W'&&!isLock(ro,p.id,iso)&&pres('N',d,adjOf(ro,p,iso,'N'))[2]}).map(function(p){return {p:p,k:nC[p.id]*R.night+Math.random()*0.9}});
     pool.sort(function(a,b){return a.k-b.k});
-    for(var i=0;i<pool.length&&have<team.need.night;i++){var pp=pool[i].p,qw=pres('W',d,adjOf(ro,pp,iso,'W')),qn=pres('N',d,adjOf(ro,pp,iso,'N'));cells[pp.id][iso]='N';cnt[iso][0]+=qn[0]-qw[0];cnt[iso][1]+=qn[1]-qw[1];cnt[iso][2]+=qn[2]-qw[2];have=cnt[iso][2]}
+    for(var i=0;i<pool.length&&have<nightNeed;i++){var pp=pool[i].p,qw=pres('W',d,adjOf(ro,pp,iso,'W')),qn=pres('N',d,adjOf(ro,pp,iso,'N'));cells[pp.id][iso]='N';cnt[iso][0]+=qn[0]-qw[0];cnt[iso][1]+=qn[1]-qw[1];cnt[iso][2]+=qn[2]-qw[2];have=cnt[iso][2]}
     staff.forEach(function(p){if(isNightCode(cells[p.id][iso]))nC[p.id]++})});
   return {cells:cells,cnt:cnt,sat:sat,nC:nC}}
 function evaluate(res,ctx){var team=ctx.team,staff=team.staff,ro=ctx.ro,R=ctx.R,short=0,unmet=0,over=0,tdev=0,fair=0,runs=0,lim=S.rules.maxWeekH*60;
-  ctx.dates.forEach(function(iso){var d=di(iso);if(d.type==='closed')return;var need=needOf(team,d),c=res.cnt[iso];
-    if(d.hasAM)short+=Math.max(0,need-c[0]);if(d.hasPM)short+=Math.max(0,need-c[1]);if(d.night)short+=Math.max(0,team.need.night-c[2])});
+  ctx.dates.forEach(function(iso){var d=di(iso);if(d.type==='closed')return;var c=res.cnt[iso];
+    if(d.hasAM)short+=Math.max(0,needOf(team,d,'am')-c[0]);if(d.hasPM)short+=Math.max(0,needOf(team,d,'pm')-c[1]);if(d.night)short+=Math.max(0,needOf(team,d,'night')-c[2])});
   staff.forEach(function(p){var rq=ro.reqs[p.id]||{};Object.keys(rq).forEach(function(iso){if(rq[iso]==='P'&&isWork(res.cells[p.id][iso]))unmet++})});
   function dev(a){if(a.length<2)return 0;var m=a.reduce(function(x,y){return x+y},0)/a.length;return a.reduce(function(x,y){return x+Math.abs(y-m)},0)}
   if(R.sat)fair+=dev(staff.filter(function(p){return p.weekDays>=5&&p.avail.some(function(dw){return S.hours[dw].type==='half'})}).map(function(p){return res.sat[p.id]}))*20*R.sat;
@@ -911,7 +931,7 @@ function stats(ym,teams){var dates=monthDates(ym),weeks=weeksOf(ym),per={},days=
       if(o.maxW>T.lim)T.over++;per[p.id]=o})});
   dates.forEach(function(iso){var d=di(iso);if(d.type==='closed')return;var row={teams:{},tot:[0,0,0]},bad=[];
     teams.forEach(function(team){var ro=roster(ym,team.id),c=[0,0,0];team.staff.forEach(function(p){var v=cellCode(ro,p.id,iso),q=pres(v,d,adjOf(ro,p,iso,v));c[0]+=q[0];c[1]+=q[1];c[2]+=q[2]});
-      var need=needOf(team,d),nn=d.night?team.need.night:0,x={c:c,need:need,nn:nn,sAM:d.hasAM&&c[0]<need,sPM:d.hasPM&&c[1]<need,sNT:d.night&&c[2]<nn};
+      var am=needOf(team,d,'am'),pm=needOf(team,d,'pm'),nn=needOf(team,d,'night'),x={c:c,am:am,pm:pm,nn:nn,sAM:d.hasAM&&c[0]<am,sPM:d.hasPM&&c[1]<pm,sNT:d.night&&c[2]<nn};
       row.teams[team.id]=x;row.tot[0]+=c[0];row.tot[1]+=c[1];row.tot[2]+=c[2];
       if(team.staff.length&&(x.sAM||x.sPM||x.sNT))bad.push(team.name+' '+[x.sAM?'오전':'',x.sPM?'오후':'',x.sNT?'야간':''].filter(Boolean).join('·'))});
     days[iso]=row;if(bad.length){T.shortDays++;T.shortList.push(parts(iso)[1]+'/'+d.day+' '+bad.join(', '))}});
@@ -1088,10 +1108,10 @@ function refreshStats(){var grid=document.getElementById('grid');
     f+=rowHTML('','오후',function(x,d){return d.hasPM?{txt:x.tot[1]}:{txt:'–',cls:'na'}},false,true);
     if(anyNight)f+=rowHTML('','야간',function(x,d){return d.night?{txt:x.tot[2]}:{txt:'',cls:'na'}},false,true)}
   teams.forEach(function(team){var tid=team.id;
-    function g(i,key,has){return function(x,d){var y=x.teams[tid];if(!has(d))return {txt:i===2?'':'–',cls:'na'};var need=i===2?y.nn:y.need;return {txt:y.c[i],cls:y[key]?'short':'',title:team.name+' '+['오전','오후','야간'][i]+' '+y.c[i]+'명 / 필요 '+need+'명'}}}
+    function g(i,key,has){return function(x,d){var y=x.teams[tid];if(!has(d))return {txt:i===2?'':'–',cls:'na'};var need=i===2?y.nn:i===0?y.am:y.pm;return {txt:y.c[i],cls:y[key]?'short':'',title:team.name+' '+['오전','오후','야간'][i]+' '+y.c[i]+'명 / 필요 '+need+'명'}}}
     f+=rowHTML('<b>'+esc(team.name)+'</b>','오전',g(0,'sAM',function(d){return d.hasAM}),true);
     f+=rowHTML('','오후',g(1,'sPM',function(d){return d.hasPM}));
-    if(anyNight&&(team.need.night>0||team.staff.some(function(p){return p.night})))f+=rowHTML('','야간',g(2,'sNT',function(d){return d.night}))});
+    if(anyNight&&(dates.some(function(iso){return needOf(team,di(iso),'night')>0})||team.staff.some(function(p){return p.night})))f+=rowHTML('','야간',g(2,'sNT',function(d){return d.night}))});
   var gf=document.getElementById('gfoot');if(gf)gf.innerHTML=f;
   var chips=document.getElementById('chips');if(!chips)return;var c='';
   c+=T.shortDays?'<span class="stat bad">인원 부족 '+T.shortDays+'일 · '+esc(T.shortList.slice(0,3).join(' / '))+(T.shortList.length>3?' 외':'')+'</span>':'<span class="stat good">오전·오후·야간 필요 인원 모두 충족</span>';
@@ -1190,8 +1210,8 @@ function adjSelect(ro,p,tid,iso){var c=ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],v
   function opts(a){return a.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===cur?' selected':'')+'>'+esc(x[1])+'</option>'}).join('')}
   return '<label class="vh" for="adj-'+p.id+'">'+esc(p.name)+' 출퇴근 시간</label><select class="dl-adj'+((c&&c.ot)||v0==='OT'?' is-ot':'')+'" id="adj-'+p.id+'" data-adjsel="'+p.id+'" data-t="'+tid+'">'+opts(o)+'<optgroup label="오버타임 사용 (OT에서 빠져요)">'+opts(g2)+'</optgroup><optgroup label="시간 조정 (OT와 상관없이)">'+opts(g1)+'</optgroup></select>'}
 function teamDayCount(t,ro,iso,d){var c=[0,0,0];t.staff.forEach(function(p){var v=cellCode(ro,p.id,iso),q=pres(v,d,adjOf(ro,p,iso,v));c[0]+=q[0];c[1]+=q[1];c[2]+=q[2]});
-  var need=needOf(t,d),parts_=[];if(d.hasAM)parts_.push('<span class="'+(c[0]<need?'bad':'')+'">오전 '+c[0]+'/'+need+'</span>');if(d.hasPM)parts_.push('<span class="'+(c[1]<need?'bad':'')+'">오후 '+c[1]+'/'+need+'</span>');
-  if(d.night&&(t.need.night||c[2]))parts_.push('<span class="'+(c[2]<t.need.night?'bad':'')+'">야간 '+c[2]+'/'+t.need.night+'</span>');return parts_.join('')}
+  var am=needOf(t,d,'am'),pm=needOf(t,d,'pm'),nn=needOf(t,d,'night'),parts_=[];if(d.hasAM)parts_.push('<span class="'+(c[0]<am?'bad':'')+'">오전 '+c[0]+'/'+am+'</span>');if(d.hasPM)parts_.push('<span class="'+(c[1]<pm?'bad':'')+'">오후 '+c[1]+'/'+pm+'</span>');
+  if(d.night&&(nn||c[2]))parts_.push('<span class="'+(c[2]<nn?'bad':'')+'">야간 '+c[2]+'/'+nn+'</span>');return parts_.join('')}
 function dayEditor(iso,teams,Y){var d=di(iso),q=parts(iso),dates=monthDates(ui.ym),di_=dates.indexOf(iso),any=teams.some(function(t){return canTeam(t.id)});
   var h=paneHead(iso,'이날 전체','s-all');
   teams.forEach(function(t){var ro=roster(ui.ym,t.id),ed=canTeam(t.id),m=memoOf(ro,iso);
@@ -1262,7 +1282,7 @@ function secEditor(iso,secId,teams,Y){var d=di(iso),sec=calSections(ui.ym,teams)
     if(tmp)adds+=(Tl.length>1?'<div class="pk-team">'+esc(t.name)+'</div>':'')+'<div class="pills">'+tmp+'</div>'});
   var help=!eds.length||(k==='off'&&!canTeam(sec.t.id))?'보기만 할 수 있어요.':k==='off'?'쉬는 사람 이름을 누르세요. 공휴일에 근무한 대신 쉬는 날은 위에서 <b>대체휴무</b>를 고른 뒤 누르세요. 위 칸에 있는 이름을 다시 누르면 빠지고 근무로 돌아가요. 정기 휴무인 사람을 누르면 그날만 근무로 바뀌어요.':k==='leave'?'위에서 연차·반차·반반차를 고른 뒤 이름을 누르세요. 다시 누르면 빠져요. 반반차는 오전이나 오후 진료 시간 중 앞쪽 또는 뒤쪽 절반(보통 2시간)만 쉬어요.':d.dow===0?'일요일에 나오는 사람 이름을 누르세요.':'야간 근무할 사람 이름을 누르세요. 다시 누르면 빠져요.';
   block(inner,adds,help);
-  if(k==='night'&&d.night){var nn=0,need=0;teams.forEach(function(t){var ro=roster(ui.ym,t.id);need+=t.need.night;t.staff.forEach(function(p){if(isNightCode(cellCode(ro,p.id,iso)))nn++})});if(need)h+='<p class="sec-help">야간 '+nn+'명 / 필요 '+need+'명</p>'}
+  if(k==='night'&&d.night){var nn=0,need=0;teams.forEach(function(t){var ro=roster(ui.ym,t.id);need+=needOf(t,d,'night');t.staff.forEach(function(p){if(isNightCode(cellCode(ro,p.id,iso)))nn++})});if(need)h+='<p class="sec-help">야간 '+nn+'명 / 필요 '+need+'명</p>'}
   return '<div class="secpane pane-'+k+'">'+h+secFoot()+'</div>'}
 function secFoot(){return '<div class="sec-foot"><button class="btn small" data-act="secAll">이날 전체 보기</button><span class="muted">'+saveNote()+'</span></div>'}
 /* panel content before a day is picked: what still needs a look this month */
@@ -1857,9 +1877,22 @@ function amtOpts(cur,k){return [0].concat(ADJ_AMTS).map(function(m){return '<opt
 function pinCell(target,has){var id='pin-'+target.replace(':','-');
   return '<span class="row"><span class="muted" style="font-size:12.5px">'+(has?'설정됨':'없음')+'</span><input type="password" class="pin" id="'+id+'" inputmode="numeric" autocomplete="new-password" placeholder="새 PIN" aria-label="새 PIN"><button class="btn small" data-act="pinSet" data-k="'+target+'">'+(has?'바꾸기':'정하기')+'</button>'+
     (has&&target==='view'?'<button class="btn small" data-act="pinClear" data-k="'+target+'">지우기</button>':'')+'</span>'}
-function teamPanel(t,admin){var tid=t.id,n=t.need,h='<section class="panel"><h2>'+esc(t.name)+(leaderNames(t)?' <span class="muted" style="font-weight:400;font-size:14px">팀장 '+esc(leaderNames(t))+'</span>':'')+'</h2>';
-  h+='<p>하루에 이 팀에서 최소 몇 명이 있어야 하는지 정해요. 오전과 오후를 각각 이 숫자에 맞춰 배치해요.</p><div class="row" style="margin-bottom:16px">'+
-    [['full','종일 진료일'],['half','반일 진료일'],['night','야간 진료']].map(function(k){return '<label class="tr" for="nd-'+tid+'-'+k[0]+'">'+k[1]+' <input type="number" min="0" max="30" id="nd-'+tid+'-'+k[0]+'" data-nd="'+tid+'" data-k="'+k[0]+'" value="'+n[k[0]]+'"> 명</label>'}).join('<span class="muted">·</span>')+'</div>';
+/* Weekday minimum staffing; an empty field inherits the full/half-day or night default. */
+function canDayNeed(){return MODE!=='server'||!!(ui.status&&ui.status.version>=16)}
+function needEditor(t){var tid=t.id,n=t.need,ready=canDayNeed();
+  var h='<div class="need-settings"><h3>최소 인원</h3><p>요일마다 오전·오후·야간에 필요한 최소 인원을 정해요. <b>빈칸은 기본값</b>을 따르고, <b>0은 최소 인원 없음</b>이에요.</p>';
+  h+='<div class="row need-defaults"><b>기본값</b>'+
+    [['full','종일 진료일'],['half','반일 진료일'],['night','야간 진료']].map(function(k){return '<label class="tr" for="nd-'+tid+'-'+k[0]+'">'+k[1]+' <input type="number" min="0" max="30" step="1" inputmode="numeric" id="nd-'+tid+'-'+k[0]+'" data-nd="'+tid+'" data-k="'+k[0]+'" value="'+n[k[0]]+'"> 명</label>'}).join('')+'</div>';
+  if(!ready)h+='<p class="banner warn" role="status">요일별 설정을 저장하려면 서버 업데이트가 필요해요. 관리자에게 요청해 주세요. 기존 기본값은 계속 사용할 수 있어요.</p>';
+  h+='<div class="tblwrap"><table class="tbl need-table"><caption class="vh">'+esc(t.name)+' 요일별 최소 인원</caption><thead><tr><th scope="col">요일</th><th scope="col">오전 (명)</th><th scope="col">오후 (명)</th><th scope="col">야간 (명)</th></tr></thead><tbody>';
+  WEEK.forEach(function(dw){var row=n.byDay&&n.byDay[dw]||{},hr=S.hours[dw],ss=sessions(hr,hr.type),dayBase=hr.type==='half'?n.half:n.full;
+    h+='<tr><th scope="row" class="'+(dw===0?'sun':dw===6?'sat':'')+'">'+DOWK[dw]+'요일<small>'+esc(hr.type==='closed'?'휴진':hr.type==='half'?'반일 진료':'종일 진료')+(ss.night?' · 야간':'')+'</small></th>';
+    [['am','오전',ss.am>0],['pm','오후',ss.pm>0],['night','야간',ss.night]].forEach(function(k){var value=row[k[0]],fallback=k[0]==='night'?n.night:dayBase;
+      h+='<td><input type="number" min="0" max="30" step="1" inputmode="numeric" id="nd-'+tid+'-'+dw+'-'+k[0]+'" data-nd="'+tid+'" data-dw="'+dw+'" data-k="'+k[0]+'" value="'+(value===undefined?'':value)+'" placeholder="'+(k[2]?'기본 '+fallback:'진료 없음')+'" aria-label="'+esc(t.name+' '+DOWK[dw]+'요일 '+k[1]+' 최소 인원')+'"'+(!ready?' disabled':'')+'></td>'});
+    h+='</tr>'});
+  return h+'</tbody></table></div><p class="fine">휴진일·진료가 없는 시간대에는 적용하지 않아요. 날짜별로 진료 시간을 바꾸면 해당 요일의 설정을 사용해요. 바뀐 인원은 부족 표시와 다음 자동 생성부터 반영돼요.</p></div>'}
+function teamPanel(t,admin){var tid=t.id,h='<section class="panel"><h2>'+esc(t.name)+(leaderNames(t)?' <span class="muted" style="font-weight:400;font-size:14px">팀장 '+esc(leaderNames(t))+'</span>':'')+'</h2>';
+  h+=needEditor(t);
   var ncol=(admin&&S.teams.length>1)?10:9;
   h+='<div class="tblwrap"><table class="tbl"><thead><tr><th class="ord">순서</th><th>이름</th>'+(admin&&S.teams.length>1?'<th>팀</th>':'')+'<th>주 근무일</th><th>근무 가능 요일</th><th>평소 근무시간</th><th>야간</th><th>'+ui.ym.slice(0,4)+'년 연차 · OT</th><th>휴직</th><th></th></tr></thead><tbody>';
   t.staff.forEach(function(p,si){var id='st-'+p.id+'-',nm=esc(p.name||'직원');
@@ -2141,7 +2174,15 @@ app.addEventListener('change',function(e){var t=e.target;
   if(t.dataset.r){S.rules[t.dataset.r]=t.value;S.rules=cleanRules(S.rules);t.value=S.rules[t.dataset.r];dConfig();return}
   if(t.dataset.h!==undefined){var x=S.hours[+t.dataset.h];x[t.dataset.k]=t.type==='checkbox'?t.checked:t.value;dConfig();render();return}
   if(t.dataset.dhh&&ui.selDate&&S.dateHours[ui.selDate]&&S.dateHours[ui.selDate].h){var hh=S.dateHours[ui.selDate].h;hh[t.dataset.k]=t.type==='checkbox'?t.checked:t.value;dConfig();render();return}
-  if(t.dataset.nd){var tm=teamById(t.dataset.nd);if(tm&&canTeam(tm.id)){tm.need[t.dataset.k]=int(t.value,0,30);t.value=tm.need[t.dataset.k];dTeam(tm.id)}return}
+  if(t.dataset.nd){var tm=teamById(t.dataset.nd);if(!tm||!canTeam(tm.id))return;
+    var nk=t.dataset.k,ndw=t.dataset.dw;
+    if(ndw!==undefined){if(!canDayNeed()||!/^[0-6]$/.test(ndw)||['am','pm','night'].indexOf(nk)<0)return;
+      var byDay=tm.need.byDay||(tm.need.byDay={}),nr=byDay[ndw]||(byDay[ndw]={});
+      if(t.value==='')delete nr[nk];else nr[nk]=int(t.value,0,30);
+      if(!Object.keys(nr).length)delete byDay[ndw];
+      t.value=nr[nk]===undefined?'':nr[nk];
+    }else{if(['full','half','night'].indexOf(nk)<0)return;tm.need[nk]=int(t.value,0,30);t.value=tm.need[nk]}
+    dTeam(tm.id);render();return}
   if(t.dataset.ty&&(t.dataset.k==='kind'||t.dataset.k==='time')){var ty=S.types.find(function(x){return x.id===t.dataset.ty});if(ty){ty[t.dataset.k]=t.value;dConfig();render()}return}
   if(t.dataset.st&&t.dataset.k!=='name'){var L=staffLoc(t.dataset.st);if(!L||!canTeam(L.team.id))return;var k2=t.dataset.k;
     if(k2==='night')L.p.night=t.checked;else if(k2==='weekDays')L.p.weekDays=+t.value;else if(k2==='early'||k2==='late')L.p[k2]=half30(t.value);else if(k2==='leave0')L.p.leave0=cleanLeave0({y:+ui.ym.slice(0,4),d:t.value});else if(k2==='post'){L.p.post=t.value;dTeam(L.team.id);render();return}
