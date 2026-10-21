@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 15;
+var VERSION = 16;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -383,6 +383,18 @@ function cleanLabels_(o) {
 }
 
 // 연도별 총 연차 { "2026": 15 }
+// 요일별 최소 인원 { '1': { d: 주간, n: 야간 } }
+function cleanNeedDow_(o) {
+  var r = {};
+  Object.keys(o || {}).forEach(function (k) {
+    if (!/^[0-6]$/.test(k)) return;
+    var x = o[k] || {}, y = {};
+    if (x.d !== undefined && x.d !== null && x.d !== '') y.d = int_(x.d, 0, 30);
+    if (x.n !== undefined && x.n !== null && x.n !== '') y.n = int_(x.n, 0, 30);
+    if (Object.keys(y).length) r[k] = y;
+  });
+  return r;
+}
 function cleanLt_(o) {
   var r = {};
   Object.keys(o || {}).forEach(function (y) {
@@ -425,10 +437,12 @@ function saveTeam_(req) {
   if ((req.base || 0) !== (tm.updatedAt || 0)) return { ok: false, error: 'conflict' };
   var before = copy_(tm);
   var n = t.need || {};
-  tm.need = { full: int_(n.full, 0, 30), half: int_(n.half, 0, 30), night: int_(n.night, 0, 30) };
+  tm.need = { full: int_(n.full, 0, 30), half: int_(n.half, 0, 30), night: int_(n.night, 0, 30), dow: cleanNeedDow_(n.dow) };
   tm.staff = (t.staff || []).slice(0, 80).map(function (p) {
     return { id: str_(p.id, 20), name: str_(p.name, 30), weekDays: int_(p.weekDays, 1, 7),
       avail: (p.avail || []).map(Number).filter(function (x) { return x >= 0 && x <= 6; }), night: !!p.night,
+      must: (p.must || []).map(Number).filter(function (x, i, a) { return x >= 0 && x <= 6 && a.indexOf(x) === i && (p.avail || []).map(Number).indexOf(x) >= 0; }),
+      nightMust: !!(p.night && p.nightMust),
       early: half30_(p.early), late: half30_(p.late),
       leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 4) / 4)) } : null,
       abs: cleanAbs_(p.abs), post: str_(p.post, 20),
