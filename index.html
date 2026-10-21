@@ -530,6 +530,26 @@ a.tab{text-decoration:none}
 .hl-act{grid-column:2;grid-row:1 / span 2;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 @media (max-width:640px){.histlist li{grid-template-columns:1fr}.hl-act{grid-column:1;grid-row:auto;justify-content:flex-start}}
 .ask-t{color:var(--danger);font-weight:500;font-size:13px}
+/* 반반차 (0.25일): the shaded quarter shows which 2 hours are off */
+.c-q1{background:linear-gradient(90deg,var(--leave-soft) 0 25%,var(--accent-soft) 25% 100%);color:var(--leave)}
+.c-q2{background:linear-gradient(90deg,var(--accent-soft) 0 25%,var(--leave-soft) 25% 50%,var(--accent-soft) 50% 100%);color:var(--leave)}
+.c-q3{background:linear-gradient(90deg,var(--accent-soft) 0 50%,var(--leave-soft) 50% 75%,var(--accent-soft) 75% 100%);color:var(--leave)}
+.c-q4{background:linear-gradient(90deg,var(--accent-soft) 0 75%,var(--leave-soft) 75% 100%);color:var(--leave)}
+.qbox{display:flex;flex-direction:column;gap:4px}
+.qseg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.qseg button{min-height:42px;padding:4px 8px;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--surface);color:var(--ink-2);font:inherit;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.25}
+.qseg button:nth-child(2n){border-right:0}
+.qseg button:nth-last-child(-n+2){border-bottom:0}
+.qseg button small{font-size:11px;font-weight:400;color:var(--muted)}
+.qseg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.qseg button[aria-pressed="true"] small{color:inherit;opacity:.85}
+.qseg button[disabled]{opacity:.45;cursor:default}
+.qseg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.qp-q[aria-expanded="true"][aria-pressed="false"]{box-shadow:inset 0 0 0 1px var(--ink-2)}
+.qsub{padding:4px;margin-top:-2px;border-radius:8px;background:var(--surface-2)}
+.qsub .qp{height:auto;min-height:32px;padding:2px 8px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;letter-spacing:0}
+.qsub .qp small{font-size:10px;font-weight:500;opacity:.8}
+.qp[disabled]{opacity:.4;cursor:default}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
@@ -548,12 +568,17 @@ var BUILTIN=[
   {id:'N',name:'야간',short:'야',kind:'in',time:'full',night:true,color:'night',desc:'종일 근무 + 야간 진료'},
   {id:'HA',name:'오전 반차',short:'전반',kind:'in',time:'pm',half:true,color:'halfam',desc:'오전에 쉬고 오후에 근무'},
   {id:'HP',name:'오후 반차',short:'후반',kind:'in',time:'am',half:true,color:'halfpm',desc:'오전에 근무하고 오후에 쉼'},
+  {id:'Q1',name:'오전 반반차(앞)',short:'반반',sub:'전앞',kind:'in',time:'full',q:1,color:'q1',desc:'오전 앞쪽 2시간(보통 9~11시) 쉬고 늦게 출근 (0.25일)'},
+  {id:'Q2',name:'오전 반반차(뒤)',short:'반반',sub:'전뒤',kind:'in',time:'full',q:2,color:'q2',desc:'오전 뒤쪽 2시간(보통 11~13시) 쉬고 점심 뒤 다시 근무 (0.25일)'},
+  {id:'Q3',name:'오후 반반차(앞)',short:'반반',sub:'후앞',kind:'in',time:'full',q:3,color:'q3',desc:'점심 뒤 2시간(보통 14~16시) 쉬고 다시 근무 (0.25일)'},
+  {id:'Q4',name:'오후 반반차(뒤)',short:'반반',sub:'후뒤',kind:'in',time:'full',q:4,color:'q4',desc:'오후 뒤쪽 2시간(보통 16~18시) 쉬고 일찍 퇴근 (0.25일)'},
   {id:'HN',name:'오전반차+야간',short:'반야',kind:'in',time:'pm',night:true,half:true,color:'halfnight',desc:'오전에 쉬고 오후·야간 근무 (오전 반차 0.5일)'},
   {id:'V',name:'연차',short:'연',kind:'paid',color:'leave',desc:'유급 휴가, 주 근무일에 포함'},
   {id:'O',name:'휴무',short:'휴',kind:'off',color:'off',desc:'정해진 휴무'},
   {id:'OT',name:'오버타임 사용',short:'OT',kind:'paid',color:'otuse',desc:'쌓인 OT로 하루 쉼 (그날 근무시간만큼 OT에서 빠져요)'},
   {id:'SUB',name:'대체휴무',short:'대휴',kind:'paid',color:'sub',desc:'공휴일에 근무한 대신 쉬는 날 (근태에서 공휴일 근무와 상계)'}
 ];
+var QS=['Q1','Q2','Q3','Q4'],QLAB={Q1:'오전 앞',Q2:'오전 뒤',Q3:'오후 앞',Q4:'오후 뒤'};
 var BUILTIN_IDS={};BUILTIN.forEach(function(t){BUILTIN_IDS[t.id]=1});
 var COLORS=[['blue','파랑'],['violet','보라'],['rose','분홍'],['cyan','청록'],['lime','연두'],['slate','회색']];
 var KINDS=[['in','병원 안 근무'],['out','병원 밖 근무 (외근·교육·출장)'],['paid','유급 휴무 (경조사·공가)'],['off','무급 휴무']];
@@ -587,7 +612,7 @@ function toMin(t){var p=String(t||'0:0').split(':').map(Number);return (p[0]||0)
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function uid(p){return p+Math.random().toString(36).slice(2,8)}
 function hrs(min){var h=Math.round(min/6)/10;return (h%1===0?h.toFixed(0):h.toFixed(1))}
-function fmtNum(x){return x%1===0?String(x):x.toFixed(1)}
+function fmtNum(x){return x%1===0?String(x):String(Math.round(x*100)/100)}
 function fmtTime(ts){var d=new Date(ts);return (d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes())}
 function clone(o){return JSON.parse(JSON.stringify(o))}
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
@@ -611,8 +636,8 @@ function cleanRules(r){r=r||{};var o={};Object.keys(DEF_RULES).forEach(function(
 function cleanGroups(a){return (Array.isArray(a)?a:[]).slice(0,50).map(function(g){g=g||{};var mem=[];(g.members||[]).forEach(function(x){x=String(x);if(mem.indexOf(x)<0)mem.push(x)});return {id:String(g.id||uid('g')),label:String(g.label||'').slice(0,20),members:mem.slice(0,10),max:int(g.max||1,1,9)}})}
 function cleanStrMap(o,max){var r={};Object.keys(o||{}).forEach(function(k){var v=String(o[k]==null?'':o[k]).slice(0,max);if(v)r[k]=v});return r}
 function cleanNotes(a){var o={};Object.keys(a||{}).forEach(function(sid){var r=cleanStrMap(a[sid],30);if(Object.keys(r).length)o[sid]=r});return o}
-function cleanLeave0(x){if(!x||!x.y)return null;return {y:int(x.y,2000,2100),d:Math.max(0,Math.min(400,Math.round((parseFloat(x.d)||0)*2)/2))}}
-function cleanLt(o){var r={};Object.keys(o||{}).forEach(function(y){if(!/^\d{4}$/.test(y))return;var v=Math.round((parseFloat(o[y])||0)*2)/2;if(v>0&&v<=400)r[y]=v});return r}
+function cleanLeave0(x){if(!x||!x.y)return null;return {y:int(x.y,2000,2100),d:Math.max(0,Math.min(400,Math.round((parseFloat(x.d)||0)*4)/4))}}
+function cleanLt(o){var r={};Object.keys(o||{}).forEach(function(y){if(!/^\d{4}$/.test(y))return;var v=Math.round((parseFloat(o[y])||0)*4)/4;if(v>0&&v<=400)r[y]=v});return r}
 function cleanOt(a){var o={};Object.keys(a||{}).forEach(function(sid){var row={};Object.keys(a[sid]||{}).forEach(function(iso){var v=r5(a[sid][iso],600);if(v>0)row[iso]=v});if(Object.keys(row).length)o[sid]=row});return o}
 function cleanPosts(a){return (Array.isArray(a)?a:[]).slice(0,30).map(function(x){x=x||{};return {id:String(x.id||uid('p')).slice(0,20),name:String(x.name||'자리').slice(0,20),need:int(x.need,0,9)}})}
 function cleanLabels(o){o=o||{};var r={};['night','leave','etc'].forEach(function(k){var v=String(o[k]||'').trim().slice(0,12);if(v)r[k]=v});return r}
@@ -715,24 +740,34 @@ function hoursText(h){if(h.type==='closed')return '휴진';var x=sessions(h,h.ty
 
 /* ---------- work types ---------- */
 /* a person's span on a day: work window by type, shortened by late start (l) and early leave (e), in minutes */
-function seg(code,d,a){var t=TY[code];if(!t||d.type==='closed'||(t.kind!=='in'&&t.kind!=='out'))return null;var m=d.mm,nt=!!(t.night&&d.night);
-  var from=t.time==='pm'?m.pmS:m.amS,to=t.time==='am'?m.amE:(nt?m.ntE:m.pmE);if(a){from+=a.l||0;to-=a.e||0}
-  function ov(x,y){return Math.max(0,Math.min(y,to)-Math.max(x,from))}
-  var am=ov(m.amS,m.amE),pm=ov(m.pmS,m.pmE),n=nt?ov(m.ntS,m.ntE):0;return {am:am,pm:pm,nt:n,min:am+pm+n,inside:t.kind==='in'}}
+/* 반반차: the 2 hours off = the first or second half of the morning or afternoon session (minutes), or null when that session doesn't run that day */
+function qGap(t,d){if(!t||!t.q||d.type==='closed')return null;var m=d.mm,am=t.q<=2,s=am?m.amS:m.pmS,e=am?m.amE:m.pmE;if(e-s<10)return null;var mid=s+Math.round((e-s)/10)*5;return t.q%2?[s,mid]:[mid,e]}
+function isQ(v){var t=TY[v];return !!(t&&t.q)}
+function hmS(m){var h=Math.floor(m/60),x=m%60;return x?h+':'+pad(x):String(h)}
+function hmRange(g){return hmS(g[0])+'~'+hmS(g[1])+(g[1]%60?'':'시')}
+/* the window a code covers on a day; a 반반차 at the start/end moves that end, one in the middle stays as a gap */
+function span(code,d,a){var t=TY[code];if(!t||d.type==='closed'||(t.kind!=='in'&&t.kind!=='out'))return null;var m=d.mm,nt=!!(t.night&&d.night),g=qGap(t,d);
+  var from=t.time==='pm'?m.pmS:m.amS,to=t.time==='am'?m.amE:(nt?m.ntE:m.pmE);
+  if(g&&g[0]<=from){from=g[1];g=null}if(g&&g[1]>=to){to=g[0];g=null}
+  if(a){from+=a.l||0;to-=a.e||0}to=Math.max(from,to);if(g&&(g[1]<=from||g[0]>=to))g=null;return {from:from,to:to,gap:g,nt:nt,t:t}}
+function seg(code,d,a){var s=span(code,d,a);if(!s)return null;var m=d.mm,from=s.from,to=s.to,g=s.gap;
+  function ov(x,y){var o=Math.max(0,Math.min(y,to)-Math.max(x,from));if(g)o-=Math.max(0,Math.min(y,to,g[1])-Math.max(x,from,g[0]));return o}
+  var am=ov(m.amS,m.amE),pm=ov(m.pmS,m.pmE),n=s.nt?ov(m.ntS,m.ntE):0;return {am:am,pm:pm,nt:n,min:am+pm+n,inside:s.t.kind==='in'}}
 function cntRule(len,got){if(len<=0||got<=0)return 0;var r=S.rules.partial;if(r==='any')return 1;if(r==='full')return got>=len?1:0;return got*2>=len?1:0}
 function pres(code,d,a){if(!a&&d.pc[code])return d.pc[code];var x=seg(code,d,a),m=d.mm,r=[0,0,0];
   if(x&&x.inside)r=[d.hasAM?cntRule(m.amE-m.amS,x.am):0,d.hasPM?cntRule(m.pmE-m.pmS,x.pm):0,d.night?cntRule(m.ntE-m.ntS,x.nt):0];
   if(!a)d.pc[code]=r;return r}
 function mins(code,d,a){var x=seg(code,d,a);return x?x.min:0}
 function adjOf(ro,p,iso,code){var t=TY[code];if(!t||(t.kind!=='in'&&t.kind!=='out'))return null;var c=ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso];
-  var e=c&&c.e!==undefined?c.e:(t.time!=='am'?(p.early||0):0),l=c&&c.l!==undefined?c.l:(t.time!=='pm'?(p.late||0):0);return (e||l)?{e:e,l:l}:null}
+  var d=t.q?di(iso):null,noL=!!t.q&&(t.q===1||(t.q===3&&!d.hasAM)),noE=!!t.q&&(t.q===4||(t.q===2&&!d.hasPM));
+  var e=c&&c.e!==undefined?c.e:(t.time!=='am'&&!noE?(p.early||0):0),l=c&&c.l!==undefined?c.l:(t.time!=='pm'&&!noL?(p.late||0):0);return (e||l)?{e:e,l:l}:null}
 function hTxt(min){var h=min/60;return h%1===0?String(h):h.toFixed(1)}
 function hLong(min){var h=Math.floor(min/60),m=min%60;return (h?h+'시간':'')+(m?(h?' ':'')+m+'분':'')}
 function adjTag(c){if(!c)return '';var e=c.e||0,l=c.l||0,o=c.ot?'OT':'';if(!e&&!l)return '정시';if(e&&l)return o+'−'+hTxt(e+l);return o+(e?'조'+hTxt(e):'늦'+hTxt(l))}
 function adjLong(c){if(!c)return '';var e=c.e||0,l=c.l||0,a=[];if(l)a.push(hLong(l)+' 늦게 출근');if(e)a.push(hLong(e)+' 일찍 퇴근');return a.length?a.join(', ')+(c.ot?' (OT 사용)':''):'평소 시간 조정 없음'}
 function isWork(code){var t=TY[code];return !!t&&(t.kind==='in'||t.kind==='out')}
 function countsTarget(code){var t=TY[code];return !!t&&t.kind!=='off'}
-function leaveAmt(code){return code==='V'?1:(code==='HA'||code==='HP'||code==='HN')?0.5:0}
+function leaveAmt(code){return code==='V'?1:(code==='HA'||code==='HP'||code==='HN')?0.5:isQ(code)?0.25:0}
 function isNightCode(v){return v==='N'||v==='HN'}
 function needOf(team,d){return d.type==='half'?team.need.half:d.type==='full'?team.need.full:0}
 
@@ -981,7 +1016,7 @@ function staffSub(p){var days=WEEK.filter(function(dw){return p.avail.indexOf(dw
 function cellParts(ro,p,iso){var d=di(iso);
   if(absOf(p,iso))return {cls:'k c-abs sm2',txt:'휴직',tg:'',abs:true,aria:(p.name||'')+' '+parts(iso)[1]+'월 '+d.day+'일 '+(p.abs.why||'휴직')+' 중'};
   var raw=rawCode(ro,p.id,iso),v=raw||baseCode(p,iso),imp=!raw&&!!v,lk=isLock(ro,p.id,iso),rq=gr(ro,p.id,iso)==='P',t=TY[v],w=isWork(v);
-  var c=w&&ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],tg=c?adjTag(c):'',ea=w?adjOf(ro,p,iso,v):null;
+  var c=w&&ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],tg=c?adjTag(c):(t&&t.sub)||'',ea=w?adjOf(ro,p,iso,v):null;
   return {cls:'k c-'+(t?t.color:'empty')+(imp?' imp':'')+(t&&t.short.length>1?' sm2':'')+(lk?' lk':'')+(rq?' rq':'')+(rq&&w?' um':'')+(tg?' has-tg':''),txt:t?t.short:'·',tg:tg,
     aria:(p.name||'')+' '+parts(iso)[1]+'월 '+d.day+'일 '+DOWK[d.dow]+'요일 '+(t?t.name+(imp?' (따로 정하지 않아 근무로 계산)':''):'근무 없는 요일')+(c?', '+adjLong(c):ea?', 평소 '+adjLong(ea):'')+(rq?', 희망휴무':'')+(lk?', 직접 지정':'')+(noteOf(ro,p.id,iso)?', 메모: '+noteOf(ro,p.id,iso):'')}}
 function cellInner(c){return '<span class="mn">'+esc(c.txt)+'</span>'+(c.tg?'<span class="tg">'+esc(c.tg)+'</span>':'')}
@@ -1050,8 +1085,7 @@ function refreshStats(){var grid=document.getElementById('grid');
 /* ----- calendar view ----- */
 function wkTxt(it){var q=parts(it.mk);return (it.p.name||'이름 없음')+' '+q[1]+'/'+q[2]+'주 '+it.n+'/'+fmtNum(Math.round(it.t*2)/2)+'일'}
 function fmtHM(m){return pad(Math.floor(m/60))+':'+pad(m%60)}
-function workSpan(code,d,a){var t=TY[code];if(!t||d.type==='closed'||(t.kind!=='in'&&t.kind!=='out'))return null;var m=d.mm,nt=!!(t.night&&d.night);
-  var from=t.time==='pm'?m.pmS:m.amS,to=t.time==='am'?m.amE:(nt?m.ntE:m.pmE);if(a){from+=a.l||0;to-=a.e||0}return {from:from,to:Math.max(from,to)}}
+function workSpan(code,d,a){var s=span(code,d,a);return s?{from:s.from,to:s.to,gap:s.gap}:null}
 function noteOf(ro,sid,iso){return (ro.notes&&ro.notes[sid]&&ro.notes[sid][iso])||''}
 function memoOf(ro,iso){return (ro.memo&&ro.memo[iso])||''}
 /* running count of annual leave in a year (Y-number), keyed sid|iso */
@@ -1069,7 +1103,7 @@ function calSections(ym,teams){var L=S.labels||{},dates=monthDates(ym),hasNight=
   secs.push({k:'leave',id:'leave',label:L.leave||'연차',cls:'s-leave'},{k:'etc',id:'etc',label:L.etc||'포상',cls:'s-etc'});return secs}
 function nameItem(name,note,extra,cls,noteLast){var n='<span class="nt">('+esc(note)+')</span>',x=extra?' <small>'+extra+'</small>':'';
   return '<span class="it'+(cls?' '+cls:'')+'">'+esc(name||'이름 없음')+(noteLast?x+(note?n:''):(note?n:'')+x)+'</span>'}
-function leaveTag(v,y){return (v==='HA'||v==='HN'?'오전 ':v==='HP'?'오후 ':'')+(y!==undefined?'Y'+fmtNum(y):(v==='V'?'연차':'반차'))}
+function leaveTag(v,y,iso){if(isQ(v)){var g=iso?qGap(TY[v],di(iso)):null;return (y!==undefined?'반반':'반반차')+(g?' '+hmRange(g):'')+(y!==undefined?' Y'+fmtNum(y):'')}return (v==='HA'||v==='HN'?'오전 ':v==='HP'?'오후 ':'')+(y!==undefined?'Y'+fmtNum(y):(v==='V'?'연차':'반차'))}
 function adjText(v,d,ro,p,iso){var c=isWork(v)&&ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso];if(!c||!((c.e||0)+(c.l||0)))return '';var sp=workSpan(v,d,adjOf(ro,p,iso,v));return c.e&&c.l?fmtHM(sp.from)+'~'+fmtHM(sp.to):c.e?fmtHM(sp.to)+' 퇴근':fmtHM(sp.from)+' 출근'}
 /* list items for one section of one day, in the order the sheet uses */
 function secItems(sec,iso,d,teams,Y){var out=[];
@@ -1078,7 +1112,7 @@ function secItems(sec,iso,d,teams,Y){var out=[];
     if((d.dow===0&&isWork(v)&&TY[v].kind==='in')||(isNightCode(v)&&d.night))out.push(nameItem(p.name,noteOf(ro,p.id,iso),v==='HN'?'오후·야간':''))})});return out}
   if(sec.k==='off'){var t=sec.t,ro=roster(ui.ym,t.id);if(d.dow===0)return out;t.staff.forEach(function(p){if(inOff(ro,p,iso,d))out.push(nameItem(p.name,noteOf(ro,p.id,iso),cellCode(ro,p.id,iso)==='SUB'?'대휴':''))});return out}
   teams.forEach(function(t){var ro=roster(ui.ym,t.id);t.staff.forEach(function(p){var v=cellCode(ro,p.id,iso),nt=noteOf(ro,p.id,iso);if(!v)return;
-    if(sec.k==='leave'){if(leaveAmt(v))out.push(nameItem(p.name,nt,leaveTag(v,Y[p.id+'|'+iso])));else if(isWork(v)&&gr(ro,p.id,iso)==='P')out.push(nameItem(p.name,nt,'휴무희망','req'));return}
+    if(sec.k==='leave'){if(leaveAmt(v))out.push(nameItem(p.name,nt,leaveTag(v,Y[p.id+'|'+iso],iso)));else if(isWork(v)&&gr(ro,p.id,iso)==='P')out.push(nameItem(p.name,nt,'휴무희망','req'));return}
     if(sec.k==='etc'){var tp=TY[v],tx=adjText(v,d,ro,p,iso);
       if(v==='OT'){out.push(nameItem(p.name,nt,'OT 하루 ('+hLong(otUse(ro,p,iso))+')','',true));return}
       if(!BUILTIN_IDS[v]){out.push(nameItem(p.name,nt,esc(tp.name)+(tx?' '+tx:''),'',true));return}
@@ -1120,7 +1154,7 @@ function calendarView(ym,teams){var dates=monthDates(ym),secs=calSections(ym,tea
   h+='<p class="hint">이름 옆 괄호는 메모예요. 연차 옆 Y숫자는 올해 쓴 연차를 그날까지 센 수예요. 이 프로그램을 쓰기 전에 쓴 연차는 ‘팀·직원’의 ‘앞서 쓴 연차’에 넣으면 이어서 세요.</p>';
   return h}
 function cellDesc(ro,p,iso,d){if(absOf(p,iso))return (p.abs.why||'휴직')+' 중';var raw=rawCode(ro,p.id,iso),v=cellCode(ro,p.id,iso);if(!v)return d.type==='closed'?'휴진':'근무 없는 요일';var t=TY[v],sp=workSpan(v,d,adjOf(ro,p,iso,v));
-  if(!sp)return t.name;return t.name+' '+fmtHM(sp.from)+'~'+fmtHM(sp.to)+(t.kind==='out'?' · 병원 밖':'')+(raw?'':' · 기본')}
+  if(!sp)return t.name;if(t.q){var g=qGap(t,d);if(g)return t.name+' · '+fmtHM(g[0])+'~'+fmtHM(g[1])+' 쉼 · '+(sp.gap?'근무 '+fmtHM(sp.from)+'~'+fmtHM(sp.to):g[1]>=sp.to?fmtHM(sp.to)+' 퇴근':fmtHM(sp.from)+' 출근')}return t.name+' '+fmtHM(sp.from)+'~'+fmtHM(sp.to)+(t.kind==='out'?' · 병원 밖':'')+(raw?'':' · 기본')}
 var lastWide=true;
 /* how many days this person works (or takes paid leave) in the Mon–Sun week of a day, against their weekly target */
 function weekInfo(p,tid,iso){var mk=mondayOf(iso),F=[],n=0;for(var i=0;i<7;i++)F.push(addDays(mk,i));
@@ -1150,9 +1184,12 @@ function dayEditor(iso,teams,Y){var d=di(iso),q=parts(iso),dates=monthDates(ui.y
       h+='<div class="dl-row'+(ed?' ed':'')+'" id="dr-'+p.id+'"><div class="dl-top"><span class="dl-name">'+nm+(nt?'<span class="nt">('+esc(nt)+')</span>':'')+'</span><span class="dl-desc">'+esc(cellDesc(ro,p,iso,d))+(leaveAmt(v)&&y!==undefined?' · Y'+fmtNum(y):'')+'</span>'+
         (wk?'<span class="wk'+wkc+'" title="이번 주(월~일)에 근무·연차로 잡힌 날 / 주 근무일">이번 주 '+wk.n+'/'+fmtNum(Math.round(wk.t*2)/2)+'일</span>':'')+'</div>';
       if(ed){var rq=gr(ro,p.id,iso)==='P';
-        h+='<div class="qps" role="group" aria-label="'+nm+' 근무 형태">'+allTypes().filter(function(tp){return tp.id!=='HN'&&(tp.id!=='N'||d.night||isNightCode(v))}).map(function(tp){var on=v===tp.id||(v==='HN'&&(tp.id==='N'||tp.id==='HA'));
-          return '<button class="qp'+(on?' c-'+tp.color+(raw?'':' imp'):'')+'" id="qp-'+p.id+'-'+tp.id+'" data-qp="'+tp.id+'" data-s="'+p.id+'" data-t="'+t.id+'" data-d="'+iso+'" aria-pressed="'+on+'" title="'+esc(tp.name+(on&&raw?' · 한 번 더 누르면 지워져요':on?' (기본)':''))+'" aria-label="'+esc(tp.name)+'">'+esc(tp.short)+'</button>'}).join('')+
+        var qk=p.id+'|'+iso,qOn=isQ(v),qOpen=qOn||ui.qOpen===qk,qAny=QS.some(function(c){return qGap(TY[c],d)});
+        h+='<div class="qps" role="group" aria-label="'+nm+' 근무 형태">'+allTypes().filter(function(tp){return tp.id!=='HN'&&!tp.q&&(tp.id!=='N'||d.night||isNightCode(v))}).map(function(tp){var on=v===tp.id||(v==='HN'&&(tp.id==='N'||tp.id==='HA'));
+          return '<button class="qp'+(on?' c-'+tp.color+(raw?'':' imp'):'')+'" id="qp-'+p.id+'-'+tp.id+'" data-qp="'+tp.id+'" data-s="'+p.id+'" data-t="'+t.id+'" data-d="'+iso+'" aria-pressed="'+on+'" title="'+esc(tp.name+(on&&raw?' · 한 번 더 누르면 지워져요':on?' (기본)':''))+'" aria-label="'+esc(tp.name)+'">'+esc(tp.short)+'</button>'+
+            (tp.id==='HP'&&qAny?'<button class="qp qp-q'+(qOn?' c-'+TY[v].color:'')+'" id="qo-'+p.id+'" data-act="qOpen" data-k="'+qk+'" aria-expanded="'+qOpen+'" aria-pressed="'+qOn+'" title="반반차 (0.25일): 오전·오후 중 2시간만 쉬어요" aria-label="반반차">반반</button>':'')}).join('')+
           '</div>';
+        if(qOpen&&qAny)h+='<div class="qps qsub" role="group" aria-label="'+nm+' 반반차">'+QS.map(function(c){var tp=TY[c],g=qGap(tp,d),on=v===c;return '<button class="qp'+(on?' c-'+tp.color:'')+'" id="qp-'+p.id+'-'+c+'" data-qp="'+c+'" data-s="'+p.id+'" data-t="'+t.id+'" data-d="'+iso+'" aria-pressed="'+on+'"'+(g?'':' disabled')+' title="'+esc(tp.name+(g?' · '+hmRange(g)+' 쉼':' · 이날은 없어요')+(on?' · 한 번 더 누르면 지워져요':''))+'">'+QLAB[c]+(g?'<small>'+hmRange(g)+'</small>':'')+'</button>'}).join('')+'</div>';
         h+='<div class="dl-more">'+(isWork(v)||v==='OT'?adjSelect(ro,p,t.id,iso):'')+'<input type="text" class="dl-note" id="dn-'+p.id+'" data-note="'+p.id+'" data-t="'+t.id+'" maxlength="30" value="'+esc(nt)+'" placeholder="메모 (예: 변경불가)" aria-label="'+nm+' 메모">'+
           '<button class="qp qp-pref" id="qr-'+p.id+'" data-qr="'+p.id+'" data-t="'+t.id+'" data-d="'+iso+'" aria-pressed="'+rq+'" title="희망휴무: 자동 생성 때 되도록 이날 쉬게 해요">희망</button></div>'}
       h+='</div>'});
@@ -1177,9 +1214,11 @@ function secEditor(iso,secId,teams,Y){var d=di(iso),sec=calSections(ui.ym,teams)
     if(adds)h+='<div class="pk-add"><div class="pk-lab">이름을 누르면 이 칸에 들어가요</div>'+adds+'</div>'}
   var Tl=k==='off'?[sec.t]:teams;
   if(k==='night'&&d.dow!==0&&!d.night){h+='<p class="sec-help">이날은 야간 진료가 없어요. 야간을 열려면 관리자가 ‘진료 시간’의 날짜별 진료 시간에서 바꿔요.</p>';return '<div class="secpane pane-'+k+'">'+h+secFoot()+'</div>'}
-  var code=k==='off'?(ui.offKind==='SUB'?'SUB':'O'):k==='night'?(d.dow===0?'W':'N'):k==='leave'?ui.leaveKind:null,inner='',adds='';
+  var lk=ui.leaveKind;if(isQ(lk)&&!qGap(TY[lk],d))lk='V';
+  var code=k==='off'?(ui.offKind==='SUB'?'SUB':'O'):k==='night'?(d.dow===0?'W':'N'):k==='leave'?lk:null,inner='',adds='';
   if(k==='off'&&canTeam(sec.t.id)){h+='<div class="seg lv-seg" role="group" aria-label="넣을 종류">'+[['O','휴무'],['SUB','대체휴무']].map(function(o){return '<button data-act="offKind" data-k="'+o[0]+'" aria-pressed="'+((ui.offKind==='SUB'?'SUB':'O')===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'}
-  if(k==='leave'){h+='<div class="seg lv-seg" role="group" aria-label="넣을 종류">'+[['V','연차'],['HA','오전 반차'],['HP','오후 반차']].map(function(o){return '<button data-act="lvKind" data-k="'+o[0]+'" aria-pressed="'+(ui.leaveKind===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'}
+  if(k==='leave'&&eds.length){h+='<div class="seg lv-seg" role="group" aria-label="넣을 종류">'+[['V','연차'],['HA','오전 반차'],['HP','오후 반차']].map(function(o){return '<button data-act="lvKind" data-k="'+o[0]+'" aria-pressed="'+(lk===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'+
+    '<div class="qbox"><div class="pk-lab">반반차 · 0.25일</div><div class="qseg" role="group" aria-label="반반차 종류">'+QS.map(function(c){var g=qGap(TY[c],d);return '<button data-act="lvKind" data-k="'+c+'" aria-pressed="'+(lk===c)+'"'+(g?'':' disabled')+' title="'+esc(TY[c].name)+'">'+QLAB[c]+'<small>'+(g?hmRange(g)+' 쉼':'이날은 없어요')+'</small></button>'}).join('')+'</div></div>'}
   if(k==='etc'){Tl.forEach(function(t){var ro=roster(ui.ym,t.id),ed=canTeam(t.id),tmp='';
       t.staff.forEach(function(p){if(absOf(p,iso))return;var v=cellCode(ro,p.id,iso);if(!v&&ui.etcAdd!==p.id)return;var tx=adjText(v,d,ro,p,iso),custom=v&&(!BUILTIN_IDS[v]||v==='OT'),nt=noteOf(ro,p.id,iso),inside=custom||tx||(nt&&v==='W')||ui.etcAdd===p.id;
         if(inside){inner+='<div class="pk-row etc"><div class="pk-top"><b>'+esc(p.name||'이름 없음')+'</b><span class="pk-sub">'+esc(custom?TY[v].name+(tx?' '+tx:''):tx||(isWork(v)?'근무':TY[v]?TY[v].name:''))+'</span><span class="pk-sub ot-left">'+otLeftText(p)+'</span>'+(ed?'<button class="btn small" data-act="etcRm" data-k="'+p.id+'" data-t="'+t.id+'">빼기</button>':'')+'</div>';
@@ -1188,19 +1227,19 @@ function secEditor(iso,secId,teams,Y){var d=di(iso),sec=calSections(ui.ym,teams)
           inner+='</div>'}
         else if(ed&&isWork(v))tmp+='<button class="pill" id="pk-'+p.id+'" data-act="etcAdd" data-k="'+p.id+'">'+esc(p.name||'이름 없음')+'</button>'});
       if(tmp)adds+=(Tl.length>1?'<div class="pk-team">'+esc(t.name)+'</div>':'')+'<div class="pills">'+tmp+'</div>'});
-    block(inner,adds,'시간 칸에서 <b>OT 조퇴·OT 늦출</b>(30분 단위)이나 <b>OT 하루 전체</b>를 고르면 그만큼 OT에서 빠져요. '+eds.length?'조퇴·늦은 출근 시간이나 '+(S.types.length?esc(S.types.map(function(t){return t.name}).join('·'))+' 같은 일정':'일정')+'을 넣어요. 메모에 사유(예: 10/16 연장근무)를 적으면 달력에 괄호로 보여요.':'보기만 할 수 있어요.');
+    block(inner,adds,eds.length?'시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>를 고르면 그만큼 OT에서 빠져요. 조퇴·늦은 출근 시간이나 '+(S.types.length?esc(S.types.map(function(t){return t.name}).join('·'))+' 같은 일정':'일정')+'을 넣어요. 메모에 사유(예: 10/16 연장근무)를 적으면 달력에 괄호로 보여요.':'보기만 할 수 있어요.');
     return '<div class="secpane pane-'+k+'">'+h+secFoot()+'</div>'}
   Tl.forEach(function(t){var ro=roster(ui.ym,t.id),ed=canTeam(t.id),tmp='';
     t.staff.forEach(function(p){var v=cellCode(ro,p.id,iso),y=Y[p.id+'|'+iso];
       var isIn=k==='leave'?!!leaveAmt(v):k==='off'?inOff(ro,p,iso,d):(d.dow===0?(isWork(v)&&TY[v].kind==='in'):isNightCode(v));
-      if(isIn){var fx=k==='off'&&fixedOff(ro,p,iso,d);inner+=inRow(p,t,ro,fx?'W':k==='leave'?(v==='HN'?'HA':v):k==='off'?v:code,k==='leave'?leaveTag(v,y)+(v==='HN'?' · 야간':'')+lvLeft(p,iso):k==='night'&&v==='HN'?'오전 반차':fx?DOWK[d.dow]+'요일 정기 휴무':v==='SUB'?'대체휴무 (공휴일 근무 대신)':'');return}
+      if(isIn){var fx=k==='off'&&fixedOff(ro,p,iso,d);inner+=inRow(p,t,ro,fx?'W':k==='leave'?(v==='HN'?'HA':v):k==='off'?v:code,k==='leave'?leaveTag(v,y,iso)+(v==='HN'?' · 야간':'')+lvLeft(p,iso):k==='night'&&v==='HN'?'오전 반차':fx?DOWK[d.dow]+'요일 정기 휴무':v==='SUB'?'대체휴무 (공휴일 근무 대신)':'');return}
       if(!ed)return;
       var ab=absOf(p,iso),st=statusText(ro,p,iso,d),dis=ab||(k!=='night'&&(!v||offDay(ro,p,iso,d))),sub=ab?(p.abs.why||'휴직'):st+(gr(ro,p.id,iso)==='P'?(st?' · ':'')+'휴무희망':'')+(k==='night'&&!p.night&&!ab?(st?' · ':'')+'야간 안 함':'');
       if(k==='leave'&&!ab){var lf=lvLeft(p,iso);if(lf)sub=(sub+lf).replace(/^ · /,'')}
       var gb=!dis&&k!=='night'?groupBlock(p.id,iso,code):[];if(gb.length)sub=(sub?sub+' · ':'')+'같이 못 쉼: '+gb.join('·');
       tmp+=pill(p,t,iso,code,false,sub,dis).replace('class="pill','class="pill'+(gb.length?' warn':'')+(ui.grpWarn&&ui.grpWarn.sid===p.id&&ui.grpWarn.iso===iso?' ask':''))});
     if(tmp)adds+=(Tl.length>1?'<div class="pk-team">'+esc(t.name)+'</div>':'')+'<div class="pills">'+tmp+'</div>'});
-  var help=!eds.length||(k==='off'&&!canTeam(sec.t.id))?'보기만 할 수 있어요.':k==='off'?'쉬는 사람 이름을 누르세요. 공휴일에 근무한 대신 쉬는 날은 위에서 <b>대체휴무</b>를 고른 뒤 누르세요. 위 칸에 있는 이름을 다시 누르면 빠지고 근무로 돌아가요. 정기 휴무인 사람을 누르면 그날만 근무로 바뀌어요.':k==='leave'?'위에서 연차·반차를 고른 뒤 이름을 누르세요. 다시 누르면 빠져요.':d.dow===0?'일요일에 나오는 사람 이름을 누르세요.':'야간 근무할 사람 이름을 누르세요. 다시 누르면 빠져요.';
+  var help=!eds.length||(k==='off'&&!canTeam(sec.t.id))?'보기만 할 수 있어요.':k==='off'?'쉬는 사람 이름을 누르세요. 공휴일에 근무한 대신 쉬는 날은 위에서 <b>대체휴무</b>를 고른 뒤 누르세요. 위 칸에 있는 이름을 다시 누르면 빠지고 근무로 돌아가요. 정기 휴무인 사람을 누르면 그날만 근무로 바뀌어요.':k==='leave'?'위에서 연차·반차·반반차를 고른 뒤 이름을 누르세요. 다시 누르면 빠져요. 반반차는 오전이나 오후 진료 시간 중 앞쪽 또는 뒤쪽 절반(보통 2시간)만 쉬어요.':d.dow===0?'일요일에 나오는 사람 이름을 누르세요.':'야간 근무할 사람 이름을 누르세요. 다시 누르면 빠져요.';
   block(inner,adds,help);
   if(k==='night'&&d.night){var nn=0,need=0;teams.forEach(function(t){var ro=roster(ui.ym,t.id);need+=t.need.night;t.staff.forEach(function(p){if(isNightCode(cellCode(ro,p.id,iso)))nn++})});if(need)h+='<p class="sec-help">야간 '+nn+'명 / 필요 '+need+'명</p>'}
   return '<div class="secpane pane-'+k+'">'+h+secFoot()+'</div>'}
@@ -1229,7 +1268,7 @@ function workIn(ro,p,iso){if(absOf(p,iso))return false;var v=cellCode(ro,p.id,is
 /* a person's place on a day: set for that day, otherwise their usual place */
 function placeOf(t,ro,p,iso){var r=ro.place&&ro.place[p.id]&&ro.place[p.id][iso];if(r==='-')return '';if(r&&postById(t,r))return r;return p.post&&postById(t,p.post)?p.post:''}
 function placeSet(t,p,iso,post){var ym=iso.slice(0,7),ro=roster(ym,t.id,true),v=post?(post===p.post?'':post):(p.post?'-':'');setIn(ro.place,p.id,iso,v);dRoster(ym,t.id)}
-function halfTag(ro,p,iso){var v=cellCode(ro,p.id,iso);return v==='HA'?'오후만':v==='HP'?'오전만':''}
+function halfTag(ro,p,iso){var v=cellCode(ro,p.id,iso);if(isQ(v)){var g=qGap(TY[v],di(iso));return g?hmRange(g)+' 쉼':''}return v==='HA'?'오후만':v==='HP'?'오전만':''}
 function placeWeek(){var ds=monthDates(ui.ym),ok=function(mk){var e=addDays(mk,6);return e>=ds[0]&&mk<=ds[ds.length-1]};
   if(!ui.pw||!ok(ui.pw)){var t=new Date(),ti=isoOf(t.getFullYear(),t.getMonth()+1,t.getDate()),thu=ds.filter(function(x){return di(x).dow===4})[0];ui.pw=mondayOf(ds.indexOf(ti)>=0?ti:thu)}return ui.pw}
 function placeDay(){var ds=monthDates(ui.ym);if(!ui.pday||ds.indexOf(ui.pday)<0){var t=new Date(),ti=isoOf(t.getFullYear(),t.getMonth()+1,t.getDate());ui.pday=ds.indexOf(ti)>=0?ti:(ds.filter(function(x){return di(x).type!=='closed'})[0]||ds[0])}return ui.pday}
@@ -1350,7 +1389,7 @@ function leaveUsedMap(year){year=String(year);if(LVC[year])return LVC[year];var 
   S.teams.forEach(function(t){t.staff.forEach(function(p){if(m[p.id]===undefined)m[p.id]=(p.leave0&&p.leave0.y===+year)?p.leave0.d:0})});return LVC[year]=m}
 function lvLeft(p,iso){var y=iso.slice(0,4),tot=p.lt&&p.lt[y];if(!tot)return '';return ' · 남은 연차 '+fmtNum(tot-(leaveUsedMap(y)[p.id]||0))}
 function balancePanel(ym,teams){var eds=teams.filter(function(t){return canTeam(t.id)});if(!eds.length)return '';var y=ym.slice(0,4),mo=+ym.slice(5),used=leaveUsedMap(y);
-  var h='<section class="panel" id="ledger"><h2>연차·OT 현황</h2><p>팀장과 관리자에게만 보여요. 올해 총 연차는 ‘팀·직원’에서 정하고, 근무표에 연차·반차를 넣으면 자동으로 빠져요. OT는 야간 근무(2시간 → 3시간)와 <b>근태</b> 탭의 수납 OT가 자동으로 쌓이고, 그 밖의 OT는 아래에서 기록해요. 쓸 때는 포상 칸이나 날짜 화면의 시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>를 고르면 그만큼 빠져요. 그 달 야간 OT가 남으면 월말에 수당으로 정산돼요.</p>';
+  var h='<section class="panel" id="ledger"><h2>연차·OT 현황</h2><p>팀장과 관리자에게만 보여요. 올해 총 연차는 ‘팀·직원’에서 정하고, 근무표에 연차·반차·반반차를 넣으면 자동으로 빠져요. OT는 야간 근무(2시간 → 3시간)와 <b>근태</b> 탭의 수납 OT가 자동으로 쌓이고, 그 밖의 OT는 아래에서 기록해요. 쓸 때는 포상 칸이나 날짜 화면의 시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>를 고르면 그만큼 빠져요. 그 달 야간 OT가 남으면 월말에 수당으로 정산돼요.</p>';
   h+='<div class="tblwrap"><table class="tbl ledger"><thead><tr><th>이름</th><th class="num">'+y+'년 연차</th><th class="num">사용</th><th class="num">남음</th><th class="num">'+mo+'월 OT 적립</th><th class="num">'+mo+'월 OT 사용</th><th class="num">남은 OT</th></tr></thead><tbody>';
   eds.forEach(function(t){if(eds.length>1)h+='<tr class="lg-team"><th colspan="7">'+esc(t.name)+'</th></tr>';
     t.staff.forEach(function(p){var tot=p.lt&&p.lt[y],u=used[p.id]||0,left=tot?tot-u:null,om=otMonth(p,ym),ob=otBalance(p,ym);
@@ -1404,7 +1443,8 @@ function dutMin(iso,t){var r=attRule(),over=toMin(t)-regEnd(di(iso));if(!hm(t)||
 /* when the roster expects someone in (근무·야간·반차), using the 근태 regular end times */
 function planSpan(v,d,a){var t=TY[v];if(!t||t.kind!=='in'||d.type==='closed')return null;var h=d.h,st=toMin(h.start),dayE=d.night?toMin(h.end):regEnd(d),nE=toMin(attRule().nEnd),ls=h.lunch?toMin(h.ls):null,le=h.lunch?toMin(h.le):null;
   var from=st,to=(t.night&&d.night)?nE:dayE;if(t.time==='pm')from=le!==null?le:Math.round((st+dayE)/2);if(t.time==='am')to=ls!==null?ls:Math.round((st+dayE)/2);
-  if(a){from+=a.l||0;to-=a.e||0}return {from:from,to:Math.max(from,to)}}
+  var g=qGap(t,d);if(g){if(t.q===1||(t.q===3&&!d.hasAM))from=g[1];if(t.q===4||(t.q===2&&!d.hasPM))to=g[0]}
+  if(a){from+=a.l||0;to-=a.e||0}return {from:from,to:Math.max(from,to),gap:g&&g[0]>from&&g[1]<to?g:null}}
 function workedMin(i,o,dow){if(i===null||o===null||o<=i)return 0;var h=S.hours[dow]||{},w=o-i;if(h.lunch){var a=toMin(h.ls),b=toMin(h.le);w-=Math.max(0,Math.min(o,b)-Math.max(i,a))}return Math.max(0,w)}
 function manOt(x,iso){if(!x.t)return 0;var ro=roster(iso.slice(0,7),x.t.id);return (ro.ot&&ro.ot[x.p.id]&&ro.ot[x.p.id][iso])||0}
 /* one person, one day: what the roster planned, what the fingerprints say, and what it earns or uses */
@@ -1412,6 +1452,8 @@ function attDay(x,iso,A){var p=x.p,t=x.t,d=di(iso),ro=t?roster(iso.slice(0,7),t.
   var has=!!(A&&A.rows[p.id]),r=has&&A.rows[p.id][iso]||null,f=A&&A.fix[p.id]&&A.fix[p.id][iso]||null;
   var ia=f&&f.i!==undefined?f.i:(r?r[0]:''),oa=f&&f.o!==undefined?f.o:(r?r[1]:''),i=ia?toMin(ia):null,o=oa?toMin(oa):null,plan=t&&!ab?planSpan(v,d,a):null,flags=[];
   var X={iso:iso,d:d,v:v,ab:ab,plan:plan,i:i,o:o,ia:ia,oa:oa,f:f,has:has,raw:r,work:workedMin(i,o,d.dow),night:0,dut:0,dutT:'',hol:0,use:0,sub:v==='SUB',early:0,late:0,flags:flags};
+  /* 반반차 in the middle of the day: the fingerprint only has first in / last out, so take the 2 hours off back out */
+  if(plan&&plan.gap&&i!==null&&o!==null)X.work=Math.max(0,X.work-Math.max(0,Math.min(o,plan.gap[1])-Math.max(i,plan.gap[0])));
   if(d.night){var dE=toMin(d.h.end),nE=toMin(rule.nEnd),nmin=Math.max(0,nE-dE);
     if(has){if(o!==null&&(i===null||i<dE)){if(o>=nE-10)X.night=nmin;else if(o-dE>=60)X.night=Math.min(nmin,Math.floor((o-dE)/30)*30)}}
     else if(isNightCode(v))X.night=nmin}
@@ -1572,7 +1614,7 @@ function attDetailView(ym,teams){var ppl=attPeople(ym,teams);if(!ppl.length)retu
   M.days.forEach(function(dd){var d=dd.d,q=parts(dd.iso),show=dd.plan||dd.i!==null||dd.o!==null||dd.night||dd.dut||dd.use||dd.hol||dd.sub||(dd.v&&dd.v!=='W'&&d.type!=='closed')||dd.f;if(!show)return;
     var tp=dd.v?TY[dd.v]:null,code=dd.ab?(x.p.abs.why||'휴직'):tp?tp.name:(d.type==='closed'?(d.hol||'휴진'):'—'),pc=(d.dow===0||d.hol)?'sun':d.dow===6?'sat':'';
     var fx=function(k){return dd.f&&dd.f[k]!==undefined?' fixed':''};
-    h+='<tr class="'+(dd.flags.some(function(f){return f[0]==='bad'||f[0]==='warn'})?'has-issue':'')+'"><th scope="row" class="'+pc+'">'+q[1]+'/'+q[2]+' ('+DOWK[d.dow]+')</th><td>'+(tp?'<span class="sw c-'+tp.color+'">'+esc(tp.short)+'</span> ':'')+esc(code)+'</td><td class="tm">'+(dd.plan?fmtHM(dd.plan.from)+'~'+fmtHM(dd.plan.to):'')+'</td>'+
+    h+='<tr class="'+(dd.flags.some(function(f){return f[0]==='bad'||f[0]==='warn'})?'has-issue':'')+'"><th scope="row" class="'+pc+'">'+q[1]+'/'+q[2]+' ('+DOWK[d.dow]+')</th><td>'+(tp?'<span class="sw c-'+tp.color+'">'+esc(tp.short)+'</span> ':'')+esc(code)+'</td><td class="tm">'+(dd.plan?fmtHM(dd.plan.from)+'~'+fmtHM(dd.plan.to)+(dd.plan.gap?'<br><small>'+hmRange(dd.plan.gap)+' 쉼</small>':''):'')+'</td>'+
       '<td class="tm'+fx('i')+'">'+esc(dd.ia||'')+'</td><td class="tm'+fx('o')+'">'+esc(dd.oa||'')+'</td><td class="num">'+(dd.work?hh(dd.work):'')+'</td><td class="num'+fx('n')+'">'+(dd.night?hh(dd.night):'')+'</td><td class="num">'+(dd.dut?'+'+dd.dut+'분<small> '+esc(dd.dutT)+'</small>':'')+'</td><td class="num">'+(dd.use?'−'+hLong(dd.use):'')+'</td><td class="num'+fx('h')+'">'+(dd.hol?hh(dd.hol):dd.sub?'대체휴무':'')+'</td>'+
       '<td class="flags">'+dd.flags.map(function(f){return '<span class="tag '+f[0]+'">'+esc(f[1])+'</span>'+(f[2]==='early'&&can&&x.t&&!dd.use&&canTeam(x.t.id)?'<button class="tagbtn" data-act="attUseOt" data-k="'+esc(x.p.id)+'" data-d="'+dd.iso+'" data-m="'+r5(dd.early,480)+'" title="근무표에 OT 조퇴로 넣어요">OT 사용으로</button>':'')}).join('')+'</td>'+
       (can?'<td><button class="btn small" data-act="attEdit" data-d="'+dd.iso+'" aria-expanded="'+(ui.attEdit===dd.iso)+'">고치기</button></td>':'')+'</tr>';
@@ -1685,7 +1727,7 @@ function dateEditor(iso){var d=di(iso),o=S.dateHours[iso],base=S.hours[d.dow],mo
 
 /* ----- types tab ----- */
 function typesTab(){
-  var h='<section class="panel"><h2>기본 근무 형태</h2><p>항상 들어 있는 근무 형태예요. 반차는 오전·오후를 나눠서, 그날 오전과 오후 인원에 각각 반영돼요.</p><div class="tblwrap"><table class="tbl"><thead><tr><th>표시</th><th>이름</th><th>설명</th></tr></thead><tbody>'+
+  var h='<section class="panel"><h2>기본 근무 형태</h2><p>항상 들어 있는 근무 형태예요. 반차는 오전·오후를 나눠서, 그날 오전과 오후 인원에 각각 반영돼요. 반반차(0.25일)는 오전이나 오후 진료 시간의 앞쪽 또는 뒤쪽 절반(보통 2시간)만 쉬어요.</p><div class="tblwrap"><table class="tbl"><thead><tr><th>표시</th><th>이름</th><th>설명</th></tr></thead><tbody>'+
     BUILTIN.map(function(t){return '<tr><td>'+swatch(t.id)+'</td><th scope="row">'+esc(t.name)+'</th><td class="desc">'+esc(t.desc)+'</td></tr>'}).join('')+'</tbody></table></div></section>';
   h+='<section class="panel"><h2>추가 근무 형태</h2><p>외근·교육·출장·경조사처럼 병원에서 쓰는 근무 형태를 더할 수 있어요. ‘병원 밖 근무’는 근무일과 근무시간에는 들어가지만 그날 병원 인원에는 세지 않아요.</p>';
   if(S.types.length){h+='<div class="tblwrap"><table class="tbl"><thead><tr><th>이름</th><th>표시 글자</th><th>색</th><th>분류</th><th>시간</th><th></th></tr></thead><tbody>';
@@ -1805,8 +1847,8 @@ function teamPanel(t,admin){var tid=t.id,n=t.need,h='<section class="panel"><h2>
       '<td><div class="days" role="group" aria-label="근무 가능 요일">'+WEEK.map(function(dw){var on=p.avail.indexOf(dw)>=0;return '<button class="day'+(on?' on':'')+(dw===6?' sat':dw===0?' sun':'')+'" id="'+id+'d'+dw+'" data-act="avail" data-k="'+p.id+'" data-dw="'+dw+'" aria-pressed="'+on+'">'+DOWK[dw]+'</button>'}).join('')+'</div></td>'+
       '<td><span class="tr"><label class="vh" for="'+id+'late">늦게 출근</label><select id="'+id+'late" data-st="'+p.id+'" data-k="late">'+amtOpts(p.late,'l')+'</select><label class="vh" for="'+id+'early">일찍 퇴근</label><select id="'+id+'early" data-st="'+p.id+'" data-k="early">'+amtOpts(p.early,'e')+'</select></span></td>'+
       '<td><label class="chk"><input type="checkbox" id="'+id+'night" data-st="'+p.id+'" data-k="night"'+(p.night?' checked':'')+'>가능</label></td>'+
-      '<td><div class="lvbox"><label class="tr" for="'+id+'lt">총 연차 <input type="number" id="'+id+'lt" data-st="'+p.id+'" data-k="lt" min="0" max="400" step="0.5" value="'+((p.lt&&p.lt[ui.ym.slice(0,4)])||'')+'" placeholder="예: 15"> 일</label>'+
-        '<label class="tr" for="'+id+'lv0">앞서 씀 <input type="number" id="'+id+'lv0" data-st="'+p.id+'" data-k="leave0" min="0" max="400" step="0.5" value="'+((p.leave0&&p.leave0.y===+ui.ym.slice(0,4))?p.leave0.d:0)+'" aria-label="'+esc(p.name)+' 올해 앞서 쓴 연차"> 일</label>'+
+      '<td><div class="lvbox"><label class="tr" for="'+id+'lt">총 연차 <input type="number" id="'+id+'lt" data-st="'+p.id+'" data-k="lt" min="0" max="400" step="0.25" value="'+((p.lt&&p.lt[ui.ym.slice(0,4)])||'')+'" placeholder="예: 15"> 일</label>'+
+        '<label class="tr" for="'+id+'lv0">앞서 씀 <input type="number" id="'+id+'lv0" data-st="'+p.id+'" data-k="leave0" min="0" max="400" step="0.25" value="'+((p.leave0&&p.leave0.y===+ui.ym.slice(0,4))?p.leave0.d:0)+'" aria-label="'+esc(p.name)+' 올해 앞서 쓴 연차"> 일</label>'+
         '<label class="tr" for="'+id+'ot0">OT 이월 <input type="number" id="'+id+'ot0" data-st="'+p.id+'" data-k="ot0" step="0.5" value="'+(p.ot0?Math.round(p.ot0/30)/2:0)+'" aria-label="'+esc(p.name)+' 이전에 쌓인 OT 시간"> 시간</label></div></td>'+
       '<td>'+(p.abs?'<span class="abs-pill">'+esc(absText(p.abs))+'</span> ':'')+'<button class="btn small" id="'+id+'abs" data-act="absEdit" data-k="'+p.id+'" aria-expanded="'+(ui.absEdit===p.id)+'">'+(p.abs?'바꾸기':'설정')+'</button></td>'+
       '<td>'+(ui.confirm==='staff:'+p.id?'<button class="btn small danger" data-act="staffDel" data-k="'+p.id+'">정말 삭제</button> <button class="btn small" data-act="cancel">취소</button>':'<button class="btn small" data-act="staffAsk" data-k="'+p.id+'">삭제</button>')+'</td></tr>';
@@ -1953,6 +1995,7 @@ app.addEventListener('click',function(e){
   case 'postDel':(function(){var tm=teamById(k);if(!tm||!canTeam(k))return;var pid=t.dataset.p;tm.posts=tm.posts.filter(function(x){return x.id!==pid});tm.staff.forEach(function(p){if(p.post===pid)p.post=''});if(ui.psel&&ui.psel.p===pid)ui.psel=null;ui.confirm=null;dTeam(k);render()})();break;
   case 'secAll':ui.selSec=null;ui.etcAdd=null;render();break;
   case 'lvKind':ui.leaveKind=k;render();break;
+  case 'qOpen':ui.qOpen=ui.qOpen===k?null:k;render();break;
   case 'etcAdd':ui.etcAdd=k;render();(function(){var el=document.getElementById('adj-'+k);if(el)el.focus()})();break;
   case 'etcRm':(function(){var tid=t.dataset.t;if(!canTeam(tid))return;var ro=roster(ui.ym,tid,true),iso=ui.selDay,v=rawCode(ro,k,iso);setIn(ro.adj,k,iso,'');setIn(ro.notes,k,iso,'');if(v&&!BUILTIN_IDS[v]){setIn(ro.cells,k,iso,'');setIn(ro.locks,k,iso,'')}if(ui.etcAdd===k)ui.etcAdd=null;dRoster(ui.ym,tid);render()})();break;
   case 'dayStep':(function(){var ds=monthDates(ui.ym),i=ds.indexOf(ui.selDay)+(+k);if(i>=0&&i<ds.length){ui.selDay=ds[i];render();var b=document.querySelector('[data-act="dayStep"][data-k="'+k+'"]');if(b&&!b.disabled)b.focus()}})();break;
@@ -2204,15 +2247,15 @@ function printCal(ym){var teams=visibleTeams().filter(function(t){return t.staff
   h+='<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},500)})<\/script></body></html>';
   return h}
 function printDoc(ym){var dates=monthDates(ym),teams=visibleTeams().filter(function(t){return t.staff.length}),st=stats(ym,teams);
-  var colors={work:['#DCEEE7','#155240'],night:['#E3E5F6','#3B468E'],halfnight:['#E3E5F6','#3B468E'],otuse:['#ECE2F7','#5A3590'],leave:['#FAEDD2','#94600A'],halfam:['#FAEDD2','#94600A'],halfpm:['#FAEDD2','#94600A'],off:['#FFFFFF','#8A9590'],blue:['#DDE8FA','#1F4E9C'],violet:['#ECE2F7','#5A3590'],rose:['#F8DFE6','#982B4A'],cyan:['#D6EEF4','#105D70'],lime:['#E7EFD0','#4C5E12'],slate:['#E3E7EA','#3D4A55']};
+  var colors={work:['#DCEEE7','#155240'],night:['#E3E5F6','#3B468E'],halfnight:['#E3E5F6','#3B468E'],otuse:['#ECE2F7','#5A3590'],leave:['#FAEDD2','#94600A'],halfam:['#FAEDD2','#94600A'],halfpm:['#FAEDD2','#94600A'],q1:['#FAEDD2','#94600A'],q2:['#FAEDD2','#94600A'],q3:['#FAEDD2','#94600A'],q4:['#FAEDD2','#94600A'],off:['#FFFFFF','#8A9590'],blue:['#DDE8FA','#1F4E9C'],violet:['#ECE2F7','#5A3590'],rose:['#F8DFE6','#982B4A'],cyan:['#D6EEF4','#105D70'],lime:['#E7EFD0','#4C5E12'],slate:['#E3E7EA','#3D4A55']};
   var css='@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;margin:14px}h1{font-size:16px;margin:0 0 2px}p{margin:0 0 8px;font-size:10.5px;color:#55615C}table{border-collapse:collapse;width:100%;font-size:9.5px;table-layout:fixed}th,td{border:1px solid #C9D2CE;text-align:center;padding:2px 0;height:20px;overflow:hidden;white-space:nowrap}th.n,td.n{width:80px;text-align:left;padding-left:4px}th.s,td.s{width:32px}td small{display:block;font-size:7px;line-height:1;font-weight:600}td.n small{font-size:8px;font-weight:400;color:#55615C}.sat{color:#2352B0}.sun{color:#C2392D}.x{background:#EEF1EF}.g td{background:#F2F5F3;font-weight:600;text-align:left;padding-left:4px}.t td{font-weight:600}.short{color:#C2392D;background:#FBE2DE}.leg{margin-top:6px;font-size:10px;color:#55615C}';
   Object.keys(TY).forEach(function(k){var t=TY[k],c=colors[t.color]||colors.slate;css+='.k-'+k+'{background:'+c[0]+';color:'+c[1]+';font-weight:600}'});
-  var h='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(S.clinic+' '+ymLabel(ym)+' 근무표')+'</title>'+FONT_LINK+'<style>'+css+'</style></head><body><h1>'+esc(S.clinic)+' · '+ymLabel(ym)+' 근무표'+(ui.team!=='all'?' · '+esc((teamById(ui.team)||{}).name||''):'')+'</h1><p>'+allTypes().map(function(t){return esc(t.short+' '+t.name)}).join(' · ')+' · 조1.5 = 1시간 30분 일찍 퇴근 · 늦1 = 1시간 늦게 출근 · 회색 칸은 휴진·공휴일</p><table><thead><tr><th class="n">이름</th>';
+  var h='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(S.clinic+' '+ymLabel(ym)+' 근무표')+'</title>'+FONT_LINK+'<style>'+css+'</style></head><body><h1>'+esc(S.clinic)+' · '+ymLabel(ym)+' 근무표'+(ui.team!=='all'?' · '+esc((teamById(ui.team)||{}).name||''):'')+'</h1><p>'+allTypes().filter(function(t){return !t.q}).map(function(t){return esc(t.short+' '+t.name)}).join(' · ')+' · 반반 반반차(전앞·전뒤 = 오전 앞·뒤 2시간, 후앞·후뒤 = 오후 앞·뒤 2시간) · 조1.5 = 1시간 30분 일찍 퇴근 · 늦1 = 1시간 늦게 출근 · 회색 칸은 휴진·공휴일</p><table><thead><tr><th class="n">이름</th>';
   dates.forEach(function(iso){var d=di(iso),c=d.dow===6?'sat':(d.dow===0||d.hol)?'sun':'';h+='<th class="'+c+'">'+d.day+'<br>'+DOWK[d.dow]+'</th>'});
   h+='<th class="s">근무</th><th class="s">야간</th><th class="s">연차</th></tr></thead><tbody>';
   teams.forEach(function(team){var ro=roster(ym,team.id);h+='<tr class="g"><td colspan="'+(dates.length+4)+'">'+esc(team.name)+(leaderNames(team)?' (팀장 '+esc(leaderNames(team))+')':'')+'</td></tr>';
     team.staff.forEach(function(p){var o=st.per[p.id];h+='<tr><td class="n">'+esc(p.name)+((p.late||p.early)?'<small>'+esc(adjLong({e:p.early,l:p.late}))+'</small>':'')+'</td>';
-      dates.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td class="x"></td>';return}if(absOf(p,iso)){h+='<td class="x" style="font-size:7.5px">휴직</td>';return}var v=cellCode(ro,p.id,iso),c=isWork(v)&&ro.adj[p.id]&&ro.adj[p.id][iso];h+='<td class="'+(v?'k-'+v:'')+'">'+(v?esc(TY[v].short):'')+(c?'<small>'+esc(adjTag(c))+'</small>':'')+'</td>'});
+      dates.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td class="x"></td>';return}if(absOf(p,iso)){h+='<td class="x" style="font-size:7.5px">휴직</td>';return}var v=cellCode(ro,p.id,iso),c=isWork(v)&&ro.adj[p.id]&&ro.adj[p.id][iso];h+='<td class="'+(v?'k-'+v:'')+'">'+(v?esc(TY[v].short):'')+(c?'<small>'+esc(adjTag(c))+'</small>':v&&TY[v].sub?'<small>'+esc(TY[v].sub)+'</small>':'')+'</td>'});
       h+='<td>'+o.work+'</td><td>'+o.night+'</td><td>'+(o.leave?fmtNum(o.leave):'')+'</td></tr>'})});
   [['오전',0,'hasAM'],['오후',1,'hasPM'],['야간',2,'night']].forEach(function(s,i){h+='<tr class="t"><td class="n">'+(i===0?'인원 ':'')+s[0]+'</td>';
     dates.forEach(function(iso){var x=st.days[iso],d=di(iso);if(!x){h+='<td class="x"></td>';return}if(!d[s[2]]){h+='<td></td>';return}
