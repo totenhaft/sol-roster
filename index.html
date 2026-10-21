@@ -53,7 +53,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .who{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-size:12.5px;font-weight:500;white-space:nowrap}
 .savestate{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
-.dot.warn{background:var(--warn)}.dot.ok{background:var(--accent)}
+.dot.warn{background:var(--warn)}.dot.ok{background:var(--accent)}.dot.bad{background:var(--danger)}
 .tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-bottom:-1px}
 .tab{appearance:none;border:0;background:none;font:inherit;color:var(--muted);padding:10px 14px 11px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px;font-weight:500}
 .tab .num{width:20px;height:20px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;font-size:11px;font-weight:600}
@@ -555,6 +555,7 @@ a.tab{text-decoration:none}
 .c-qn2{background:linear-gradient(90deg,var(--night-soft) 0 25%,var(--leave-soft) 25% 50%,var(--night-soft) 50% 100%);color:var(--night)}
 .c-qn3{background:linear-gradient(90deg,var(--night-soft) 0 50%,var(--leave-soft) 50% 75%,var(--night-soft) 75% 100%);color:var(--night)}
 .c-qn4{background:linear-gradient(90deg,var(--night-soft) 0 75%,var(--leave-soft) 75% 100%);color:var(--night)}
+@media (min-width:641px){.savebox .savestate{min-width:176px;justify-content:flex-end}}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
@@ -700,7 +701,7 @@ function allTypes(){return BUILTIN.slice(0,4).concat(BUILTIN.slice(4),S.types)}
 function freshDirty(){return {config:false,teams:{},rosters:{},att:{}}}
 var ui={rv:(lsGet(KEYS.view)==='table'?'table':'cal'),selDay:null,selSec:null,leaveKind:'V',etcAdd:null,adjKind:'e',adjAmt:'30',view:MODE==='server'?'loading':'app',tab:(sess&&sess.tab)||'roster',ym:(sess&&sess.ym)||null,team:(sess&&sess.team)||'all',brush:'V',
   preview:(sess&&sess.preview)||'admin',auth:null,pins:null,status:null,ro:false,dirty:freshDirty(),confirm:null,resetOpen:false,saving:false,
-  selDate:null,importData:null,conflict:null,loginErr:'',lastSync:0,netErr:'',attTried:{},attMonths:null,dutSel:{},attEdit:null};
+  selDate:null,importData:null,conflict:null,loginErr:'',lastSync:0,netErr:'',attTried:{},attMonths:null,dutSel:{},attEdit:null,base:{}};
 if(!ui.ym)ui.ym=defaultYM();
 function defaultYM(){var t=new Date(),cur=isoOf(t.getFullYear(),t.getMonth()+1,1).slice(0,7),nxt=shiftYM(cur,1);
   var has=function(ym){var m=S.sched[ym];return !!(m&&Object.keys(m).some(function(k){return m[k].gen}))};
@@ -949,7 +950,7 @@ function header(){
       S.teams.map(function(t){return '<option value="'+t.id+'"'+(ui.preview===t.id?' selected':'')+'>'+esc(t.name)+' 팀장 화면</option>'}).join('')+'<option value="viewer"'+(ui.preview==='viewer'?' selected':'')+'>직원(보기) 화면</option></select>';
   }
   var save='';
-  if(ui.view==='app'&&(canEditAny()||MODE!=='server')&&!ui.ro)save='<span class="savestate" id="savestate">'+saveState()+'</span>'+(MODE==='server'&&canEditAny()?'<button class="btn" data-act="histOpen" aria-expanded="'+!!ui.histOpen+'" title="저장하기 전 상태로 되돌려요">되돌리기</button>':'')+'<button class="btn primary" id="saveBtn" data-act="save"'+(ui.saving?' disabled':'')+'>'+(ui.saving?'저장 중…':'저장')+'</button>';
+  if(ui.view==='app'&&(canEditAny()||MODE!=='server')&&!ui.ro)save=saveBoxInner();
   return '<header class="bar"><div class="wrap"><div class="bar-top">'+
     '<div class="brand"><div class="mark" aria-hidden="true">근</div><div style="min-width:0"><div class="clinic">'+esc(S.clinic||'근무표')+'</div><div class="sub">직원 근무표</div></div></div>'+
     (ui.view==='app'?'<div class="month"><button class="icon-btn" id="prevM" data-act="month" data-k="-1" aria-label="이전 달">‹</button><div class="mlabel" aria-live="polite">'+ymLabel(ui.ym)+'</div><button class="icon-btn" id="nextM" data-act="month" data-k="1" aria-label="다음 달">›</button></div>':'')+
@@ -958,7 +959,12 @@ function header(){
     '</div></header>'}
 function authLabel(){if(!ui.auth)return '';if(ui.auth.role==='admin')return '관리자';if(ui.auth.role==='leader'){var t=teamById(ui.auth.teamId);return (t?t.name:'팀')+' · '+(ui.auth.name||'팀장')}return '직원(보기)'}
 function isDirty(){var d=ui.dirty;return d.config||Object.keys(d.att||{}).length>0||Object.keys(d.teams).length>0||Object.keys(d.rosters).length>0}
-function saveState(){if(isDirty())return '<span class="dot warn"></span>저장 안 된 변경 있음';
+function saveBoxInner(){var st='<span class="savestate" id="savestate"'+(ui.saveErr?' title="'+esc(ui.saveErr)+'"':'')+' aria-live="polite">'+saveState()+'</span>';
+  if(MODE==='server')return st+(canEditAny()?'<button class="btn" data-act="histOpen" aria-expanded="'+!!ui.histOpen+'" title="저장하기 전 상태로 되돌려요">되돌리기</button>':'')+(ui.saveErr&&!ui.conflict?'<button class="btn primary" id="saveBtn" data-act="save"'+(ui.saving?' disabled':'')+'>다시 저장</button>':'');
+  return st+'<button class="btn primary" id="saveBtn" data-act="save"'+(ui.saving?' disabled':'')+'>'+(ui.saving?'저장 중…':'저장')+'</button>'}
+function saveState(){if(MODE==='server'){if(ui.saving)return '<span class="dot warn"></span>저장 중…';if(ui.conflict&&isDirty())return '<span class="dot bad"></span>자동 저장 멈춤';if(ui.saveErr)return '<span class="dot bad"></span>저장 안 됨';if(isDirty())return '<span class="dot warn"></span>곧 저장돼요';
+    if(ui.lastSaved)return '<span class="dot ok"></span>자동 저장됨 · '+fmtTime(ui.lastSaved);if(ui.lastSync)return '<span class="dot ok"></span>최신 · '+fmtTime(ui.lastSync);return ''}
+  if(isDirty())return '<span class="dot warn"></span>저장 안 된 변경 있음';
   if(MODE==='server'&&ui.lastSync)return '<span class="dot ok"></span>최신 · '+fmtTime(ui.lastSync);
   if(S.savedAt)return '<span class="dot ok"></span>저장됨 · '+fmtTime(S.savedAt);return ''}
 function teamBar(){var mine=myTeam();
@@ -966,7 +972,7 @@ function teamBar(){var mine=myTeam();
   S.teams.forEach(function(t){h+='<button class="tchip" data-act="team" data-k="'+t.id+'" aria-pressed="'+(ui.team===t.id)+'">'+esc(t.name)+(leaderNames(t)?' <small>'+esc(leaderNames(t))+'</small>':'')+(t.id===mine?'<span class="mine">내 팀</span>':'')+'</button>'});
   return h+'</div>'}
 function banners(){var h='';
-  if(ui.conflict)h+='<div class="note bad"><div class="grow">'+esc(ui.conflict)+' 최신 내용을 불러오면 아직 저장하지 않은 변경은 사라져요.</div><button class="btn small" data-act="reload">최신 내용 불러오기</button></div>';
+  if(ui.conflict)h+='<div class="note bad"><div class="grow">'+esc(ui.conflict)+' 최신 내용을 불러온 뒤 다시 고쳐 주세요. 불러오면 아직 저장되지 않은 변경은 사라져요.</div><button class="btn small" data-act="reload">최신 내용 불러오기</button></div>';
   if(ui.netErr)h+='<div class="note bad"><div class="grow">'+esc(ui.netErr)+'</div><button class="btn small" data-act="dismissNet">닫기</button></div>';
   if(MODE==='server'&&!ui.auth)h+='<div class="note info"><div class="grow">보기 전용으로 열려 있어요. 팀장이나 관리자는 로그인하면 고칠 수 있어요.</div><button class="btn small" data-act="toLogin">로그인</button></div>';
   if(MODE!=='server'&&ui.ro)h+='<div class="note info"><div class="grow">보기 전용이에요. 근무표를 확인하고 파일로 받을 수 있어요.</div></div>';
@@ -991,7 +997,7 @@ function rosterTab(){
       '<p class="hint grow">구글 시트처럼 <b>칸을 누르고 이름을 고르면</b> 돼요. 예를 들어 ‘오프’ 칸을 누르면 '+(isWide()?'왼쪽':'아래')+'에서 쉬는 사람을, ‘연차’ 칸을 누르면 연차 쓸 사람을 고를 수 있어요. 휴무·연차를 넣지 않은 날은 <b>근무</b>로 계산해요. 휴무·연차만 넣고 <b>'+gl+'</b>을 누르면 나머지를 알아서 짜 줘요.</p>')+
       '<div class="acts"><button class="btn primary" data-act="gen">'+gl+'</button><button class="btn" data-act="resetOpen" aria-expanded="'+ui.resetOpen+'">비우기</button></div></div>';
     if(ui.resetOpen)h+='<div class="note warn"><div class="grow">'+(ui.team==='all'?'고칠 수 있는 모든 팀':'이 팀')+'의 '+ymLabel(ym)+' 근무표에서 무엇을 지울까요? ‘자동 배치만 지우기’는 직접 넣은 칸(휴무·연차·외근·희망휴무 등)을 남겨요. 지운 칸은 근무로 계산돼요.</div><button class="btn small" data-act="clearAuto">자동 배치만 지우기</button><button class="btn small danger" data-act="clearAll">전부 지우기</button><button class="btn small" data-act="resetOpen">취소</button></div>';
-    if(tbl)h+='<p class="hint">칠할 근무 형태를 고른 뒤 칸을 <b>누르거나 끌어서</b> 여러 칸을 한 번에 칠하세요(터치 화면은 옆으로 끌기). <b>같은 형태로 칠한 칸을 다시 누르면 지워져요.</b> 아무것도 칠하지 않은 칸(흐린 ‘근’)은 근무로 계산해요. 일찍 퇴근·늦게 출근은 <b>시간 조정</b>에서 30분 단위로 고른 뒤 칠하세요. 직접 칠한 칸(왼쪽 위 ◤)은 자동 생성을 다시 해도 그대로 남아요.</p>';
+    if(tbl)h+='<p class="hint">칠할 근무 형태를 고른 뒤 칸을 <b>누르거나 끌어서</b> 여러 칸을 한 번에 칠하세요(터치 화면은 옆으로 끌기). <b>같은 형태로 칠한 칸을 다시 누르면 지워져요.</b> 고른 형태 버튼을 한 번 더 누르면 선택이 풀려요. 아무것도 칠하지 않은 칸(흐린 ‘근’)은 근무로 계산해요. 일찍 퇴근·늦게 출근은 <b>시간 조정</b>에서 30분 단위로 고른 뒤 칠하세요. 직접 칠한 칸(왼쪽 위 ◤)은 자동 생성을 다시 해도 그대로 남아요.</p>';
     h+='</section>';
   }
   h+='<div class="viewbar"><div class="mstep" role="group" aria-label="달 바꾸기"><button class="btn small" data-act="month" data-k="-1" title="이전 달">‹ '+(+shiftYM(ym,-1).slice(5))+'월</button><b>'+(+ym.slice(5))+'월</b><button class="btn small" data-act="month" data-k="1" title="다음 달">'+(+shiftYM(ym,1).slice(5))+'월 ›</button></div><div class="seg" role="group" aria-label="보기 방식"><button data-act="rv" data-k="cal" aria-pressed="'+(ui.rv==='cal')+'">달력</button><button data-act="rv" data-k="table" aria-pressed="'+(ui.rv==='table')+'">표</button></div><div class="chips" id="chips" aria-live="polite"></div></div>';
@@ -1210,7 +1216,7 @@ function dayEditor(iso,teams,Y){var d=di(iso),q=parts(iso),dates=monthDates(ui.y
       h+='</div>'});
     h+='</div>'});
   if(d.type==='closed')h+='<p class="muted" style="margin:0">휴진이라 근무가 없어요.</p>';
-  else if(any)h+='<p class="hint">버튼을 누르면 바로 바뀌어요. 같은 버튼을 한 번 더 누르면 지워지고 근무로 돌아가요. 흐린 테두리는 따로 정하지 않아 근무로 계산한 거예요. 다 고쳤으면 위쪽 <b>저장</b>을 누르세요.</p>';
+  else if(any)h+='<p class="hint">버튼을 누르면 바로 바뀌어요. 같은 버튼을 한 번 더 누르면 지워지고 근무로 돌아가요. 흐린 테두리는 따로 정하지 않아 근무로 계산한 거예요. '+saveNote()+'</p>';
   return h}
 /* put a person into / take them out of a calendar cell (sheet style) */
 function pickToggle(sid,tid,iso,code){var ro=roster(ui.ym,tid,true),cv=cellCode(ro,sid,iso);if(isCombo(cv)&&(code==='N'||code===leavePart(cv)))return setCode(sid,tid,iso,code,'toggle');if(cellCode(ro,sid,iso)===code){if(rawCode(ro,sid,iso)===code)setCode(sid,tid,iso,code,'toggle');if(cellCode(ro,sid,iso)===code)setCode(sid,tid,iso,'O','add');return true}return setCode(sid,tid,iso,code,'add')}
@@ -1258,7 +1264,7 @@ function secEditor(iso,secId,teams,Y){var d=di(iso),sec=calSections(ui.ym,teams)
   block(inner,adds,help);
   if(k==='night'&&d.night){var nn=0,need=0;teams.forEach(function(t){var ro=roster(ui.ym,t.id);need+=t.need.night;t.staff.forEach(function(p){if(isNightCode(cellCode(ro,p.id,iso)))nn++})});if(need)h+='<p class="sec-help">야간 '+nn+'명 / 필요 '+need+'명</p>'}
   return '<div class="secpane pane-'+k+'">'+h+secFoot()+'</div>'}
-function secFoot(){return '<div class="sec-foot"><button class="btn small" data-act="secAll">이날 전체 보기</button><span class="muted">고친 뒤에는 위쪽 <b>저장</b>을 누르세요.</span></div>'}
+function secFoot(){return '<div class="sec-foot"><button class="btn small" data-act="secAll">이날 전체 보기</button><span class="muted">'+saveNote()+'</span></div>'}
 /* panel content before a day is picked: what still needs a look this month */
 function dayHome(ym,teams,st,gc){var items=[];
   monthDates(ym).forEach(function(iso){var x=st.days[iso];if(!x)return;var bad=[];teams.forEach(function(t){var y=x.teams[t.id];if(y&&(y.sAM||y.sPM||y.sNT))bad.push(t.name+' '+[y.sAM?'오전':'',y.sPM?'오후':'',y.sNT?'야간':''].filter(Boolean).join('·'))});
@@ -1266,7 +1272,7 @@ function dayHome(ym,teams,st,gc){var items=[];
   st.T.wkOver.forEach(function(it){items.push([it.mk,'근무일 많음',wkTxt(it)])});st.T.wkUnder.forEach(function(it){items.push([it.mk,'근무일 적음',wkTxt(it)])});
   gc.forEach(function(x){items.push([x.iso,'휴무 겹침',gNames(x.G)])});
   items.sort(function(a,b){return a[0]<b[0]?-1:a[0]>b[0]?1:0});
-  var h='<div class="dayed-head"><h3>이렇게 써요</h3></div><ol class="howto"><li>달력에서 <b>칸</b>을 누르세요.<br><span class="muted">예: 6일의 ‘'+esc(offLabel(teams[0]||{name:'외래'}))+'’ 칸</span></li><li>여기에 나오는 <b>이름</b>을 누르면 그 칸에 들어가요. 다시 누르면 빠져요.</li><li>다 했으면 위쪽 <b>저장</b>을 누르세요.</li></ol>'+
+  var h='<div class="dayed-head"><h3>이렇게 써요</h3></div><ol class="howto"><li>달력에서 <b>칸</b>을 누르세요.<br><span class="muted">예: 6일의 ‘'+esc(offLabel(teams[0]||{name:'외래'}))+'’ 칸</span></li><li>여기에 나오는 <b>이름</b>을 누르면 그 칸에 들어가요. 다시 누르면 빠져요.</li><li>'+saveNote()+'</li></ol>'+
     '<p class="dl-help">휴무·연차를 넣지 않은 날은 근무로 계산해요. 날짜 숫자를 누르면 그날 전체를 한 번에 볼 수 있어요.</p>';
   h+='<h4 class="dl-sub">확인할 것 '+(items.length?items.length+'건':'')+'</h4>';
   if(!items.length)return h+'<p class="dl-help">인원 부족, 주 근무일, 휴무 겹침 모두 문제없어요.</p>';
@@ -1336,7 +1342,7 @@ function dayBoard(teams,iso){var d=di(iso),h='<div class="pday">';
   return h+'</div>'}
 function placeHome(teams,days){var items=[];
   days.forEach(function(iso){if(di(iso).type==='closed')return;teams.forEach(function(t){var sp=placeSplit(t,iso);postsOf(t).forEach(function(x){if(x.need&&sp.by[x.id].length<x.need)items.push([iso,t,x,'비어 있음'])});if(sp.free.length&&postsOf(t).length)items.push([iso,t,null,'자리 미정 '+sp.free.length+'명'])})});
-  var h='<div class="dayed-head"><h3>이렇게 써요</h3></div><ol class="howto"><li>배치표에서 <b>칸</b>을 누르세요.<br><span class="muted">예: 화요일의 ‘1번 진료실’ 칸</span></li><li>여기에 나오는 <b>이름</b>을 누르면 그 자리에 들어가요. 다시 누르면 빠져요.</li><li>다 했으면 위쪽 <b>저장</b>을 누르세요.</li></ol>';
+  var h='<div class="dayed-head"><h3>이렇게 써요</h3></div><ol class="howto"><li>배치표에서 <b>칸</b>을 누르세요.<br><span class="muted">예: 화요일의 ‘1번 진료실’ 칸</span></li><li>여기에 나오는 <b>이름</b>을 누르면 그 자리에 들어가요. 다시 누르면 빠져요.</li><li>'+saveNote()+'</li></ol>';
   h+='<h4 class="dl-sub">확인할 것 '+(items.length?items.length+'건':'')+'</h4>';
   if(!items.length)return h+'<p class="dl-help">모든 자리가 채워졌어요.</p>';
   return h+'<ul class="todo">'+items.slice(0,14).map(function(it){var q=parts(it[0]);return '<li><button class="todo-it" data-pt="'+it[1].id+'" data-pp="'+(it[2]?it[2].id:postsOf(it[1])[0].id)+'" data-pd="'+it[0]+'"><b>'+q[1]+'/'+q[2]+' ('+DOWK[di(it[0]).dow]+')</b> '+esc(it[1].name)+(it[2]?' '+esc(it[2].name):'')+' <span class="tag">'+esc(it[3])+'</span></button></li>'}).join('')+'</ul>'}
@@ -1351,7 +1357,7 @@ function placeEditor(sel){var t=teamById(sel.t),x=postById(t,sel.p),iso=sel.d,d=
     if(others.length)h+='<div class="pk-add"><div class="pk-lab">이름을 누르면 이 자리에 들어가요</div><div class="pills">'+others.map(function(p){var cur=placeOf(t,sp.ro,p,iso),cx=postById(t,cur);return '<button class="pill" id="pl-'+p.id+'" data-pls="'+p.id+'" aria-pressed="false">'+esc(p.name)+'<small>'+(cx?esc(cx.name):'자리 미정')+'</small></button>'}).join('')+'</div></div>';
     if(sp.away.length)h+='<p class="pk-sub">오늘 쉬는 사람: '+sp.away.map(function(a){return esc(a.p.name)+'('+esc(a.why)+')'}).join(', ')+'</p>'}
   h+='<div class="pk-lab">다른 자리</div><div class="pills">'+postsOf(t).map(function(y){var n=sp.by[y.id].length;return '<button class="pill'+(y.id===x.id?' on':'')+(y.need&&n<y.need?' warn':'')+'" data-act="pSel" data-k="'+y.id+'">'+esc(y.name)+'<small>'+n+(y.need?'/'+y.need:'')+'</small></button>'}).join('')+'</div>';
-  h+='<div class="sec-foot"><span class="muted">고친 뒤에는 위쪽 <b>저장</b>을 누르세요.</span></div>';
+  h+='<div class="sec-foot"><span class="muted">'+saveNote()+'</span></div>';
   return '<div class="secpane pane-place">'+h+'</div>'}
 function postSetup(t){var posts=postsOf(t),h='<section class="panel"><h2>'+esc(t.name)+' 배치 자리</h2><p>배치표에 쓸 자리를 정해요. <b>필요 인원</b>을 정하면 모자랄 때 빨간색으로 알려 주고, ‘빈 자리 채우기’가 그 수만큼 채워요.</p>';
   var pre=POST_PRESETS.filter(function(n){return !posts.some(function(x){return x.name===n})});
@@ -1446,7 +1452,7 @@ function cleanAttMonth(a,ym){a=a||{};var rows={},fix={},fin={},map={},key=functi
   var f=a.file||null;
   return {rows:rows,fix:fix,fin:fin,map:map,file:f&&f.name?{name:String(f.name).slice(0,80),at:+f.at||0,by:String(f.by||'').slice(0,30),n:int(f.n,0,100000)}:null,updatedAt:+a.updatedAt||0,updatedBy:String(a.updatedBy||'')}}
 function attOf(ym,create){var A=S.att[ym];if(!A&&create)A=S.att[ym]=cleanAttMonth({},ym);return A||null}
-function dAtt(ym){ui.dirty.att[ym]=1;touched()}
+function dAtt(ym){ui.dirty.att[ym]=++GEN;touched()}
 /* everyone the tab talks about: roster staff, then names found only in the fingerprint file */
 function attPeople(ym,teams){var A=attOf(ym),out=[];(teams||S.teams).forEach(function(t){t.staff.forEach(function(p){out.push({p:p,t:t})})});
   if(A&&(!teams||teams===S.teams||ui.team==='all'))Object.keys(A.rows).forEach(function(k){if(k.indexOf('n:')===0)out.push({p:{id:k,name:k.slice(2),avail:[1,2,3,4,5,6],ot0:0,only:true},t:null})});return out}
@@ -1685,18 +1691,19 @@ function attPrint(ym){var teams=visibleTeams(),ppl=attPeople(ym,teams),rate=attR
 
 /* ----- 저장 기록 · 되돌리기 (server keeps the state before each save) ----- */
 function histPanel(){if(!ui.histOpen||MODE!=='server'||!canEditAny())return '';var H=ui.hist||{loading:true,items:[]};
-  var h='<section class="panel hist" id="histPanel"><div class="hb-head"><div class="grow"><h2>저장 기록 · 되돌리기</h2><p class="lead">저장할 때마다 <b>저장하기 전 상태</b>가 남아요. 실수로 저장했다면 그 저장을 골라 되돌리세요.'+(isAdmin()?'':' 팀장은 자기 팀의 근무표와 직원 명단만 되돌릴 수 있어요.')+'</p></div><div class="acts"><button class="btn small" data-act="histLoad">새로 불러오기</button><button class="btn small" data-act="histClose">닫기</button></div></div>';
+  var h='<section class="panel hist" id="histPanel"><div class="hb-head"><div class="grow"><h2>저장 기록 · 되돌리기</h2><p class="lead">고친 내용은 자동으로 저장되고, 저장하기 전 상태가 남아요. 같은 사람이 10분 안에 이어서 고친 것은 한 번으로 묶여서, 되돌리면 <b>고치기 시작하기 전</b>으로 돌아가요.'+(isAdmin()?'':' 팀장은 자기 팀의 근무표와 직원 명단만 되돌릴 수 있어요.')+'</p></div><div class="acts"><button class="btn small" data-act="histLoad">새로 불러오기</button><button class="btn small" data-act="histClose">닫기</button></div></div>';
   if(H.loading)return h+'<p class="muted">불러오는 중이에요…</p></section>';
   if(H.err)return h+'<p class="err">'+esc(H.err)+'</p></section>';
   if(!H.items.length)return h+'<p class="muted" style="margin:0">아직 저장 기록이 없어요. 지금부터 저장하는 것부터 남아요.</p></section>';
   h+='<ul class="histlist">'+H.items.map(function(x){var ask=ui.confirm==='hist:'+x.id;
-    return '<li><div class="hl-main"><b>'+esc(x.label)+'</b><span class="muted">'+fmtTime(x.at)+(x.by?' · '+esc(x.by):'')+' 저장</span></div>'+
+    return '<li><div class="hl-main"><b>'+esc(x.label)+'</b><span class="muted">'+(x.n>1&&x.from&&x.from<x.at?fmtTime(x.from)+' ~ '+fmtTime(x.at).replace(/^.* /,''):fmtTime(x.at))+(x.by?' · '+esc(x.by):'')+(x.n>1?' 고침 (자동 저장 '+x.n+'번)':' 저장')+'</span></div>'+
       '<div class="hl-sub">'+(x.empty?'되돌리면 이 저장 전처럼 비어 있는 상태가 돼요.':'되돌리면 '+(x.prevAt?fmtTime(x.prevAt)+(x.prevBy?' '+esc(x.prevBy):'')+'에 저장한 상태':'그 전 상태')+'로 돌아가요.')+(x.later?' <span class="tag warn">이 뒤에 '+x.later+'번 더 저장됐어요 · 그 내용도 함께 되돌아가요</span>':'')+'</div>'+
       '<div class="hl-act">'+(ask?'<span class="ask-t">정말 되돌릴까요?</span><button class="btn small danger" data-act="histDo" data-k="'+esc(x.id)+'">되돌리기</button><button class="btn small" data-act="cancel">취소</button>':'<button class="btn small" data-act="histAsk" data-k="'+esc(x.id)+'">이 저장 전으로 되돌리기</button>')+'</div></li>'}).join('')+'</ul>';
   return h+'<p class="fine">되돌린 것도 기록에 남아서, 잘못 되돌렸으면 다시 되돌릴 수 있어요. 근무표는 팀·달마다, 직원 명단은 팀마다 최근 8번까지 남아요.</p></section>'}
 function histLoad(){ui.hist={loading:true,items:[]};render();
   api('history',{pin:pinArg()}).then(function(r){ui.hist=r.ok?{items:r.items||[]}:{items:[],err:r.error==='unknown_action'?'근무표 서버가 아직 예전 버전이에요.':errMsg(r)};render()}).catch(function(){ui.hist={items:[],err:'서버에 연결하지 못했어요. 잠시 뒤 다시 불러오세요.'};render()})}
-function histDo(id){if(isDirty()){toast('저장하지 않은 변경이 있어요. 먼저 저장하거나 ↻로 버린 뒤 되돌리세요.');return}ui.confirm=null;ui.hist={loading:true,items:[]};render();
+function histDo(id){if(MODE==='server'&&(isDirty()||ui.saving)&&!ui.conflict){autoSave().then(function(){if(isDirty())toast('저장하지 못한 변경이 있어서 되돌릴 수 없어요.');else histDo(id)},function(){toast('저장하지 못한 변경이 있어서 되돌릴 수 없어요.')});return}
+  if(isDirty()){toast('저장하지 않은 변경이 있어요. ↻로 최신 내용을 불러온 뒤 되돌리세요.');return}ui.confirm=null;ui.hist={loading:true,items:[]};render();
   api('restore',{pin:pinArg(),id:id}).then(function(r){if(!r.ok){toast(errMsg(r));histLoad();return}toast('되돌렸어요: '+(r.label||'')+'.'+(r.noLeader?' 이 팀의 팀장 PIN은 팀·직원에서 다시 등록해 주세요.':' 다른 사람도 ↻을 누르면 보여요.'));return loadData().then(histLoad)}).catch(function(){toast('서버에 연결하지 못했어요.');histLoad()})}
 /* ----- hours tab ----- */
 function hoursRowInputs(h,prefix,attr,dis){
@@ -1806,7 +1813,7 @@ function groupsPanel(){var h='<section class="panel"><h2>함께 쉬지 않기 ·
   h+=grpCards(S.groups,all,isAdmin(),'');
   var tg=[];S.teams.forEach(function(t){(t.groups||[]).forEach(function(g){var m=g.members.map(staffLoc).filter(Boolean);if(m.length>1)tg.push(esc(t.name)+': '+esc(m.map(function(L){return L.p.name}).join('·')))})});
   if(tg.length)h+='<p class="fine">팀 안의 묶음: '+tg.join(' / ')+' · ‘팀·직원’에서 고쳐요.</p>';
-  return h+'<p class="fine">바꾼 뒤 위쪽 저장을 눌러야 유지돼요.</p></section>'}
+  return h+'<p class="fine">'+saveNote()+'</p></section>'}
 function grpRuleCtl(g,n){if(n<=2)return '같은 날 한 명만 쉴 수 있어요';var o='';for(var k=1;k<n;k++)o+='<option value="'+k+'"'+(g.max===k?' selected':'')+'>'+k+'</option>';
   return '<label class="tr" for="grp-'+g.id+'-max">같은 날 최대 <select id="grp-'+g.id+'-max" data-grp="'+g.id+'" data-k="max">'+o+'</select>명만 쉬어요</label>'}
 function grpById(id){var o=grpOwner(id);return o?o.g:null}
@@ -1844,7 +1851,7 @@ function leadersPanel(){var L=(ui.pins&&ui.pins.leaders)||[],saved=S.teams.filte
   h+='<h3 style="margin:18px 0 8px">팀장 추가</h3>';
   if(!saved.length)h+='<p class="muted" style="margin:0">팀을 먼저 저장하면 팀장을 추가할 수 있어요.</p>';
   else h+='<div class="row"><label class="vh" for="ld-new-name">이름</label><input type="text" id="ld-new-name" placeholder="이름" autocomplete="off"><label class="vh" for="ld-new-team">팀</label><select id="ld-new-team">'+saved.map(function(t){return '<option value="'+t.id+'"'+(ui.team===t.id?' selected':'')+'>'+esc(t.name)+'</option>'}).join('')+'</select><label class="vh" for="ld-new-pin">PIN</label><input type="password" class="pin" id="ld-new-pin" inputmode="numeric" autocomplete="new-password" placeholder="PIN 4~12자"><button class="btn primary" data-act="ldAdd">추가</button></div>';
-  if(S.teams.some(function(t){return !t.updatedAt}))h+='<p class="fine">새로 만든 팀은 먼저 저장해야 팀장을 추가할 수 있어요.</p>';
+  if(S.teams.some(function(t){return !t.updatedAt}))h+='<p class="fine">새로 만든 팀은 '+(MODE==='server'?'자동 저장이 끝나면(몇 초)':'먼저 저장해야')+' 팀장을 추가할 수 있어요.</p>';
   return h+'</section>'}
 function amtOpts(cur,k){return [0].concat(ADJ_AMTS).map(function(m){return '<option value="'+m+'"'+((cur||0)===m?' selected':'')+'>'+(m?hLong(m)+(k==='l'?' 늦게 출근':' 일찍 퇴근'):(k==='l'?'출근 정시':'퇴근 정시'))+'</option>'}).join('')}
 function pinCell(target,has){var id='pin-'+target.replace(':','-');
@@ -1895,15 +1902,18 @@ function loginView(){var st=ui.status||{};return '<section class="panel authpane
   '<label for="loginPin">PIN</label><input type="password" class="pin" id="loginPin" autocomplete="current-password" inputmode="numeric">'+
   '<label class="chk"><input type="checkbox" id="loginRemember">이 기기에서 로그인 유지 (개인 기기에서만)</label>'+
   (ui.loginErr?'<p class="err">'+esc(ui.loginErr)+'</p>':'')+'<div class="row"><button class="btn primary" data-act="login">로그인</button>'+(st.viewPin?'':'<button class="btn" data-act="viewOnly">PIN 없이 보기</button>')+'</div></section>'}
+function saveNote(){return MODE==='server'?'고친 내용은 바로 자동 저장돼요.':'다 고쳤으면 위쪽 <b>저장</b>을 누르세요.'}
+function keepNote(){return MODE==='server'?' 자동 저장돼요.':' 저장을 눌러야 유지돼요.'}
 function errorView(){return '<section class="panel authpanel"><h2>서버에 연결하지 못했어요</h2><p>'+esc(ui.netErr||'')+'</p><p class="muted">인터넷 연결과 config.js에 넣은 주소(Apps Script 웹 앱 URL)를 확인한 뒤 다시 시도하세요.</p><button class="btn primary" data-act="retry">다시 시도</button></section>'}
 
 /* ---------- dirty tracking ---------- */
 var draftTimer=null;
-function touched(){var el=document.getElementById('savestate');if(el)el.innerHTML=saveState();
+function touched(){var el=document.getElementById('savestate');if(el)el.innerHTML=saveState();scheduleSave();
   if(MODE!=='server'){clearTimeout(draftTimer);draftTimer=setTimeout(function(){lsSet(KEYS.draft,JSON.stringify({at:Date.now(),state:S}))},600)}}
-function dConfig(){ui.dirty.config=true;S.example=false;touched()}
-function dTeam(tid){ui.dirty.teams[tid]=1;S.example=false;touched()}
-function dRoster(ym,tid){ui.dirty.rosters[ym+'|'+tid]=1;touched()}
+var GEN=0;
+function dConfig(){ui.dirty.config=++GEN;S.example=false;touched()}
+function dTeam(tid){ui.dirty.teams[tid]=++GEN;S.example=false;touched()}
+function dRoster(ym,tid){ui.dirty.rosters[ym+'|'+tid]=++GEN;touched()}
 
 /* ---------- drag selection ---------- */
 var sel=null,selCells=[],skipClick=false;
@@ -1924,7 +1934,7 @@ function setCode(sid,tid,iso,code,mode){var ro=roster(ui.ym,tid,true),p=pOf(sid)
 function setAdj(sid,tid,iso,c){var ro=roster(ui.ym,tid,true),p=pOf(sid);if(p&&absOf(p,iso))return;
   if(c&&!isWork(rawCode(ro,sid,iso))){setIn(ro.cells,sid,iso,'W');setIn(ro.reqs,sid,iso,'')}
   setIn(ro.adj,sid,iso,c&&Object.keys(c).length?c:'');if(isWork(rawCode(ro,sid,iso)))setIn(ro.locks,sid,iso,1);dRoster(ui.ym,tid)}
-function applyCell(sid,tid,iso,mode){var ro=roster(ui.ym,tid,true),b=ui.brush,p=pOf(sid);if(p&&absOf(p,iso))return;
+function applyCell(sid,tid,iso,mode){var ro=roster(ui.ym,tid,true),b=ui.brush,p=pOf(sid);if(!b||(p&&absOf(p,iso)))return;
   if(b==='P'){setIn(ro.reqs,sid,iso,mode==='remove'?'':'P');dRoster(ui.ym,tid)}
   else if(b==='X'){setIn(ro.cells,sid,iso,'');setIn(ro.locks,sid,iso,'');setIn(ro.reqs,sid,iso,'');setIn(ro.adj,sid,iso,'');dRoster(ui.ym,tid)}
   else if(b==='ADJ'){var k=ui.adjKind.slice(-1),aot=ui.adjKind.charAt(0)==='o',c=Object.assign({},(ro.adj[sid]&&ro.adj[sid][iso])||{});
@@ -1935,7 +1945,7 @@ function applySel(s){var r0=Math.min(s.r0,s.r1),r1=Math.max(s.r0,s.r1),c0=Math.m
   for(var r=r0;r<=r1;r++){var row=GRID.rows[r];if(!row||!row.ed)continue;for(var c=c0;c<=c1;c++){if(!row.btns[c])continue;applyCell(row.sid,row.tid,GRID.dates[c],s.mode);n++}}
   if(n)refreshStats()}
 function cellFromPoint(e){var el=null;try{el=document.elementFromPoint?document.elementFromPoint(e.clientX,e.clientY):null}catch(x){}if(!el||!el.closest)el=e.target;return el&&el.closest?el.closest('.k[data-r]'):null}
-app.addEventListener('pointerdown',function(e){var b=e.target.closest&&e.target.closest('.k.ed[data-r]');if(!b)return;if(e.pointerType==='mouse'&&e.button!==0)return;
+app.addEventListener('pointerdown',function(e){var b=e.target.closest&&e.target.closest('.k.ed[data-r]');if(!b||!ui.brush)return;if(e.pointerType==='mouse'&&e.button!==0)return;
   if(e.pointerType==='mouse')e.preventDefault();sel={r0:+b.dataset.r,c0:+b.dataset.c,r1:+b.dataset.r,c1:+b.dataset.c,id:e.pointerId,mode:anchorMode(b)};drawSel()});
 document.addEventListener('pointermove',function(e){if(!sel||e.pointerId!==sel.id)return;var b=cellFromPoint(e);if(!b)return;var r=+b.dataset.r,c=+b.dataset.c;if(r!==sel.r1||c!==sel.c1){sel.r1=r;sel.c1=c;drawSel()}});
 document.addEventListener('pointerover',function(e){if(!sel||e.pointerId!==sel.id)return;var b=e.target.closest&&e.target.closest('.k[data-r]');if(!b)return;var r=+b.dataset.r,c=+b.dataset.c;if(r!==sel.r1||c!==sel.c1){sel.r1=r;sel.c1=c;drawSel()}});
@@ -1955,7 +1965,7 @@ app.addEventListener('click',function(e){
     if(dayEl.classList.contains('todo-it')){ui.selDay=diso;ui.selSec=null}else if(ui.selDay===diso&&ui.selSec===dsec){ui.selDay=null;ui.selSec=null}else{ui.selDay=diso;ui.selSec=dsec}
     render();if(ui.selSec){var first=document.querySelector('#dayed .pill:not([disabled]),#dayed [data-act="etcAdd"]');if(first&&document.activeElement===document.body)try{first.focus({preventScroll:true})}catch(x){}}return}
   var cb=e.target.closest('.k[data-r]');
-  if(cb){if(skipClick){skipClick=false;return}if(!cb.classList.contains('ed'))return;applySel({r0:+cb.dataset.r,c0:+cb.dataset.c,r1:+cb.dataset.r,c1:+cb.dataset.c,mode:anchorMode(cb)});return}
+  if(cb){if(skipClick){skipClick=false;return}if(!cb.classList.contains('ed'))return;if(!ui.brush){toast('위에서 칠할 근무 형태를 먼저 고르세요.');return}applySel({r0:+cb.dataset.r,c0:+cb.dataset.c,r1:+cb.dataset.r,c1:+cb.dataset.c,mode:anchorMode(cb)});return}
   var t=e.target.closest('[data-act]');if(!t)return;var act=t.dataset.act,k=t.dataset.k;
   switch(act){
   case 'tab':ui.tab=k;ui.confirm=null;render();try{window.scrollTo(0,0)}catch(x){}break;
@@ -1996,17 +2006,17 @@ app.addEventListener('click',function(e){
   case 'dayClose':ui.selDay=null;ui.selSec=null;ui.etcAdd=null;render();break;
   case 'otAdd':(function(){var g=function(x){var el=document.getElementById(x);return el?el.value:''},sid=g('otWho'),iso=g('otDay'),amt=+g('otAmt')||0,L=staffLoc(sid);if(!L||!canTeam(L.team.id))return;
     if(!isISO(iso)||iso.slice(0,7)!==ui.ym){toast('이번 달 안의 날짜를 고르세요.');return}var ro=roster(ui.ym,L.team.id,true),cur=(ro.ot[sid]&&ro.ot[sid][iso])||0,nv=Math.min(480,cur+amt);
-    setIn(ro.ot,sid,iso,nv);dRoster(ui.ym,L.team.id);ui.otWho=sid;ui.otDay=iso;ui.otAmt=String(amt);render();toast(L.p.name+' 님 '+mdLabel(iso)+' OT '+hLong(nv-cur)+' 기록'+(cur+amt>480?' (하루 8시간까지)':'')+' · 남은 OT '+fmtMin(otBalance(L.p,ui.ym))+'. 저장을 눌러야 유지돼요.')})();break;
+    setIn(ro.ot,sid,iso,nv);dRoster(ui.ym,L.team.id);ui.otWho=sid;ui.otDay=iso;ui.otAmt=String(amt);render();toast(L.p.name+' 님 '+mdLabel(iso)+' OT '+hLong(nv-cur)+' 기록'+(cur+amt>480?' (하루 8시간까지)':'')+' · 남은 OT '+fmtMin(otBalance(L.p,ui.ym))+'.'+keepNote())})();break;
   case 'otDel':(function(){var tid=t.dataset.t;if(!canTeam(tid))return;var ro=roster(ui.ym,tid,true);setIn(ro.ot,k,t.dataset.d,'');dRoster(ui.ym,tid);render()})();break;
   case 'pView':(function(){if(k==='day'&&ui.pv!=='day'){var wk=placeDays().filter(function(x){return x.slice(0,7)===ui.ym&&di(x).type!=='closed'});if(wk.length)ui.pday=wk[0]}else if(k==='week'&&ui.pv==='day'&&ui.pday){ui.pw=mondayOf(ui.pday)}ui.pv=k;ui.psel=null;render()})();break;
   case 'pClose':ui.psel=null;render();break;
   case 'pSel':if(ui.psel){ui.psel.p=k;render()}break;
   case 'pStep':(function(){if(ui.pv==='day'){var nd=addDays(placeDay(),+k);ui.pday=nd;ui.ym=nd.slice(0,7)}else{var nw=addDays(placeWeek(),7*(+k));ui.pw=nw;ui.ym=addDays(nw,3).slice(0,7)}ui.psel=null;clearDI();exampleFill();render()})();break;
   case 'pSelStep':(function(){if(!ui.psel)return;var nd=addDays(ui.psel.d,+k);ui.psel.d=nd;if(ui.pv==='day'){ui.pday=nd;ui.ym=nd.slice(0,7)}else{ui.pw=mondayOf(nd);ui.ym=addDays(ui.pw,3).slice(0,7)}clearDI();exampleFill();render();var b=document.querySelector('[data-act="pSelStep"][data-k="'+k+'"]');if(b)b.focus()})();break;
-  case 'pFill':(function(){var r=placeFill(placeDays());render();toast(r.filled?'빈 자리 '+r.filled+'곳을 채웠어요'+(r.left?' · 사람이 모자라 '+r.left+'자리는 비어 있어요':'')+'. 저장을 눌러야 유지돼요.':r.left?'자리 미정인 사람이 없어서 '+r.left+'자리를 못 채웠어요.':'채울 빈 자리가 없어요.')})();break;
+  case 'pFill':(function(){var r=placeFill(placeDays());render();toast(r.filled?'빈 자리 '+r.filled+'곳을 채웠어요'+(r.left?' · 사람이 모자라 '+r.left+'자리는 비어 있어요':'')+'.'+keepNote():r.left?'자리 미정인 사람이 없어서 '+r.left+'자리를 못 채웠어요.':'채울 빈 자리가 없어요.')})();break;
   case 'pPrint':(function(){var ds=placeDays(),a=parts(ds[0]),b=parts(ds[ds.length-1]);offerFile(S.clinic+' 근무 배치표 '+(ds.length===1?a[1]+'월 '+a[2]+'일':a[1]+'.'+a[2]+'-'+b[1]+'.'+b[2])+'.html',placePrint(visibleTeams().filter(function(x){return x.staff.length}),ds))})();break;
   case 'postAdd':(function(){var tm=teamById(k);if(!tm||!canTeam(k))return;var inp=document.getElementById('pa-'+k),nm=(t.dataset.v||(inp&&inp.value)||'').trim().slice(0,20);if(!nm){toast('자리 이름을 입력하세요.');if(inp)inp.focus();return}
-    if(!tm.posts)tm.posts=[];if(tm.posts.some(function(x){return x.name===nm})){toast('이미 있는 자리예요.');return}tm.posts.push({id:uid('p'),name:nm,need:1});dTeam(k);render();toast(nm+' 자리를 만들었어요. 저장을 눌러야 유지돼요.')})();break;
+    if(!tm.posts)tm.posts=[];if(tm.posts.some(function(x){return x.name===nm})){toast('이미 있는 자리예요.');return}tm.posts.push({id:uid('p'),name:nm,need:1});dTeam(k);render();toast(nm+' 자리를 만들었어요.'+keepNote())})();break;
   case 'postMove':(function(){var tm=teamById(k);if(!tm||!canTeam(k))return;var a=tm.posts,x=postById(tm,t.dataset.p),i=a.indexOf(x),j=i+(+t.dataset.dir);if(!x||j<0||j>=a.length)return;a.splice(i,1);a.splice(j,0,x);dTeam(k);render()})();break;
   case 'postAsk':ui.confirm='post:'+k;render();break;
   case 'postDel':(function(){var tm=teamById(k);if(!tm||!canTeam(k))return;var pid=t.dataset.p;tm.posts=tm.posts.filter(function(x){return x.id!==pid});tm.staff.forEach(function(p){if(p.post===pid)p.post=''});if(ui.psel&&ui.psel.p===pid)ui.psel=null;ui.confirm=null;dTeam(k);render()})();break;
@@ -2024,7 +2034,7 @@ app.addEventListener('click',function(e){
     var g=function(x){var el=document.getElementById('abs-'+k+'-'+x);return el?el.value:''},f=g('from'),to=g('to'),why=g('why');
     if(!isISO(f)){toast('휴직 시작일을 넣어 주세요.');return}if(to&&!isISO(to)){toast('끝나는 날을 다시 확인해 주세요.');return}if(to&&to<f){toast('끝나는 날이 시작일보다 빨라요.');return}
     L.p.abs=cleanAbs({from:f,to:to,why:why});ui.absEdit=null;dTeam(L.team.id);render();toast(nm+' 님 '+absText(L.p.abs)+' · 이 기간은 근무표와 인원 계산에서 빠져요.')})();break;
-  case 'brush':ui.brush=k;app.querySelectorAll('.brush').forEach(function(x){x.setAttribute('aria-pressed',String(x.dataset.k===k))});break;
+  case 'brush':ui.brush=ui.brush===k?null:k;app.querySelectorAll('.brush').forEach(function(x){x.setAttribute('aria-pressed',String(x.dataset.k===ui.brush))});break;
   case 'gen':(function(){var list=visibleTeams().filter(function(tm){return canTeam(tm.id)&&tm.staff.length});if(!list.length){toast('자동 생성할 수 있는 팀이 없어요.');return}
     t.disabled=true;t.textContent='만드는 중…';setTimeout(function(){list.forEach(function(tm){genTeam(ui.ym,tm);dRoster(ui.ym,tm.id)});render();
       var T=stats(ui.ym,visibleTeams().filter(function(x){return x.staff.length})).T;
@@ -2032,12 +2042,12 @@ app.addEventListener('click',function(e){
   case 'resetOpen':ui.resetOpen=!ui.resetOpen;render();break;
   case 'clearAuto':visibleTeams().forEach(function(tm){if(!canTeam(tm.id))return;var ro=roster(ui.ym,tm.id,true);Object.keys(ro.cells).forEach(function(sid){Object.keys(ro.cells[sid]).forEach(function(iso){if(!isLock(ro,sid,iso))delete ro.cells[sid][iso]})});ro.gen=false;dRoster(ui.ym,tm.id)});ui.resetOpen=false;render();toast('자동 배치를 지웠어요. 직접 칠한 칸은 남겨 뒀어요.');break;
   case 'clearAll':visibleTeams().forEach(function(tm){if(!canTeam(tm.id))return;var ro=roster(ui.ym,tm.id,true);ro.cells={};ro.locks={};ro.reqs={};ro.adj={};ro.memo={};ro.notes={};ro.gen=false;dRoster(ui.ym,tm.id)});ui.resetOpen=false;render();toast(ymLabel(ui.ym)+' 근무표를 지웠어요.');break;
-  case 'save':doSave();break;
+  case 'save':if(MODE==='server'){retryMs=0;autoSave().catch(function(){})}else doSave();break;
   case 'csv':offerFile(fileBase()+'.csv','\uFEFF'+toCSV(ui.ym));break;
   case 'print':offerFile(fileBase()+' 인쇄용 표.html',printDoc(ui.ym));break;
   case 'printCal':offerFile(fileBase()+' 달력.html',printCal(ui.ym));break;
   case 'backup':offerFile('근무표 백업 '+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(S,null,1));break;
-  case 'importOk':S=upgrade(ui.importData);ui.importData=null;ui.dirty.config=true;S.teams.forEach(function(tm){ui.dirty.teams[tm.id]=1});touched();render();toast('백업을 불러왔어요. 저장을 눌러야 유지돼요.');break;
+  case 'importOk':S=upgrade(ui.importData);ui.importData=null;ui.dirty.config=true;S.teams.forEach(function(tm){ui.dirty.teams[tm.id]=1});touched();render();toast('백업을 불러왔어요.'+keepNote());break;
   case 'importCancel':ui.importData=null;render();break;
   case 'draftLoad':S=upgrade(draft.state);draft=null;ui.dirty.config=true;touched();render();toast('저장하지 않았던 작업을 불러왔어요.');break;
   case 'draftDrop':draft=null;lsDel(KEYS.draft);render();break;
@@ -2079,8 +2089,10 @@ app.addEventListener('click',function(e){
   case 'login':(function(){var pin=(document.getElementById('loginPin')||{}).value||'',rem=!!(document.getElementById('loginRemember')||{}).checked;if(!pin){ui.loginErr='PIN을 입력하세요.';render();return}doLogin(pin,rem,false)})();break;
   case 'viewOnly':ui.auth=null;ui.loginErr='';loadData();break;
   case 'toLogin':if(isDirty()){toast('저장하지 않은 변경이 있어요. 먼저 저장하세요.');return}ui.view='login';ui.loginErr='';render();break;
-  case 'logout':if(isDirty()&&ui.confirm!=='logout'){ui.confirm='logout';toast('저장하지 않은 변경이 있어요. 한 번 더 누르면 버리고 로그아웃해요.');return}ui.confirm=null;clearAuth();ui.auth=null;ui.dirty=freshDirty();ui.team='all';ui.tab='roster';boot();break;
-  case 'reload':if(isDirty()&&ui.confirm!=='reload'&&!ui.conflict){ui.confirm='reload';toast('저장하지 않은 변경이 있어요. 한 번 더 누르면 버리고 다시 불러와요.');return}ui.confirm=null;ui.conflict=null;ui.dirty=freshDirty();loadData();break;
+  case 'logout':if(MODE==='server'&&(isDirty()||ui.saving)&&!ui.conflict&&ui.confirm!=='logout'){autoSave().then(function(){if(isDirty()){ui.confirm='logout';toast('저장하지 못한 변경이 있어요. 한 번 더 누르면 버리고 로그아웃해요.');return}ui.confirm=null;clearAuth();ui.auth=null;ui.dirty=freshDirty();ui.team='all';ui.tab='roster';boot()},function(){ui.confirm='logout';toast('저장하지 못한 변경이 있어요. 한 번 더 누르면 버리고 로그아웃해요.')});return}
+    if(isDirty()&&ui.confirm!=='logout'){ui.confirm='logout';toast('저장하지 않은 변경이 있어요. 한 번 더 누르면 버리고 로그아웃해요.');return}ui.confirm=null;clearAuth();ui.auth=null;ui.dirty=freshDirty();ui.team='all';ui.tab='roster';boot();break;
+  case 'reload':if(MODE==='server'&&(isDirty()||ui.saving)&&!ui.conflict&&ui.confirm!=='reload'){autoSave().then(function(){if(isDirty()){ui.confirm='reload';toast('저장하지 못한 변경이 있어요. 한 번 더 누르면 버리고 다시 불러와요.');return}loadData()},function(){ui.confirm='reload';toast('저장하지 못한 변경이 있어요. 한 번 더 누르면 버리고 다시 불러와요.')});return}
+    if(isDirty()&&ui.confirm!=='reload'&&!ui.conflict){ui.confirm='reload';toast('저장하지 않은 변경이 있어요. 한 번 더 누르면 버리고 다시 불러와요.');return}ui.confirm=null;ui.conflict=null;ui.dirty=freshDirty();loadData();break;
   case 'retry':boot();break;
   case 'dismissNet':ui.netErr='';render();break;
   }
@@ -2178,18 +2190,54 @@ function loadData(){ui.view=ui.view==='app'?'app':'loading';if(ui.view==='loadin
     if(!r.ok){if(r.error==='pin'||r.error==='auth'){clearAuth();ui.auth=null;ui.view='login';ui.loginErr=r.error==='auth'?'열람 PIN이 필요해요.':'다시 로그인해 주세요.';render();return}throw new Error(errMsg(r))}
     applyServer(r);ui.dirty=freshDirty();ui.conflict=null;ui.lastSync=Date.now();ui.view='app';render()}).catch(netFail)}
 function applyServer(r){var d=r.data||{},c=d.config||{};var n=blankState();n.clinic=c.clinic||'';n.holidayCredit=c.holidayCredit!==false;n.rules=c.rules||{};n.groups=c.groups||[];n.labels=c.labels||{};n.hours=c.hours||n.hours;n.dateHours=c.dateHours||{};n.types=c.types||[];
-  n.teams=(c.teamOrder||[]).map(function(id){return (d.teams||{})[id]}).filter(Boolean);n.sched=d.sched||{};n.att=d.att||{};n.attRule=c.attRule||{};n.meta={configAt:c.updatedAt||0};S=normalize(n);ui.pins=r.pins||null;ui.attMonths=r.attMonths||null;ui.attTried={};
+  n.teams=(c.teamOrder||[]).map(function(id){return (d.teams||{})[id]}).filter(Boolean);n.sched=d.sched||{};n.att=d.att||{};n.attRule=c.attRule||{};n.meta={configAt:c.updatedAt||0};S=normalize(n);ui.base={};Object.keys(S.sched).forEach(function(ym){Object.keys(S.sched[ym]).forEach(function(tid){ui.base[ym+'|'+tid]=JSON.stringify(roPayload(S.sched[ym][tid]))})});ui.saveErr='';ui.pins=r.pins||null;ui.attMonths=r.attMonths||null;ui.attTried={};
   if(ui.auth&&ui.auth.role==='leader'&&!teamById(ui.auth.teamId)){ui.auth=null;clearAuth()}rebuildTypes()}
 function saveServer(){var pin=pinArg(),steps=[];
-  if(ui.dirty.config&&isAdmin())steps.push(function(){return api('saveConfig',{pin:pin,base:S.meta.configAt||0,config:{clinic:S.clinic,holidayCredit:S.holidayCredit,labels:S.labels,attRule:S.attRule,rules:S.rules,groups:S.groups,hours:S.hours,dateHours:S.dateHours,types:S.types,teams:S.teams.map(function(t){return {id:t.id,name:t.name,leader:t.leader}})}}).then(function(r){
-    if(!r.ok)throw r;S.meta.configAt=r.updatedAt;Object.keys(r.teams||{}).forEach(function(id){var tm=teamById(id);if(tm&&!ui.dirty.teams[id])tm.updatedAt=r.teams[id];else if(tm&&!tm.updatedAt)tm.updatedAt=r.teams[id]});ui.dirty.config=false})});
-  Object.keys(ui.dirty.teams).forEach(function(tid){steps.push(function(){var tm=teamById(tid);if(!tm||!canTeam(tid)){delete ui.dirty.teams[tid];return Promise.resolve()}
-    return api('saveTeam',{pin:pin,base:tm.updatedAt||0,team:{id:tm.id,need:tm.need,staff:tm.staff,groups:tm.groups||[],posts:tm.posts||[]}}).then(function(r){if(!r.ok){r.what=tm.name+' 직원 명단';throw r}tm.updatedAt=r.updatedAt;tm.updatedBy=r.updatedBy||'';delete ui.dirty.teams[tid]})})});
-  Object.keys(ui.dirty.rosters).forEach(function(key){steps.push(function(){var p=key.split('|'),ym=p[0],tid=p[1],tm=teamById(tid);if(!tm||!canTeam(tid)){delete ui.dirty.rosters[key];return Promise.resolve()}
-    var ro=roster(ym,tid,true);return api('saveRoster',{pin:pin,ym:ym,teamId:tid,base:ro.updatedAt||0,roster:{cells:ro.cells,locks:ro.locks,reqs:ro.reqs,adj:ro.adj,memo:ro.memo,notes:ro.notes,place:ro.place||{},ot:ro.ot||{},dut:ro.dut||{},gen:ro.gen}}).then(function(r){if(!r.ok){r.what=tm.name+' '+ymLabel(ym)+' 근무표';throw r}ro.updatedAt=r.updatedAt;ro.updatedBy=r.updatedBy||'';delete ui.dirty.rosters[key]})})});
-  Object.keys(ui.dirty.att||{}).forEach(function(ym){steps.push(function(){var A=attOf(ym);if(!A||!canEditAny()){delete ui.dirty.att[ym];return Promise.resolve()}
-    return api('saveAtt',{pin:pin,ym:ym,base:A.updatedAt||0,att:A}).then(function(r){if(!r.ok){r.what=ymLabel(ym)+' 근태';throw r}A.updatedAt=r.updatedAt;A.updatedBy=r.updatedBy||'';delete ui.dirty.att[ym]})})});
+  if(ui.dirty.config&&isAdmin())steps.push(function(){var g=ui.dirty.config;return api('saveConfig',{pin:pin,base:S.meta.configAt||0,config:{clinic:S.clinic,holidayCredit:S.holidayCredit,labels:S.labels,attRule:S.attRule,rules:S.rules,groups:S.groups,hours:S.hours,dateHours:S.dateHours,types:S.types,teams:S.teams.map(function(t){return {id:t.id,name:t.name,leader:t.leader}})}}).then(function(r){
+    if(!r.ok){r.what='진료 시간·근무 형태·팀 설정';throw r}S.meta.configAt=r.updatedAt;Object.keys(r.teams||{}).forEach(function(id){var tm=teamById(id);if(tm&&!tm.updatedAt){tm.updatedAt=r.teams[id];ui.needRender=true}else if(tm&&!ui.dirty.teams[id])tm.updatedAt=r.teams[id]});if(ui.dirty.config===g)ui.dirty.config=false})});
+  Object.keys(ui.dirty.teams).forEach(function(tid){steps.push(function(){var tm=teamById(tid);if(!tm||!canTeam(tid)){delete ui.dirty.teams[tid];return Promise.resolve()}var g=ui.dirty.teams[tid];
+    return api('saveTeam',{pin:pin,base:tm.updatedAt||0,team:{id:tm.id,need:tm.need,staff:tm.staff,groups:tm.groups||[],posts:tm.posts||[]}}).then(function(r){if(!r.ok){r.what=tm.name+' 직원 명단';throw r}tm.updatedAt=r.updatedAt;tm.updatedBy=r.updatedBy||'';if(ui.dirty.teams[tid]===g)delete ui.dirty.teams[tid]})})});
+  Object.keys(ui.dirty.rosters).forEach(function(key){steps.push(function(){return saveRo(key,pin,0)})});
+  Object.keys(ui.dirty.att||{}).forEach(function(ym){steps.push(function(){var A=attOf(ym);if(!A||!canEditAny()){delete ui.dirty.att[ym];return Promise.resolve()}var g=ui.dirty.att[ym];
+    return api('saveAtt',{pin:pin,ym:ym,base:A.updatedAt||0,att:A}).then(function(r){if(!r.ok){r.what=ymLabel(ym)+' 근태';throw r}A.updatedAt=r.updatedAt;A.updatedBy=r.updatedBy||'';if(ui.dirty.att[ym]===g)delete ui.dirty.att[ym]})})});
   return steps.reduce(function(p,f){return p.then(f)},Promise.resolve())}
+/* one team-month: save it; if someone else saved it first, take their version, put my changes on top and save again */
+var RO_F={cells:2,locks:2,reqs:2,adj:2,notes:2,place:2,ot:2,memo:1,dut:1};
+function roPayload(ro){ro=ro||{};var o={};Object.keys(RO_F).forEach(function(f){o[f]=ro[f]||{}});o.gen=!!ro.gen;return o}
+function roFlat(o,depth,pre,out){Object.keys(o||{}).forEach(function(k){var v=o[k],p=pre?pre+'\u0001'+k:k;if(depth>1&&v&&typeof v==='object'&&!Array.isArray(v))roFlat(v,depth-1,p,out);else if(v!==''&&v!==null&&v!==undefined)out[p]=JSON.stringify(v)});return out}
+function roMerge(base,mine,theirs){var out={};Object.keys(RO_F).forEach(function(f){var dp=RO_F[f],B=roFlat(base[f],dp,'',{}),M=roFlat(mine[f],dp,'',{}),T=roFlat(theirs[f],dp,'',{});
+    Object.keys(B).concat(Object.keys(M)).forEach(function(k){if(B[k]===M[k])return;if(M[k]===undefined)delete T[k];else T[k]=M[k]});
+    var o={};Object.keys(T).forEach(function(k){var ps=k.split('\u0001'),cur=o;for(var i=0;i<ps.length-1;i++)cur=cur[ps[i]]||(cur[ps[i]]={});cur[ps[ps.length-1]]=JSON.parse(T[k])});out[f]=o});
+  out.gen=mine.gen!==base.gen?mine.gen:theirs.gen;return out}
+function saveRo(key,pin,tries){var p=key.split('|'),ym=p[0],tid=p[1],tm=teamById(tid);if(!tm||!canTeam(tid)){delete ui.dirty.rosters[key];return Promise.resolve()}
+  var ro=roster(ym,tid,true),g=ui.dirty.rosters[key],pay=roPayload(ro);
+  return api('saveRoster',{pin:pin,ym:ym,teamId:tid,base:ro.updatedAt||0,roster:pay}).then(function(r){
+    if(!r.ok&&r.error==='conflict'&&tries<3)return api('load',{pin:pin}).then(function(L){if(!L.ok)throw L;
+      var th=(((L.data||{}).sched||{})[ym]||{})[tid]||{},base=ui.base[key]?JSON.parse(ui.base[key]):roPayload(null),m=roMerge(base,roPayload(roster(ym,tid,true)),roPayload(th)),cur=roster(ym,tid,true);
+      Object.keys(m).forEach(function(f){cur[f]=m[f]});cur.updatedAt=th.updatedAt||0;cur.updatedBy=th.updatedBy||'';ui.base[key]=JSON.stringify(roPayload(th));ui.merged=true;ui.needRender=true;
+      return saveRo(key,pin,tries+1)});
+    if(!r.ok){r.what=tm.name+' '+ymLabel(ym)+' 근무표';throw r}
+    ro.updatedAt=r.updatedAt;ro.updatedBy=r.updatedBy||'';ui.base[key]=JSON.stringify(pay);if(ui.dirty.rosters[key]===g)delete ui.dirty.rosters[key]})}
+/* ---------- autosave (server): a moment after the last change, like a shared sheet ---------- */
+var autoTimer=null,saveP=null,retryMs=0,AUTO_MS=1500;
+function canAuto(){return MODE==='server'&&ui.view==='app'&&canEditAny()&&!ui.ro}
+function scheduleSave(ms){if(!canAuto())return;clearTimeout(autoTimer);autoTimer=setTimeout(function(){autoSave().catch(function(){})},ms==null?AUTO_MS:ms)}
+function autoSave(){clearTimeout(autoTimer);autoTimer=null;
+  if(saveP)return saveP.then(function(){return isDirty()&&!ui.conflict?autoSave():null},function(){return null});
+  if(!isDirty()||ui.conflict||!canAuto())return Promise.resolve();
+  ui.saving=true;ui.saveErr='';paintSave();
+  saveP=saveServer().then(function(){saveP=null;ui.saving=false;ui.lastSaved=Date.now();retryMs=0;
+      if(ui.needRender){ui.needRender=false;render()}else paintSave();
+      if(ui.merged){ui.merged=false;toast('같은 근무표를 다른 사람도 고쳐서, 두 사람의 변경을 합쳐 저장했어요.')}
+      if(ui.histOpen)histLoad();if(isDirty())scheduleSave(300)},
+    function(r){saveP=null;ui.saving=false;ui.needRender=false;
+      if(r&&r.error==='conflict'){ui.conflict='다른 사람이 먼저 저장한 내용이 있어서 자동 저장을 멈췄어요'+(r.what?' ('+r.what+')':'')+'.';render()}
+      else if(r&&r.error==='pin'){clearAuth();ui.auth=null;ui.dirty=freshDirty();ui.view='login';ui.loginErr='PIN이 바뀌었거나 팀장 등록이 삭제됐어요. 다시 로그인해 주세요.';render()}
+      else if(r&&r.error){ui.saveErr=errMsg(r);paintSave();toast(errMsg(r))}
+      else{var first=!retryMs;retryMs=Math.min(60000,retryMs?retryMs*2:3000);ui.saveErr='인터넷 연결 문제로 아직 저장하지 못했어요. 잠시 뒤 다시 저장해요.';paintSave();if(first)toast('인터넷 연결 문제로 저장하지 못했어요. 연결되면 자동으로 다시 저장해요.');scheduleSave(retryMs)}
+      throw r||new Error('save')});
+  return saveP}
+function paintSave(){var b=app.querySelector('.savebox');if(b)b.innerHTML=saveBoxInner()}
 function setPin(target,clear){var inp=document.getElementById('pin-'+target.replace(':','-')),v=clear?'':((inp&&inp.value)||'');
   if(!clear&&(v.length<4||v.length>12)){toast('PIN은 4~12자로 정하세요.');return}
   if(MODE!=='server'){toast('PIN은 구글 드라이브 공유 서버에 연결했을 때 쓸 수 있어요.');return}
@@ -2287,7 +2335,11 @@ function toast(msg){var el=document.getElementById('toast');if(!el){el=document.
 
 function exampleFill(){if(MODE==='server'||!S.example)return;S.teams.forEach(function(tm){var ro=roster(ui.ym,tm.id);if(!ro.gen&&tm.staff.length)genTeam(ui.ym,tm)})}
 window.addEventListener('resize',function(){var w=isWide();if(w!==lastWide){lastWide=w;if(ui.view==='app'&&ui.tab==='roster'&&ui.rv==='cal')render()}});
-window.addEventListener('beforeunload',function(e){if(isDirty()&&!ui.saving&&MODE!=='artifact'){e.preventDefault();e.returnValue=''}});
+window.addEventListener('beforeunload',function(e){if((isDirty()||ui.saving)&&MODE!=='artifact'){if(MODE==='server')autoSave().catch(function(){});e.preventDefault();e.returnValue=''}});
+/* leaving the tab saves right away; coming back after a while shows what others changed */
+document.addEventListener('visibilitychange',function(){if(MODE!=='server')return;
+  if(document.visibilityState==='hidden'){ui.hiddenAt=Date.now();if(isDirty())autoSave().catch(function(){});return}
+  if(ui.view==='app'&&ui.hiddenAt&&Date.now()-ui.hiddenAt>60000&&!isDirty()&&!ui.saving&&!ui.conflict&&!ui.histOpen){ui.hiddenAt=0;loadData()}});
 boot();
 if(sess&&sess.flash)toast(sess.flash);
 })();
