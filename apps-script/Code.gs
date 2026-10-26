@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 17;
+var VERSION = 18;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -390,6 +390,17 @@ function cleanLabels_(o) {
 }
 
 // 연도별 총 연차 { "2026": 15 }
+// 기간별 설정: 그 기간에만 평소 근무시간(t: e/l)이나 야간(n: off·on·must)을 바꿔요
+function cleanPer_(a) {
+  var re = /^\d{4}-\d{2}-\d{2}$/;
+  return (Array.isArray(a) ? a : []).slice(0, 12).map(function (x) {
+    x = x || {};
+    var o = { id: str_(x.id, 20) || ('v' + Utilities.getUuid().slice(0, 6)), from: re.test(x.from) ? x.from : '', to: re.test(x.to) ? x.to : '', why: str_(x.why, 20) };
+    if (x.t) { o.t = 1; o.e = half30_(x.e); o.l = half30_(x.l); }
+    if (['off', 'on', 'must'].indexOf(x.n) >= 0) o.n = x.n;
+    return o;
+  }).filter(function (x) { return x.from && (!x.to || x.to >= x.from) && (x.t || x.n); });
+}
 // 요일별 최소 인원 { '1': { d: 주간, n: 야간 } }
 function cleanNeedDow_(o) {
   var r = {};
@@ -450,6 +461,7 @@ function saveTeam_(req) {
       avail: (p.avail || []).map(Number).filter(function (x) { return x >= 0 && x <= 6; }), night: !!p.night,
       must: (p.must || []).map(Number).filter(function (x, i, a) { return x >= 0 && x <= 6 && a.indexOf(x) === i && (p.avail || []).map(Number).indexOf(x) >= 0; }),
       nightMust: !!(p.night && p.nightMust),
+      per: cleanPer_(p.per),
       early: half30_(p.early), late: half30_(p.late),
       leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 4) / 4)) } : null,
       abs: cleanAbs_(p.abs), post: str_(p.post, 20),
