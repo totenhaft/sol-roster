@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 16;
+var VERSION = 17;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -324,7 +324,14 @@ function cleanAdj_(a, ids, ym) {
       var c = a[sid][iso] || {}, x = {};
       if (c.e !== undefined) x.e = r5_(c.e);
       if (c.l !== undefined) x.l = r5_(c.l);
-      if (c.ot && (x.e || x.l)) x.ot = 1;   // 오버타임으로 쓴 조퇴·늦은 출근
+      if (c.ot && (x.e || x.l)) x.ot = 1;   // 오버타임으로 쓴 조퇴·늦은 출근 (예전 방식)
+      // 야간 대체(n: 쓴 야간 날짜들, nm: 그 시간)와 OT 사용(o)으로 나눠 쓴 조퇴·늦은 출근
+      if (x.e || x.l) {
+        if (c.o !== undefined) x.o = r5_(c.o);
+        var nn = (Array.isArray(c.n) ? c.n : []).filter(function (d, i, arr) { return /^\d{4}-\d{2}-\d{2}$/.test(d) && d !== iso && arr.indexOf(d) === i; }).slice(0, 3);
+        if (nn.length) { x.n = nn; x.nm = r5_(c.nm, 960); }
+        if (x.o !== undefined || x.n) delete x.ot;
+      }
       if (Object.keys(x).length) row[iso] = x;
     });
     if (Object.keys(row).length) outv[sid] = row;
