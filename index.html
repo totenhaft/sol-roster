@@ -568,6 +568,21 @@ a.tab{text-decoration:none}
 .days.must .day.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
 .days .day[disabled]{opacity:.35;cursor:default}
 .nchk{display:flex;flex-direction:column;gap:4px}
+/* 야간 대체 + OT 사용 */
+.adjsrc{display:flex;flex-direction:column;gap:6px;margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--surface-2)}
+.as-row{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.as-lab{font-size:12.5px;font-weight:600;color:var(--ink-2);min-width:56px}
+.adjsrc .pills{gap:4px}
+.adjsrc .pill{min-height:30px;padding:3px 10px;font-size:12.5px;--sc:var(--night)}
+.adjsrc .pill small{margin-left:2px}
+.adjsrc .pill.on small{color:inherit;opacity:.85}
+.adjsrc select{height:30px;font-size:12.5px}
+.as-sum{margin:0;font-size:12.5px;color:var(--ink-2)}
+.as-sum b{color:var(--accent)}
+.pk-row.etc .pk-top{flex-wrap:wrap}
+.pk-row.etc .pk-top b{white-space:nowrap}
+.pk-row.etc .pk-top .pk-sub:first-of-type{flex:1 1 140px;min-width:0}
+.pk-ctl .dl-adj{max-width:240px}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
@@ -669,7 +684,10 @@ function cleanPosts(a){return (Array.isArray(a)?a:[]).slice(0,30).map(function(x
 function cleanLabels(o){o=o||{};var r={};['night','leave','etc'].forEach(function(k){var v=String(o[k]||'').trim().slice(0,12);if(v)r[k]=v});return r}
 function isISO(x){return /^\d{4}-\d{2}-\d{2}$/.test(String(x||''))}
 function cleanAbs(a){if(!a||!isISO(a.from))return null;return {from:a.from,to:isISO(a.to)&&a.to>=a.from?a.to:'',why:String(a.why||'휴직').slice(0,12)||'휴직'}}
-function cleanAdj(a){var o={};Object.keys(a||{}).forEach(function(sid){var row={};Object.keys(a[sid]||{}).forEach(function(iso){var c=a[sid][iso]||{},x={};if(c.e!==undefined)x.e=r5(c.e);if(c.l!==undefined)x.l=r5(c.l);if(c.ot&&(x.e||x.l))x.ot=1;if(Object.keys(x).length)row[iso]=x});if(Object.keys(row).length)o[sid]=row});return o}
+function cleanAdj(a){var o={};Object.keys(a||{}).forEach(function(sid){var row={};Object.keys(a[sid]||{}).forEach(function(iso){var c=a[sid][iso]||{},x={};if(c.e!==undefined)x.e=r5(c.e);if(c.l!==undefined)x.l=r5(c.l);if(c.ot&&(x.e||x.l))x.ot=1;
+    /* 야간 대체(n: 쓴 야간 날짜, nm: 그때 인정 시간)와 OT 사용(o) */
+    if(x.e||x.l){if(c.o!==undefined)x.o=r5(c.o);var n=(Array.isArray(c.n)?c.n:[]).filter(function(d,i,arr){return /^\d{4}-\d{2}-\d{2}$/.test(d)&&d!==iso&&arr.indexOf(d)===i}).slice(0,3);if(n.length){x.n=n;x.nm=r5(c.nm,960)}if(x.o!==undefined||x.n)delete x.ot}
+    if(Object.keys(x).length)row[iso]=x});if(Object.keys(row).length)o[sid]=row});return o}
 function normalize(s){
   s.v=2;s.meta=s.meta||{};if(!s.clinic)s.clinic='우리 병원';if(s.holidayCredit===undefined)s.holidayCredit=true;s.rules=cleanRules(s.rules);s.groups=cleanGroups(s.groups);s.labels=cleanLabels(s.labels);s.attRule=cleanAttRule(s.attRule);var at0=s.att||{};s.att={};Object.keys(at0).forEach(function(ym){if(/^\d{4}-\d{2}$/.test(ym)&&at0[ym])s.att[ym]=cleanAttMonth(at0[ym],ym)});
   var h=s.hours||{};s.hours={};for(var dw=0;dw<7;dw++)s.hours[dw]=fixHours(h[dw],dw);
@@ -746,7 +764,7 @@ function fixTab(){var ok=tabsFor().some(function(t){return t[0]===ui.tab});if(!o
 
 /* ---------- calendar model ---------- */
 var DI={};
-function clearDI(){DI={};PX={};LVC={};ATC={};LGC={}}
+function clearDI(){DI={};PX={};LVC={};ATC={};LGC={};NSC={};SRC={}}
 var LVC={};
 function sessions(h,type){if(type==='closed')return {am:0,pm:0,nmin:0,night:false};
   var s=toMin(h.start),e=toMin(h.end),a=h.lunch?toMin(h.ls):780,b=h.lunch?toMin(h.le):780;
@@ -789,8 +807,11 @@ function adjOf(ro,p,iso,code){var t=TY[code];if(!t||(t.kind!=='in'&&t.kind!=='ou
   var e=c&&c.e!==undefined?c.e:(t.time!=='am'&&!noE?(p.early||0):0),l=c&&c.l!==undefined?c.l:(t.time!=='pm'&&!noL?(p.late||0):0);return (e||l)?{e:e,l:l}:null}
 function hTxt(min){var h=min/60;return h%1===0?String(h):h.toFixed(1)}
 function hLong(min){var h=Math.floor(min/60),m=min%60;return (h?h+'시간':'')+(m?(h?' ':'')+m+'분':'')}
-function adjTag(c){if(!c)return '';var e=c.e||0,l=c.l||0,o=c.ot?'OT':'';if(!e&&!l)return '정시';if(e&&l)return o+'−'+hTxt(e+l);return o+(e?'조'+hTxt(e):'늦'+hTxt(l))}
-function adjLong(c){if(!c)return '';var e=c.e||0,l=c.l||0,a=[];if(l)a.push(hLong(l)+' 늦게 출근');if(e)a.push(hLong(e)+' 일찍 퇴근');return a.length?a.join(', ')+(c.ot?' (OT 사용)':''):'평소 시간 조정 없음'}
+/* 시간 조정의 출처: 야간 대체(나머지는 OT) — 예전 'OT 조퇴'(ot:1)는 전부 OT로 봐요 */
+function adjSrc(c){if(!c)return null;var t=(c.e||0)+(c.l||0);if(!t)return null;if(c.n&&c.n.length)return {k:c.e?'e':'l',t:t,n:c.n,nm:c.nm||0,o:c.o||0};if(c.o!==undefined)return {k:c.e?'e':'l',t:t,n:[],nm:0,o:c.o};if(c.ot)return {k:c.e?'e':'l',t:t,n:[],nm:0,o:t};return null}
+function adjTag(c){if(!c)return '';var e=c.e||0,l=c.l||0,sr=adjSrc(c),o=sr?(sr.n.length?'야':'OT'):'';if(!e&&!l)return '정시';if(e&&l)return o+'−'+hTxt(e+l);return o+(e?'조'+hTxt(e):'늦'+hTxt(l))}
+function adjLong(c){if(!c)return '';var e=c.e||0,l=c.l||0,a=[],sr=adjSrc(c);if(l)a.push(hLong(l)+' 늦게 출근');if(e)a.push(hLong(e)+' 일찍 퇴근');return a.length?a.join(', ')+(sr?' ('+[sr.n.length?'야간 대체 '+sr.n.map(mdShort).join('·'):'',sr.o?'OT '+hLong(sr.o):''].filter(Boolean).join(' + ')+')':''):'평소 시간 조정 없음'}
+function mdShort(iso){var q=parts(iso);return q[1]+'/'+q[2]}
 function isWork(code){var t=TY[code];return !!t&&(t.kind==='in'||t.kind==='out')}
 function countsTarget(code){var t=TY[code];return !!t&&t.kind!=='off'}
 function leaveAmt(code){return code==='V'?1:(code==='HA'||code==='HP'||code==='HN')?0.5:isQ(code)?0.25:0}
@@ -1165,7 +1186,7 @@ function secItems(sec,iso,d,teams,Y){var out=[];
     if(sec.k==='etc'){var tp=TY[v],tx=adjText(v,d,ro,p,iso);
       if(v==='OT'){out.push(nameItem(p.name,nt,'OT 하루 ('+hLong(otUse(ro,p,iso))+')','',true));return}
       if(!BUILTIN_IDS[v]){out.push(nameItem(p.name,nt,esc(tp.name)+(tx?' '+tx:''),'',true));return}
-      if(tx){var ca=ro.adj[p.id]&&ro.adj[p.id][iso];out.push(nameItem(p.name,nt,tx+(ca&&ca.ot?' (OT '+hLong((ca.e||0)+(ca.l||0))+')':''),'',true));return}
+      if(tx){out.push(nameItem(p.name,nt,tx+adjSrcLabel(ro,p,iso),'',true));return}
       if(nt&&v==='W'&&d.dow!==0)out.push(nameItem(p.name,nt))}})});
   return out}
 function isWide(){return (window.innerWidth||1200)>=1100}
@@ -1210,13 +1231,32 @@ function weekInfo(p,tid,iso){var mk=mondayOf(iso),F=[],n=0;for(var i=0;i<7;i++)F
   F.forEach(function(x){if(di(x).type==='closed')return;if(countsTarget(cellCode(roster(x.slice(0,7),tid),p.id,x)))n++});
   return {n:n,t:weekTarget(p,{full:F,days:F})}}
 function adjVal(c){if(!c)return 'def';var e=c.e||0,l=c.l||0,o=c.ot?'o':'';if(e&&l)return 'mix';if(e)return o+'e'+e;if(l)return o+'l'+l;return '0'}
-function adjSelect(ro,p,tid,iso){var c=ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],v0=cellCode(ro,p.id,iso),cur=v0==='OT'?'otday':adjVal(c),dayM=mins('W',di(iso),adjOf(ro,p,iso,'W')),usual=p.early||p.late,o=[['def','평소 시간'+(usual?'('+adjTag({e:p.early,l:p.late})+')':'')]];
+function adjSelect(ro,p,tid,iso){var c=ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],v0=cellCode(ro,p.id,iso),sr=adjSrc(c),pend=ui.adjSrc&&ui.adjSrc.s===p.id&&ui.adjSrc.d===iso?ui.adjSrc.k:'',
+    cur=v0==='OT'?'otday':sr?'src'+sr.k.toUpperCase():pend?'src'+pend.toUpperCase():adjVal(c),dayM=mins('W',di(iso),null),usual=p.early||p.late,o=[['def','평소 시간'+(usual?'('+adjTag({e:p.early,l:p.late})+')':'')]];
   if(usual||cur==='0')o.push(['0','정시']);if(cur==='mix')o.push(['mix','직접 '+adjTag(c)]);
   var g1=[],g2=[];ADJ_AMTS.forEach(function(m){g1.push(['e'+m,'조퇴 '+hLong(m)])});ADJ_AMTS.forEach(function(m){g1.push(['l'+m,'늦출 '+hLong(m)])});
-  OT_AMTS.forEach(function(m){if(m<dayM)g2.push(['oe'+m,'OT 조퇴 '+hLong(m)])});OT_AMTS.forEach(function(m){if(m<dayM)g2.push(['ol'+m,'OT 늦출 '+hLong(m)])});
-  if(/^o?[el]\d+$/.test(cur)&&!g1.concat(g2).some(function(x){return x[0]===cur}))(cur.charAt(0)==='o'?g2:g1).push([cur,(cur.charAt(0)==='o'?'OT ':'')+(cur.replace(/^o/,'').charAt(0)==='e'?'조퇴 ':'늦출 ')+hLong(+cur.replace(/^o?[el]/,''))]);if(dayM)g2.push(['otday','OT 하루 전체 ('+hLong(dayM)+')']);
+  if(/^[el]\d+$/.test(cur)&&!g1.some(function(x){return x[0]===cur}))g1.push([cur,(cur.charAt(0)==='e'?'조퇴 ':'늦출 ')+hLong(+cur.slice(1))]);
+  g2.push(['srcE',sr&&sr.k==='e'?hLong(sr.t)+' 일찍 퇴근 (야간·OT)':'일찍 퇴근 — 야간·OT 고르기'],['srcL',sr&&sr.k==='l'?hLong(sr.t)+' 늦게 출근 (야간·OT)':'늦게 출근 — 야간·OT 고르기']);if(dayM)g2.push(['otday','OT 하루 전체 ('+hLong(dayM)+')']);
   function opts(a){return a.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===cur?' selected':'')+'>'+esc(x[1])+'</option>'}).join('')}
-  return '<label class="vh" for="adj-'+p.id+'">'+esc(p.name)+' 출퇴근 시간</label><select class="dl-adj'+((c&&c.ot)||v0==='OT'?' is-ot':'')+'" id="adj-'+p.id+'" data-adjsel="'+p.id+'" data-t="'+tid+'">'+opts(o)+'<optgroup label="오버타임 사용 (OT에서 빠져요)">'+opts(g2)+'</optgroup><optgroup label="시간 조정 (OT와 상관없이)">'+opts(g1)+'</optgroup></select>'}
+  return '<label class="vh" for="adj-'+p.id+'">'+esc(p.name)+' 출퇴근 시간</label><select class="dl-adj'+(sr||pend||v0==='OT'?' is-ot':'')+'" id="adj-'+p.id+'" data-adjsel="'+p.id+'" data-t="'+tid+'">'+opts(o)+'<optgroup label="야간 대체·OT 사용 (수당·OT에서 빠져요)">'+opts(g2)+'</optgroup><optgroup label="시간 조정 (OT·야간과 상관없이)">'+opts(g1)+'</optgroup></select>'}
+/* a person's nights from the start of last month to the end of this month that can be taken as time off */
+function nightCands(p,iso){var L=staffLoc(p.id);if(!L)return [];var ym=iso.slice(0,7),used=nightSubMap(p.id),x=personX(p),rate=attRule().rate,out=[];
+  [shiftYM(ym,-1),ym].forEach(function(m){var ro=roster(m,L.team.id);monthDates(m).forEach(function(nd){if(nd===iso||!di(nd).night||absOf(p,nd))return;if(!isNightCode(cellCode(ro,p.id,nd)))return;
+    var X=attDay(x,nd,attOf(m));out.push({iso:nd,cr:X.night*rate,usedOn:used[nd]&&used[nd]!==iso?used[nd]:''})})});return out}
+/* 야간 대체 + OT 사용: pick the nights and the OT minutes; the time off is their sum */
+function adjSrcEditor(ro,p,tid,iso){var c=ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],sr=adjSrc(c),pend=ui.adjSrc&&ui.adjSrc.s===p.id&&ui.adjSrc.d===iso?ui.adjSrc.k:'';if(!sr&&!pend)return '';
+  var k=sr?sr.k:pend,d=di(iso),v=cellCode(ro,p.id,iso),full=mins('W',d,null),sel=sr?sr.n:[],nm=sr?sr.nm:0,o=sr?sr.o:0,cands=nightCands(p,iso);
+  var h='<div class="adjsrc" id="as-'+p.id+'"><div class="as-row"><span class="as-lab">야간 대체</span>';
+  h+=cands.length?'<div class="pills">'+cands.map(function(cn){var on=sel.indexOf(cn.iso)>=0,dis=!on&&(!!cn.usedOn||!cn.cr||nm+cn.cr+o>full);
+      return '<button class="pill'+(on?' on':'')+'" id="an-'+p.id+'-'+cn.iso+'" data-act="adjNight" data-k="'+p.id+'" data-t="'+tid+'" data-n="'+cn.iso+'" aria-pressed="'+on+'"'+(dis?' disabled':'')+' title="'+esc(cn.usedOn?mdLabel(cn.usedOn)+'에 이미 썼어요':!cn.cr?'인정된 야간 시간이 없어요':on?'한 번 더 누르면 빠져요':'이 야간을 수당 대신 쉬는 시간으로 써요')+'">'+mdShort(cn.iso)+'('+DOWK[di(cn.iso).dow]+') 야간<small>'+(cn.usedOn?mdShort(cn.usedOn)+'에 씀':hLong(cn.cr))+'</small></button>'}).join('')+'</div>'
+    :'<span class="muted">지난달·이번 달 근무표에 야간이 없어요</span>';
+  h+='</div><div class="as-row"><label class="as-lab" for="aso-'+p.id+'">OT 사용</label><select id="aso-'+p.id+'" data-adjo="'+p.id+'" data-t="'+tid+'">'+[0].concat(OT_AMTS).filter(function(m){return m===o||nm+m<=full}).map(function(m){return '<option value="'+m+'"'+(m===o?' selected':'')+'>'+(m?hLong(m):'안 씀')+'</option>'}).join('')+'</select><span class="muted">'+otLeftText(p)+'</span></div>';
+  var tot=nm+o,sp=tot?workSpan(v,d,adjOf(ro,p,iso,v)):null;
+  h+='<p class="as-sum">'+(sp?'→ <b>'+(k==='e'?fmtHM(sp.to)+' 퇴근':fmtHM(sp.from)+' 출근')+'</b> · '+hLong(tot)+' 일찍'.replace('일찍',k==='e'?'일찍 퇴근':'늦게 출근')+esc(adjSrcLabel(ro,p,iso)):'야간이나 OT를 고르면 그 시간을 더한 만큼 '+(k==='e'?'일찍 퇴근':'늦게 출근')+'해요. 야간 1번은 보통 '+hLong(120*attRule().rate)+'이에요.')+'</p>';
+  return h+'</div>'}
+function setSrcAdj(sid,tid,iso,k,n,o){var L=staffLoc(sid);if(!L)return;var cr={};nightCands(L.p,iso).forEach(function(cn){cr[cn.iso]=cn.cr});n=n.filter(function(x){return cr[x]!==undefined});
+  var nm=n.reduce(function(s,x){return s+cr[x]},0),tot=nm+o,c=null;if(tot){c={o:o};c[k]=Math.min(480,tot);if(n.length){c.n=n;c.nm=nm}}
+  ui.adjSrc={s:sid,d:iso,k:k};setAdj(sid,tid,iso,c);clearDI()}
 function teamDayCount(t,ro,iso,d){var c=[0,0,0];t.staff.forEach(function(p){var v=cellCode(ro,p.id,iso),q=pres(v,d,adjOf(ro,p,iso,v));c[0]+=q[0];c[1]+=q[1];c[2]+=q[2]});
   var need=needOf(t,d),parts_=[];if(d.hasAM)parts_.push('<span class="'+(c[0]<need?'bad':'')+'">오전 '+c[0]+'/'+need+'</span>');if(d.hasPM)parts_.push('<span class="'+(c[1]<need?'bad':'')+'">오후 '+c[1]+'/'+need+'</span>');
   var nn=nightNeed(t,d);if(d.night&&(nn||c[2]))parts_.push('<span class="'+(c[2]<nn?'bad':'')+'">야간 '+c[2]+'/'+nn+'</span>');return parts_.join('')}
@@ -1240,7 +1280,7 @@ function dayEditor(iso,teams,Y){var d=di(iso),q=parts(iso),dates=monthDates(ui.y
           '</div>';
         if(qOpen&&qAny)h+='<div class="qps qsub" role="group" aria-label="'+nm+' 반반차">'+QS.map(function(c){var tp=TY[c],g=qGap(tp,d),on=leavePart(v)===c;return '<button class="qp'+(on?' c-'+tp.color:'')+'" id="qp-'+p.id+'-'+c+'" data-qp="'+c+'" data-s="'+p.id+'" data-t="'+t.id+'" data-d="'+iso+'" aria-pressed="'+on+'"'+(g?'':' disabled')+' title="'+esc(tp.name+(g?' · '+hmRange(g)+' 쉼':' · 이날은 없어요')+(on?' · 한 번 더 누르면 지워져요':''))+'">'+QLAB[c]+(g?'<small>'+hmRange(g)+'</small>':'')+'</button>'}).join('')+'</div>';
         h+='<div class="dl-more">'+(isWork(v)||v==='OT'?adjSelect(ro,p,t.id,iso):'')+'<input type="text" class="dl-note" id="dn-'+p.id+'" data-note="'+p.id+'" data-t="'+t.id+'" maxlength="30" value="'+esc(nt)+'" placeholder="메모 (예: 변경불가)" aria-label="'+nm+' 메모">'+
-          '<button class="qp qp-pref" id="qr-'+p.id+'" data-qr="'+p.id+'" data-t="'+t.id+'" data-d="'+iso+'" aria-pressed="'+rq+'" title="희망휴무: 자동 생성 때 되도록 이날 쉬게 해요">희망</button></div>'}
+          '<button class="qp qp-pref" id="qr-'+p.id+'" data-qr="'+p.id+'" data-t="'+t.id+'" data-d="'+iso+'" aria-pressed="'+rq+'" title="희망휴무: 자동 생성 때 되도록 이날 쉬게 해요">희망</button></div>'+(isWork(v)?adjSrcEditor(ro,p,t.id,iso):'')}
       h+='</div>'});
     h+='</div>'});
   if(d.type==='closed')h+='<p class="muted" style="margin:0">휴진이라 근무가 없어요.</p>';
@@ -1269,14 +1309,14 @@ function secEditor(iso,secId,teams,Y){var d=di(iso),sec=calSections(ui.ym,teams)
   if(k==='leave'&&eds.length){h+='<div class="seg lv-seg" role="group" aria-label="넣을 종류">'+[['V','연차'],['HA','오전 반차'],['HP','오후 반차']].map(function(o){return '<button data-act="lvKind" data-k="'+o[0]+'" aria-pressed="'+(lk===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'+
     '<div class="qbox"><div class="pk-lab">반반차 · 0.25일</div><div class="qseg" role="group" aria-label="반반차 종류">'+QS.map(function(c){var g=qGap(TY[c],d);return '<button data-act="lvKind" data-k="'+c+'" aria-pressed="'+(lk===c)+'"'+(g?'':' disabled')+' title="'+esc(TY[c].name)+'">'+QLAB[c]+'<small>'+(g?hmRange(g)+' 쉼':'이날은 없어요')+'</small></button>'}).join('')+'</div></div>'}
   if(k==='etc'){Tl.forEach(function(t){var ro=roster(ui.ym,t.id),ed=canTeam(t.id),tmp='';
-      t.staff.forEach(function(p){if(absOf(p,iso))return;var v=cellCode(ro,p.id,iso);if(!v&&ui.etcAdd!==p.id)return;var tx=adjText(v,d,ro,p,iso),custom=v&&(!BUILTIN_IDS[v]||v==='OT'),nt=noteOf(ro,p.id,iso),inside=custom||tx||(nt&&v==='W')||ui.etcAdd===p.id;
-        if(inside){inner+='<div class="pk-row etc"><div class="pk-top"><b>'+esc(p.name||'이름 없음')+'</b><span class="pk-sub">'+esc(custom?TY[v].name+(tx?' '+tx:''):tx||(isWork(v)?'근무':TY[v]?TY[v].name:''))+'</span><span class="pk-sub ot-left">'+otLeftText(p)+'</span>'+(ed?'<button class="btn small" data-act="etcRm" data-k="'+p.id+'" data-t="'+t.id+'">빼기</button>':'')+'</div>';
-          if(ed){inner+='<div class="pk-ctl">'+(isWork(v)||v==='OT'?adjSelect(ro,p,t.id,iso):'')+S.types.map(function(tp){var on=v===tp.id;return '<button class="qp'+(on?' c-'+tp.color:'')+'" id="qp-'+p.id+'-'+tp.id+'" data-qp="'+tp.id+'" data-s="'+p.id+'" data-t="'+t.id+'" data-d="'+iso+'" aria-pressed="'+on+'" title="'+esc(tp.name)+'">'+esc(tp.short)+'</button>'}).join('')+'</div>'+noteIn(p,t,ro,iso)}
+      t.staff.forEach(function(p){if(absOf(p,iso))return;var v=cellCode(ro,p.id,iso);if(!v&&ui.etcAdd!==p.id)return;var tx=adjText(v,d,ro,p,iso),custom=v&&(!BUILTIN_IDS[v]||v==='OT'),nt=noteOf(ro,p.id,iso),inside=custom||tx||(nt&&v==='W')||ui.etcAdd===p.id||(ui.adjSrc&&ui.adjSrc.s===p.id&&ui.adjSrc.d===iso);
+        if(inside){inner+='<div class="pk-row etc"><div class="pk-top"><b>'+esc(p.name||'이름 없음')+'</b><span class="pk-sub">'+esc(custom?TY[v].name+(tx?' '+tx:''):tx?tx+adjSrcLabel(ro,p,iso):(isWork(v)?'근무':TY[v]?TY[v].name:''))+'</span><span class="pk-sub ot-left">'+otLeftText(p)+'</span>'+(ed?'<button class="btn small" data-act="etcRm" data-k="'+p.id+'" data-t="'+t.id+'">빼기</button>':'')+'</div>';
+          if(ed){inner+='<div class="pk-ctl">'+(isWork(v)||v==='OT'?adjSelect(ro,p,t.id,iso):'')+S.types.map(function(tp){var on=v===tp.id;return '<button class="qp'+(on?' c-'+tp.color:'')+'" id="qp-'+p.id+'-'+tp.id+'" data-qp="'+tp.id+'" data-s="'+p.id+'" data-t="'+t.id+'" data-d="'+iso+'" aria-pressed="'+on+'" title="'+esc(tp.name)+'">'+esc(tp.short)+'</button>'}).join('')+'</div>'+(isWork(v)?adjSrcEditor(ro,p,t.id,iso):'')+noteIn(p,t,ro,iso)}
           else if(nt)inner+='<span class="pk-sub">('+esc(nt)+')</span>';
           inner+='</div>'}
         else if(ed&&isWork(v))tmp+='<button class="pill" id="pk-'+p.id+'" data-act="etcAdd" data-k="'+p.id+'">'+esc(p.name||'이름 없음')+'</button>'});
       if(tmp)adds+=(Tl.length>1?'<div class="pk-team">'+esc(t.name)+'</div>':'')+'<div class="pills">'+tmp+'</div>'});
-    block(inner,adds,eds.length?'시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>를 고르면 그만큼 OT에서 빠져요. 조퇴·늦은 출근 시간이나 '+(S.types.length?esc(S.types.map(function(t){return t.name}).join('·'))+' 같은 일정':'일정')+'을 넣어요. 메모에 사유(예: 10/16 연장근무)를 적으면 달력에 괄호로 보여요.':'보기만 할 수 있어요.');
+    block(inner,adds,eds.length?'시간 칸에서 <b>일찍 퇴근·늦게 출근 — 야간·OT 고르기</b>를 고르면, <b>야간 대체</b>(야간 1번 = 보통 3시간)와 <b>OT</b>를 골라 더한 만큼 쉬어요. 야간 대체로 쓴 야간은 근태의 야간 수당에서 빠져요. 조퇴·늦은 출근 시간이나 '+(S.types.length?esc(S.types.map(function(t){return t.name}).join('·'))+' 같은 일정':'일정')+'을 넣어요. 메모에 사유(예: 10/16 연장근무)를 적으면 달력에 괄호로 보여요.':'보기만 할 수 있어요.');
     return '<div class="secpane pane-'+k+'">'+h+secFoot()+'</div>'}
   Tl.forEach(function(t){var ro=roster(ui.ym,t.id),ed=canTeam(t.id),tmp='';
     t.staff.forEach(function(p){var v=cellCode(ro,p.id,iso),y=Y[p.id+'|'+iso];
@@ -1424,7 +1464,12 @@ function placePrint(teams,days){var css='@page{size:A4 landscape;margin:8mm}*{bo
 /* ----- 연차·OT 현황 ----- */
 function fmtMin(m){if(!m)return '0';return (m<0?'−':'')+hLong(Math.abs(m))}
 /* OT used on a day: a whole OT day (that day's hours), or 조퇴·늦출 marked as OT */
-function otUse(ro,p,iso){var d=di(iso);if(d.type==='closed'||absOf(p,iso))return 0;var v=cellCode(ro,p.id,iso);if(v==='OT')return mins('W',d,adjOf(ro,p,iso,'W'));var c=isWork(v)&&ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso];return c&&c.ot?(c.e||0)+(c.l||0):0}
+function otUse(ro,p,iso){var d=di(iso);if(d.type==='closed'||absOf(p,iso))return 0;var v=cellCode(ro,p.id,iso);if(v==='OT')return mins('W',d,adjOf(ro,p,iso,'W'));var c=isWork(v)&&ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],sr=adjSrc(c);return sr?sr.o:0}
+/* 야간 대체로 쓴 야간: {n: 야간 날짜들, nm: 그 시간} */
+function adjNights(ro,p,iso){var v=cellCode(ro,p.id,iso),c=isWork(v)&&ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],sr=adjSrc(c);return sr&&sr.n.length?{n:sr.n,nm:sr.nm}:null}
+/* which of a person's nights were taken as time off instead of pay, and on which day: {night: usage day} */
+var NSC={};
+function nightSubMap(pid){if(NSC[pid])return NSC[pid];var m={};Object.keys(S.sched).forEach(function(ym){Object.keys(S.sched[ym]).forEach(function(tid){var a=S.sched[ym][tid].adj&&S.sched[ym][tid].adj[pid];if(a)Object.keys(a).forEach(function(iso){(a[iso].n||[]).forEach(function(n){if(!m[n])m[n]=iso})})})});return NSC[pid]=m}
 function personX(p){var L=staffLoc(p.id);return {p:p,t:L?L.team:null}}
 function otMonth(p,ym){var L=ledgerAt(personX(p),ym);return {earn:L.man+L.dut+L.nightOT,use:L.use,man:L.man,dut:L.dut,night:L.nightOT}}
 function otMonthOld(p,ym){var m=S.sched[ym]||{},earn=0,use=0;Object.keys(m).forEach(function(tid){var ro=m[tid],e=ro.ot&&ro.ot[p.id];if(e)Object.keys(e).forEach(function(iso){earn+=e[iso]});
@@ -1509,7 +1554,8 @@ function attDay(x,iso,A){var p=x.p,t=x.t,d=di(iso),ro=t?roster(iso.slice(0,7),t.
   if(f&&f.n!==undefined)X.night=f.n;
   if(d.hol){if(has)X.hol=X.work;else if(t&&d.type!=='closed'&&isWork(v)&&TY[v].kind==='in')X.hol=mins(v,d,a)}
   if(f&&f.h!==undefined)X.hol=f.h;
-  if(t){var du=ro.dut&&ro.dut[iso];if(du&&du.s.indexOf(p.id)>=0){X.dutT=du.t;X.dut=dutMin(iso,du.t)}X.use=otUse(ro,p,iso)}
+  if(t){var du=ro.dut&&ro.dut[iso];if(du&&du.s.indexOf(p.id)>=0){X.dutT=du.t;X.dut=dutMin(iso,du.t)}X.use=otUse(ro,p,iso);X.useN=adjNights(ro,p,iso)}
+  X.subTo=!p.only?(nightSubMap(p.id)[iso]||''):'';
   if(has){
     if(plan){if(i===null&&o===null)flags.push(['bad','지문 없음']);
       else{if(i===null)flags.push(['warn','출근 기록 없음']);if(o===null)flags.push(['warn','퇴근 기록 없음']);
@@ -1518,25 +1564,36 @@ function attDay(x,iso,A){var p=x.p,t=x.t,d=di(iso),ro=t?roster(iso.slice(0,7),t.
     else if(t&&(i!==null||o!==null)&&!d.hol)flags.push(['warn','근무표엔 '+(ab?(p.abs.why||'휴직'):v&&TY[v]?TY[v].name:'쉬는 날')+'인데 지문 있음']);
     if(X.night&&!isNightCode(v)&&!(f&&f.n!==undefined)&&t)flags.push(['info','근무표엔 주간인데 야간까지']);}
   if(X.hol)flags.push(['info','공휴일 근무 '+hLong(X.hol)]);
+  if(X.subTo&&X.night)flags.push(['info','야간 대체 → '+mdShort(X.subTo)+'에 씀 (수당 제외)']);
+  if(X.useN)flags.push(['info','야간 대체 '+X.useN.n.map(mdShort).join('·')+' 야간으로 '+hLong(X.useN.nm)]);
   if(f&&f.x)flags.push(['note',f.x]);
   return X}
 var ATC={},LGC={};
 function attMonth(x,ym){var k=x.p.id+'|'+ym;if(ATC[k])return ATC[k];var A=attOf(ym),days=monthDates(ym).map(function(iso){return attDay(x,iso,A)}),n=0;
   days.forEach(function(dd){dd.flags.forEach(function(fl){if(fl[0]==='bad'||fl[0]==='warn')n++})});return ATC[k]={days:days,issues:n,has:!!(A&&A.rows[x.p.id])}}
-/* OT bank across months: 수납·기타 OT carries over (oldest used first); 야간 OT lives one month, the rest is paid */
+/* OT bank across months: 수납·기타 OT carries over (oldest used first); 야간 OT lives one month, the rest is paid.
+   A night picked as 야간 대체 (in any month) is not paid and not put in the pool: that time off already used it. */
+var SRC={};
 function ledgerOf(x){var id=x.p.id;if(LGC[id])return LGC[id];var rate=attRule().rate,ms={};Object.keys(S.sched).forEach(function(m){ms[m]=1});Object.keys(S.att).forEach(function(m){ms[m]=1});
-  var bank=[],def=0,res={},c0=x.p.ot0||0;if(c0>0)bank.push({iso:'',kind:'carry',m:c0,left:c0,uses:[]});else if(c0<0)def=-c0;
+  var bank=[],def=0,res={},src={},c0=x.p.ot0||0,sub=x.p.only?{}:nightSubMap(id),credit={};if(c0>0)bank.push({iso:'',kind:'carry',m:c0,left:c0,uses:[]});else if(c0<0)def=-c0;
   var sum=function(){return bank.reduce(function(s,e){return s+e.left},0)};
-  Object.keys(ms).sort().forEach(function(ym){var M=attMonth(x,ym),o={ym:ym,start:sum()-def,man:0,dut:0,nightMin:0,nightOT:0,use:0,useBank:0,useNight:0,entries:[]},pool=0;
+  var yms=Object.keys(ms).sort(),MM={};yms.forEach(function(ym){MM[ym]=attMonth(x,ym);MM[ym].days.forEach(function(dd){if(dd.night)credit[dd.iso]=dd.night*rate})});
+  yms.forEach(function(ym){var M=MM[ym],o={ym:ym,start:sum()-def,man:0,dut:0,nightMin:0,nightOT:0,nightSub:0,subList:[],use:0,useBank:0,useNight:0,useSub:0,entries:[]},pool=0;
     M.days.forEach(function(dd){var iso=dd.iso;
       [[manOt(x,iso),'man',''],[dd.dut,'dut',dd.dutT]].forEach(function(c){var amt=c[0];if(!amt)return;o[c[1]]+=amt;var e={iso:iso,kind:c[1],t:c[2],m:amt,left:amt,uses:[]};o.entries.push(e);var pay=Math.min(def,amt);if(pay){def-=pay;e.left-=pay;e.uses.push(['',pay])}if(e.left>0)bank.push(e)});
-      if(dd.night){var nc=dd.night*rate;o.nightMin+=dd.night;o.nightOT+=nc;var pay=Math.min(def,nc);def-=pay;pool+=nc-pay}
-      if(dd.use){var u=dd.use;o.use+=u;for(var k=0;k<bank.length&&u>0;k++){var e=bank[k];if(e.left<=0)continue;var tk=Math.min(e.left,u);e.left-=tk;u-=tk;e.uses.push([iso,tk]);o.useBank+=tk}
-        var tn=Math.min(pool,u);pool-=tn;u-=tn;o.useNight+=tn;def+=u;bank=bank.filter(function(e){return e.left>0})}});
+      if(dd.night){var nc=dd.night*rate;o.nightMin+=dd.night;o.nightOT+=nc;
+        if(sub[iso]){o.nightSub+=nc;o.subList.push([iso,sub[iso],nc])}else{var pay=Math.min(def,nc);def-=pay;pool+=nc-pay}}
+      var u=dd.use||0;if(dd.useN){var got=dd.useN.n.reduce(function(s,n){return s+(credit[n]||0)},0);o.useSub+=Math.min(dd.useN.nm,got);u+=Math.max(0,dd.useN.nm-got)}
+      if(u){var s0=src[iso]=[];o.use+=u;for(var k=0;k<bank.length&&u>0;k++){var e=bank[k];if(e.left<=0)continue;var tk=Math.min(e.left,u);e.left-=tk;u-=tk;e.uses.push([iso,tk]);o.useBank+=tk;s0.push({iso:e.iso,kind:e.kind,m:tk})}
+        var tn=Math.min(pool,u);pool-=tn;u-=tn;o.useNight+=tn;if(tn)s0.push({kind:'pool',m:tn});def+=u;if(u)s0.push({kind:'def',m:u});bank=bank.filter(function(e){return e.left>0})}});
     o.nightLeft=pool;o.nightPay=pool/rate;o.def=def;o.bankEnd=sum()-def;res[ym]=o});
-  return LGC[id]=res}
+  SRC[id]=src;return LGC[id]=res}
+/* where the OT used on a day came from: "11/1 OT 20분" */
+function otSrcText(p,iso){ledgerOf(personX(p));var l=(SRC[p.id]||{})[iso]||[];return l.map(function(s){return s.kind==='pool'?'야간 OT '+hLong(s.m):s.kind==='def'?'OT 모자람 '+hLong(s.m):(s.iso?mdShort(s.iso)+' ':'이월 ')+(s.kind==='dut'?'수납 OT ':'OT ')+hLong(s.m)})}
+/* "(11/2 야간, 11/1 OT 20분)" next to the time on the calendar */
+function adjSrcLabel(ro,p,iso){var c=ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],sr=adjSrc(c);if(!sr)return '';var a=sr.n.map(function(n){return mdShort(n)+' 야간'}),ot=sr.o?otSrcText(p,iso):[];if(sr.o&&!ot.length)ot=['OT '+hLong(sr.o)];return ' ('+a.concat(ot).join(', ')+')'}
 function ledgerAt(x,ym){var L=ledgerOf(x);if(L[ym])return L[ym];var prev=Object.keys(L).filter(function(m){return m<ym}).sort().pop(),b=prev?L[prev].bankEnd:(x.p.ot0||0);
-  return {ym:ym,start:b,man:0,dut:0,nightMin:0,nightOT:0,use:0,useBank:0,useNight:0,entries:[],nightLeft:0,nightPay:0,def:b<0?-b:0,bankEnd:b}}
+  return {ym:ym,start:b,man:0,dut:0,nightMin:0,nightOT:0,nightSub:0,subList:[],use:0,useBank:0,useNight:0,useSub:0,entries:[],nightLeft:0,nightPay:0,def:b<0?-b:0,bankEnd:b}}
 /* 공휴일 근무 ↔ 대체휴무, within the month */
 function holSettle(days){var hol=days.filter(function(d){return d.hol>0}).map(function(d){return {iso:d.iso,m:d.hol,sub:''}}),extra=[];
   days.filter(function(d){return d.sub}).forEach(function(d){var h=hol.filter(function(x){return !x.sub})[0];if(h)h.sub=d.iso;else extra.push(d.iso)});
@@ -1635,21 +1692,21 @@ function attImportView(){var I=ui.attImp,P=I.P,yms=Object.keys(P.months).sort(),
   if(P.empty.length)h+='<p class="fine">출퇴근 시간이 하나도 없는 이름은 뺐어요: '+esc(P.empty.join(', '))+'</p>';
   h+='<p class="fine">'+yms.map(function(ym){return ymLabel(ym)}).join(', ')+'의 지문 기록을 이 파일로 바꿔요. 직접 고친 시간과 정산표에서 고친 값은 그대로 남아요.</p><div class="row"><button class="btn primary" data-act="attApply">가져오기</button><button class="btn" data-act="attCancel">취소</button></div></section>';
   return h}
-function attSettleView(ym,teams){var A=attOf(ym),adm=isAdmin()&&!ui.ro,ppl=attPeople(ym,teams),rate=attRule().rate,mo=+ym.slice(5),tot={a:0,b:0,c:0,d:0,n:0,e:0,f:0,h:0,g:0};
-  var h='<section class="panel" id="attSettle"><h2>'+mo+'월 정산</h2><p class="lead">남은 야간·공휴일 시간은 OT 휴무와 대체휴무로 상계하고 남은 실제 근무시간이에요. 급여에서 <b>'+fmtNum(rate)+'배</b>로 계산하세요.'+(adm?' 굵은 칸은 직접 고칠 수 있어요.':'')+'</p>';
-  h+='<div class="tblwrap"><table class="tbl att-tbl"><thead><tr><th scope="col">이름</th><th class="num" scope="col">야간 근무</th><th class="num" scope="col">야간 OT<br><small>×'+fmtNum(rate)+'</small></th><th class="num" scope="col">수납·기타<br>OT</th><th class="num" scope="col">OT 사용</th><th class="num pay" scope="col">남은 야간<br><small>'+fmtNum(rate)+'배 지급</small></th><th class="num" scope="col">공휴일<br>근무</th><th class="num" scope="col">대체휴무</th><th class="num pay" scope="col">남은 공휴일<br><small>'+fmtNum(rate)+'배 지급</small></th><th class="num" scope="col">다음 달로<br>넘기는 OT</th><th scope="col">확인할 점</th></tr></thead><tbody>';
+function attSettleView(ym,teams){var A=attOf(ym),adm=isAdmin()&&!ui.ro,ppl=attPeople(ym,teams),rate=attRule().rate,mo=+ym.slice(5),tot={a:0,b:0,c:0,d:0,s:0,n:0,e:0,f:0,h:0,g:0};
+  var h='<section class="panel" id="attSettle"><h2>'+mo+'월 정산</h2><p class="lead">남은 야간·공휴일 시간은 OT 휴무와 대체휴무로 상계하고 남은 실제 근무시간이에요. 근무표에서 <b>야간 대체</b>로 쉰 야간은 다른 달에 썼어도 수당에서 빠져요. 급여에서 <b>'+fmtNum(rate)+'배</b>로 계산하세요.'+(adm?' 굵은 칸은 직접 고칠 수 있어요.':'')+'</p>';
+  h+='<div class="tblwrap"><table class="tbl att-tbl"><thead><tr><th scope="col">이름</th><th class="num" scope="col">야간 근무</th><th class="num" scope="col">야간 OT<br><small>×'+fmtNum(rate)+'</small></th><th class="num" scope="col">수납·기타<br>OT</th><th class="num" scope="col">OT 사용</th><th class="num" scope="col">야간 대체<br><small>수당 제외</small></th><th class="num pay" scope="col">남은 야간<br><small>'+fmtNum(rate)+'배 지급</small></th><th class="num" scope="col">공휴일<br>근무</th><th class="num" scope="col">대체휴무</th><th class="num pay" scope="col">남은 공휴일<br><small>'+fmtNum(rate)+'배 지급</small></th><th class="num" scope="col">다음 달로<br>넘기는 OT</th><th scope="col">확인할 점</th></tr></thead><tbody>';
   var lastT='-';
   ppl.forEach(function(x){var R=settleRow(x,ym),L=R.L,tn=x.t?x.t.name:'근무표에 없음 (지문만)';
-    if(tn!==lastT){h+='<tr class="lg-team"><th colspan="11">'+esc(tn)+'</th></tr>';lastT=tn}
-    tot.a+=L.nightMin;tot.b+=L.nightOT;tot.c+=L.dut+L.man;tot.d+=L.use;tot.n+=R.n;tot.e+=R.H.total;tot.f+=R.H.subN;tot.h+=R.h;tot.g+=Math.max(0,L.bankEnd);
+    if(tn!==lastT){h+='<tr class="lg-team"><th colspan="12">'+esc(tn)+'</th></tr>';lastT=tn}
+    tot.a+=L.nightMin;tot.b+=L.nightOT;tot.c+=L.dut+L.man;tot.d+=L.use;tot.s+=L.nightSub;tot.n+=R.n;tot.e+=R.H.total;tot.f+=R.H.subN;tot.h+=R.h;tot.g+=Math.max(0,L.bankEnd);
     var fin=function(q,val,auto){var over=R.fin[q]!==undefined;if(!adm)return '<b>'+(val?h2(val):'')+'</b>';
       return '<input type="number" class="fin-in'+(over?' over':'')+'" step="0.01" min="0" id="fin-'+q+'-'+esc(x.p.id)+'" data-fin="'+q+'" data-k="'+esc(x.p.id)+'" value="'+(over||val?h2(val):'')+'" aria-label="'+esc(x.p.name)+(q==='n'?' 남은 야간':' 남은 공휴일')+'">'+(over?'<button class="fin-rs" data-act="finReset" data-k="'+esc(x.p.id)+'" data-q="'+q+'" title="자동 값 '+h2(auto)+'으로 되돌리기">자동 '+h2(auto)+'</button>':'')};
     h+='<tr><th scope="row"><button class="linkbtn" data-act="attWho" data-k="'+esc(x.p.id)+'">'+esc(x.p.name||'이름 없음')+'</button>'+(R.M.has||!A?'':'<small class="muted"> 지문 없음</small>')+'</th>'+
-      '<td class="num">'+hh(L.nightMin)+'</td><td class="num">'+hh(L.nightOT)+'</td><td class="num">'+hh(L.dut+L.man)+'</td><td class="num">'+(L.use?hh(L.use):'')+'</td>'+
+      '<td class="num">'+hh(L.nightMin)+'</td><td class="num">'+hh(L.nightOT)+'</td><td class="num">'+hh(L.dut+L.man)+'</td><td class="num">'+(L.use?hh(L.use):'')+'</td><td class="num"'+(L.subList.length?' title="'+esc(L.subList.map(function(z){return mdShort(z[0])+' 야간 → '+mdShort(z[1])+'에 씀'}).join(', '))+'"':'')+'>'+(L.nightSub?hh(L.nightSub):'')+'</td>'+
       '<td class="num pay">'+fin('n',R.n,R.nightPay)+'</td><td class="num">'+hh(R.H.total)+'</td><td class="num">'+(R.H.subN?R.H.subN+'일':'')+'</td><td class="num pay">'+fin('h',R.h,R.holPay)+'</td>'+
       '<td class="num">'+(L.bankEnd?(L.bankEnd<0?'<span class="bad">−'+h2(-L.bankEnd/60)+'</span>':h2(L.bankEnd/60)):'')+'</td>'+
       '<td>'+(R.M.issues?'<button class="tagbtn" data-act="attWho" data-k="'+esc(x.p.id)+'">'+R.M.issues+'건</button>':'')+(R.H.extra.length?'<span class="tag warn">대체휴무 '+R.H.extra.length+'일 근거 없음</span>':'')+(R.fin.x?'<span class="muted"> '+esc(R.fin.x)+'</span>':'')+'</td></tr>'});
-  h+='</tbody><tfoot><tr><th scope="row">합계</th><td class="num">'+hh(tot.a)+'</td><td class="num">'+hh(tot.b)+'</td><td class="num">'+hh(tot.c)+'</td><td class="num">'+hh(tot.d)+'</td><td class="num pay"><b>'+h2(tot.n)+'</b></td><td class="num">'+hh(tot.e)+'</td><td class="num">'+(tot.f?tot.f+'일':'')+'</td><td class="num pay"><b>'+h2(tot.h)+'</b></td><td class="num">'+hh(tot.g)+'</td><td></td></tr></tfoot></table></div>';
+  h+='</tbody><tfoot><tr><th scope="row">합계</th><td class="num">'+hh(tot.a)+'</td><td class="num">'+hh(tot.b)+'</td><td class="num">'+hh(tot.c)+'</td><td class="num">'+hh(tot.d)+'</td><td class="num">'+hh(tot.s)+'</td><td class="num pay"><b>'+h2(tot.n)+'</b></td><td class="num">'+hh(tot.e)+'</td><td class="num">'+(tot.f?tot.f+'일':'')+'</td><td class="num pay"><b>'+h2(tot.h)+'</b></td><td class="num">'+hh(tot.g)+'</td><td></td></tr></tfoot></table></div>';
   h+='<p class="fine">시간은 소수(6.00 = 6시간)예요. 야간 OT = 야간 근무 × '+fmtNum(rate)+'. OT를 쓰면 수납·기타 OT부터(오래된 것부터) 빠지고, 모자라면 그 달 야간 OT에서 빠져요. 남은 야간 = (야간 OT − 야간에서 쓴 OT) ÷ '+fmtNum(rate)+'. 수납·기타 OT는 다음 달로 넘어가요.</p>';
   return h+'</section>'}
 function attDetailView(ym,teams){var ppl=attPeople(ym,teams);if(!ppl.length)return '';var sel=ui.attWho&&ppl.filter(function(x){return x.p.id===ui.attWho})[0];
@@ -1658,7 +1715,7 @@ function attDetailView(ym,teams){var ppl=attPeople(ym,teams);if(!ppl.length)retu
   ppl.forEach(function(y){var tn=y.t?y.t.name:'근무표에 없음';if(tn!==lastT){if(lastT!=='-')opts+='</optgroup>';opts+='<optgroup label="'+esc(tn)+'">';lastT=tn}var n=attMonth(y,ym).issues;opts+='<option value="'+esc(y.p.id)+'"'+(y.p.id===x.p.id?' selected':'')+'>'+esc(y.p.name)+(n?' · 확인 '+n:'')+'</option>'});opts+='</optgroup>';
   var h='<section class="panel" id="attDetail"><div class="hb-head"><div class="grow"><h2>날짜별 비교</h2><p class="lead">근무표와 지문 기록을 날짜별로 맞춰 봐요.'+(can?' <b>고치기</b>로 빠진 지문이나 인정 시간을 직접 바꿀 수 있어요.':'')+'</p></div>'+
     '<div class="row"><label for="attWho">직원</label><select id="attWho">'+opts+'</select></div></div>';
-  h+='<div class="chips att-sum"><span class="stat">야간 '+hh(L.nightMin||0)+'h</span><span class="stat">수납·기타 OT '+(L.dut+L.man?hLong(L.dut+L.man):'0')+'</span><span class="stat">OT 사용 '+(L.use?hLong(L.use):'0')+'</span><span class="stat">공휴일 '+(holSettle(M.days).total?hLong(holSettle(M.days).total):'0')+'</span>'+(M.issues?'<span class="stat warn">확인할 점 '+M.issues+'건</span>':'<span class="stat good">확인할 점 없음</span>')+(x.p.only?'<span class="stat">근무표에 없는 이름</span>':'')+'</div>';
+  h+='<div class="chips att-sum"><span class="stat">야간 '+hh(L.nightMin||0)+'h</span><span class="stat">수납·기타 OT '+(L.dut+L.man?hLong(L.dut+L.man):'0')+'</span><span class="stat">OT 사용 '+(L.use?hLong(L.use):'0')+'</span>'+(L.nightSub?'<span class="stat">야간 대체 '+hLong(L.nightSub)+' (수당 제외)</span>':'')+'<span class="stat">공휴일 '+(holSettle(M.days).total?hLong(holSettle(M.days).total):'0')+'</span>'+(M.issues?'<span class="stat warn">확인할 점 '+M.issues+'건</span>':'<span class="stat good">확인할 점 없음</span>')+(x.p.only?'<span class="stat">근무표에 없는 이름</span>':'')+'</div>';
   h+='<div class="tblwrap"><table class="tbl att-day"><thead><tr><th scope="col">날짜</th><th scope="col">근무표</th><th scope="col">예정</th><th scope="col">출근</th><th scope="col">퇴근</th><th class="num" scope="col">근무</th><th class="num" scope="col">야간</th><th class="num" scope="col">수납 OT</th><th class="num" scope="col">OT 사용</th><th class="num" scope="col">공휴일</th><th scope="col">확인할 점</th>'+(can?'<th scope="col"><span class="vh">고치기</span></th>':'')+'</tr></thead><tbody>';
   M.days.forEach(function(dd){var d=dd.d,q=parts(dd.iso),show=dd.plan||dd.i!==null||dd.o!==null||dd.night||dd.dut||dd.use||dd.hol||dd.sub||(dd.v&&dd.v!=='W'&&d.type!=='closed')||dd.f;if(!show)return;
     var tp=dd.v?TY[dd.v]:null,code=dd.ab?(x.p.abs.why||'휴직'):tp?tp.name:(d.type==='closed'?(d.hol||'휴진'):'—'),pc=(d.dow===0||d.hol)?'sun':d.dow===6?'sat':'';
@@ -1707,8 +1764,8 @@ function attRulesView(){var r=attRule(),adm=isAdmin()&&!ui.ro;
     '<div class="row"><label>평일 정규 종료 <input type="time" data-ar="wEnd" value="'+r.wEnd+'"></label><label>야간 있는 날 종료 <input type="time" data-ar="nEnd" value="'+r.nEnd+'"></label><label>토요일 정규 종료 <input type="time" data-ar="sEnd" value="'+r.sEnd+'"></label></div><p class="fine">바꾼 뒤 위의 ‘저장’을 누르세요. 진료 시간 설정과 따로 근태 계산에만 써요.</p></div>';
   return h+'</details>'}
 function attCsv(ym){var teams=visibleTeams(),ppl=attPeople(ym,teams),rate=attRule().rate,rows=[[S.clinic+' '+ymLabel(ym)+' 근태 정산']];
-  rows.push(['구분','팀','성명','야간 근무(시간)','야간 OT(×'+rate+')','수납·기타 OT(시간)','OT 사용(시간)','남은 야간 근무('+rate+'배 지급)','공휴일 근무(시간)','대체휴무(일)','남은 공휴일 근무('+rate+'배 지급)','다음 달로 넘기는 OT(시간)','확인할 점','메모']);
-  ppl.forEach(function(x){var R=settleRow(x,ym),L=R.L;rows.push([ymLabel(ym),x.t?x.t.name:'근무표에 없음',x.p.name,h2(L.nightMin/60),h2(L.nightOT/60),h2((L.dut+L.man)/60),h2(L.use/60),h2(R.n),h2(R.H.total/60),R.H.subN,h2(R.h),h2(L.bankEnd/60),R.M.issues,R.fin.x||''])});
+  rows.push(['구분','팀','성명','야간 근무(시간)','야간 OT(×'+rate+')','수납·기타 OT(시간)','OT 사용(시간)','야간 대체(시간, 수당 제외)','남은 야간 근무('+rate+'배 지급)','공휴일 근무(시간)','대체휴무(일)','남은 공휴일 근무('+rate+'배 지급)','다음 달로 넘기는 OT(시간)','확인할 점','메모']);
+  ppl.forEach(function(x){var R=settleRow(x,ym),L=R.L;rows.push([ymLabel(ym),x.t?x.t.name:'근무표에 없음',x.p.name,h2(L.nightMin/60),h2(L.nightOT/60),h2((L.dut+L.man)/60),h2(L.use/60),h2(L.nightSub/60),h2(R.n),h2(R.H.total/60),R.H.subN,h2(R.h),h2(L.bankEnd/60),R.M.issues,R.fin.x||''])});
   return '\uFEFF'+rows.map(function(r){return r.map(csvCell).join(',')}).join('\r\n')}
 function attPrint(ym){var teams=visibleTeams(),ppl=attPeople(ym,teams),rate=attRule().rate;
   var css='@page{size:A4;margin:12mm}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;font-size:11px;margin:0}h1{font-size:16px;margin:0 0 8px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #BFC8C4;padding:4px 6px;text-align:center}thead th{background:#E2EFDA}tbody th{text-align:left;background:#F2F5F3}.pay{background:#FFF2CC;font-weight:600}.team td{background:#EAF0ED;text-align:left;font-weight:600}';
@@ -2024,7 +2081,7 @@ app.addEventListener('click',function(e){
     dAtt(ui.ym);ui.attEdit=null;clearDI();render();toast('고쳤어요. 위의 ‘저장’을 눌러야 모두에게 보여요.')})();break;
   case 'attClear':(function(){var x=attX(k,ui.ym),iso=t.dataset.d;if(!canAtt(x))return;var A=attOf(ui.ym);if(A&&A.fix[k]){delete A.fix[k][iso];if(!Object.keys(A.fix[k]).length)delete A.fix[k]}dAtt(ui.ym);ui.attEdit=null;clearDI();render()})();break;
   case 'attUseOt':(function(){var x=attX(k,ui.ym),iso=t.dataset.d,m=+t.dataset.m||0;if(!x||!x.t||!canTeam(x.t.id)||!m)return;var ro=roster(ui.ym,x.t.id,true),c=ro.adj[k]&&ro.adj[k][iso]||{};
-    var nc={e:Math.min(480,(c.e||0)+m),ot:1};if(c.l!==undefined)nc.l=c.l;setAdj(k,x.t.id,iso,nc);clearDI();render();toast(x.p.name+' 님 '+mdLabel(iso)+' 근무표에 OT 조퇴 '+hLong(m)+'을 넣었어요. 저장을 눌러 주세요.')})();break;
+    var sr0=adjSrc(c),nc={e:Math.min(480,(c.e||0)+m),o:(sr0?sr0.o:0)+m};if(sr0&&sr0.n.length){nc.n=sr0.n;nc.nm=sr0.nm}if(c.l!==undefined&&!c.e)nc.l=c.l;setAdj(k,x.t.id,iso,nc);clearDI();render();toast(x.p.name+' 님 '+mdLabel(iso)+' 근무표에 OT 조퇴 '+hLong(m)+'을 넣었어요.'+keepNote())})();break;
   case 'finReset':(function(){var A=attOf(ui.ym);if(!A||!isAdmin())return;var q=t.dataset.q;if(A.fin[k]){delete A.fin[k][q];if(!Object.keys(A.fin[k]).length)delete A.fin[k]}dAtt(ui.ym);render()})();break;
   case 'dutPick':ui.dutSel=ui.dutSel||{};if(ui.dutSel[k])delete ui.dutSel[k];else ui.dutSel[k]=1;render();break;
   case 'dutSave':case 'dutDel':(function(){var ds=monthDates(ui.ym),day=ui.dutFor,tm=hm(ui.dutTime||''),eds=visibleTeams().filter(function(x){return canTeam(x.id)});if(!day||ds.indexOf(day)<0)return;
@@ -2057,6 +2114,8 @@ app.addEventListener('click',function(e){
   case 'secAll':ui.selSec=null;ui.etcAdd=null;render();break;
   case 'lvKind':ui.leaveKind=k;render();break;
   case 'qOpen':ui.qOpen=ui.qOpen===k?null:k;render();break;
+  case 'adjNight':(function(){var tid=t.dataset.t;if(!canTeam(tid))return;var iso=ui.selDay,ro=roster(ui.ym,tid,true),c=ro.adj[k]&&ro.adj[k][iso],sr=adjSrc(c),dir=sr?sr.k:(ui.adjSrc&&ui.adjSrc.s===k&&ui.adjSrc.d===iso?ui.adjSrc.k:'e'),n=(sr?sr.n:[]).slice(),nd=t.dataset.n,i=n.indexOf(nd);
+    if(i>=0)n.splice(i,1);else n.push(nd);n.sort();setSrcAdj(k,tid,iso,dir,n,sr?sr.o:0);render()})();break;
   case 'etcAdd':ui.etcAdd=k;render();(function(){var el=document.getElementById('adj-'+k);if(el)el.focus()})();break;
   case 'etcRm':(function(){var tid=t.dataset.t;if(!canTeam(tid))return;var ro=roster(ui.ym,tid,true),iso=ui.selDay,v=rawCode(ro,k,iso);setIn(ro.adj,k,iso,'');setIn(ro.notes,k,iso,'');if(v&&!BUILTIN_IDS[v]){setIn(ro.cells,k,iso,'');setIn(ro.locks,k,iso,'')}if(ui.etcAdd===k)ui.etcAdd=null;dRoster(ui.ym,tid);render()})();break;
   case 'dayStep':(function(){var ds=monthDates(ui.ym),i=ds.indexOf(ui.selDay)+(+k);if(i>=0&&i<ds.length){ui.selDay=ds[i];render();var b=document.querySelector('[data-act="dayStep"][data-k="'+k+'"]');if(b&&!b.disabled)b.focus()}})();break;
@@ -2167,7 +2226,11 @@ app.addEventListener('change',function(e){var t=e.target;
   if(t.dataset.adjsel){if(!canTeam(t.dataset.t))return;ui.etcAdd=null;var asid=t.dataset.adjsel,atid=t.dataset.t,aro=roster(ui.ym,atid,true),wasOT=rawCode(aro,asid,ui.selDay)==='OT';
     if(t.value==='otday'){setCode(asid,atid,ui.selDay,'OT','add');render();otWarn(asid);return}
     if(wasOT){setIn(aro.cells,asid,ui.selDay,'');setIn(aro.locks,asid,ui.selDay,'');dRoster(ui.ym,atid);if(t.value==='def'){render();return}}
-    var v=t.value,ot=v.charAt(0)==='o',v2=ot?v.slice(1):v,c=v==='def'?null:v==='0'?{e:0,l:0}:v==='mix'?undefined:v2.charAt(0)==='e'?{e:+v2.slice(1)}:{l:+v2.slice(1)};if(c&&ot)c.ot=1;if(c===undefined)return;setAdj(t.dataset.adjsel,t.dataset.t,ui.selDay,c);render();if(ot)otWarn(asid);return}
+    if(t.value==='srcE'||t.value==='srcL'){var sk=t.value==='srcE'?'e':'l',cc=aro.adj[asid]&&aro.adj[asid][ui.selDay],sr0=adjSrc(cc);
+      if(sr0)setSrcAdj(asid,atid,ui.selDay,sk,sr0.n,sr0.o);else{if(cc)setAdj(asid,atid,ui.selDay,null);ui.adjSrc={s:asid,d:ui.selDay,k:sk}}render();return}
+    ui.adjSrc=null;var v=t.value,ot=v.charAt(0)==='o',v2=ot?v.slice(1):v,c=v==='def'?null:v==='0'?{e:0,l:0}:v==='mix'?undefined:v2.charAt(0)==='e'?{e:+v2.slice(1)}:{l:+v2.slice(1)};if(c&&ot)c.o=c.e||c.l;if(c===undefined)return;setAdj(t.dataset.adjsel,t.dataset.t,ui.selDay,c);render();if(ot)otWarn(asid);return}
+  if(t.dataset.adjo){if(!canTeam(t.dataset.t))return;var oro=roster(ui.ym,t.dataset.t,true),oc=oro.adj[t.dataset.adjo]&&oro.adj[t.dataset.adjo][ui.selDay],osr=adjSrc(oc),ok=osr?osr.k:(ui.adjSrc&&ui.adjSrc.k)||'e';
+    setSrcAdj(t.dataset.adjo,t.dataset.t,ui.selDay,ok,osr?osr.n:[],+t.value||0);render();if(+t.value)otWarn(t.dataset.adjo);return}
   if(t.dataset.grp&&t.dataset.k==='max'){var go2=grpOwner(t.dataset.grp);if(canGrp(go2)){go2.g.max=int(t.value,1,9);grpDirty(go2)}return}
   if(t.id==='importFile'){var f=t.files&&t.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var o=JSON.parse(rd.result);if(!o||!o.hours)throw 0;ui.importData=o;render()}catch(err){toast('근무표 백업 파일이 아니에요. ‘전체 백업 파일’로 받은 .json 파일을 골라 주세요.')}};rd.readAsText(f);t.value='';return}
   if(t.dataset.f==='preview'){ui.preview=t.value;ui.team=(t.value!=='admin'&&t.value!=='viewer')?t.value:'all';ui.confirm=null;render();return}
