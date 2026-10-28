@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 20;
+var VERSION = 21;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -470,6 +470,7 @@ function saveTeam_(req) {
       per: cleanPer_(p.per),
       early: half30_(p.early), late: half30_(p.late),
       leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 4) / 4)) } : null,
+      hire: /^\d{4}-\d{2}-\d{2}$/.test(String(p.hire || '')) ? String(p.hire) : '',   // 입사일: 연차 기준일
       abs: cleanAbs_(p.abs), post: str_(p.post, 20),
       lt: cleanLt_(p.lt), ot0: int_(p.ot0, -60000, 60000) };
   });
