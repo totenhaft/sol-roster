@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 18;
+var VERSION = 19;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -235,9 +235,10 @@ function load_(req) {
     return { ok: false, error: 'auth', status: st };
   }
   delete d.handbook;   // 취업규칙은 rules.html에서 따로 불러와요
-  // 근태(지문 기록)는 최근 몇 달만 함께 보내고, 나머지는 근태 탭에서 그 달을 열 때 따로 불러와요
+  // 근태(지문 기록)는 관리자에게만 보내요. 그것도 최근 몇 달만 함께 보내고, 나머지는 근태 탭에서 그 달을 열 때 따로 불러와요
   var att = d.att || {}, months = Object.keys(att).sort(), cut = ymShift_(ymNow_(), -3), recent = {};
-  months.forEach(function (m) { if (m >= cut) recent[m] = att[m]; });
+  if (a && a.role === 'admin') months.forEach(function (m) { if (m >= cut) recent[m] = att[m]; });
+  else months = [];
   d.att = recent;
   return { ok: true, data: d, pins: pinsInfo_(d), me: a ? meOf_(a) : null, status: st, attMonths: months, serverTime: Date.now() };
 }
@@ -747,28 +748,25 @@ function staffIds_(d, teamId) {
 }
 /** 근태 탭에서 그 달을 열 때 */
 function att_(req) {
-  var d = readData_(), ym = String(req.ym || '');
-  if (req.pin) { var a = auth_(req.pin); if (a.error) return { ok: false, error: a.error }; }
-  else if (props_().getProperty('VIEW_PIN')) return { ok: false, error: 'auth' };
+  if (!req.pin) return { ok: false, error: 'auth' };
+  var a = auth_(req.pin), ym = String(req.ym || '');
+  if (a.error) return { ok: false, error: a.error };
+  if (a.role !== 'admin') return { ok: false, error: 'forbidden' };   // 근태는 관리자만 봐요
   if (!/^\d{4}-\d{2}$/.test(ym)) return { ok: false, error: 'bad_request' };
+  var d = readData_();
   return { ok: true, att: (d.att || {})[ym] || null };
 }
-/** 관리자: 지문 기록·정산값까지 전부 / 팀장: 자기 팀 직원의 날짜별 고친 값만 */
+/** 근태는 관리자만 저장해요 (지문 기록·정산값까지 전부). 수납 OT는 근무표에 들어 있어서 팀장도 근무표 탭에서 기록해요 */
 function saveAtt_(req) {
   var a = auth_(req.pin);
   if (a.error) return { ok: false, error: a.error };
-  if (a.role !== 'admin' && a.role !== 'leader') return { ok: false, error: 'forbidden' };
+  if (a.role !== 'admin') return { ok: false, error: 'forbidden' };
   var ym = String(req.ym || '');
   if (!/^\d{4}-\d{2}$/.test(ym)) return { ok: false, error: 'bad_request' };
   var d = readData_(), all = d.att || (d.att = {}), cur = all[ym] || null;
-  // 관리자는 달 전체를 바꾸니 겹침을 확인하고, 팀장은 자기 팀 줄만 합치니 다른 팀장과 겹치지 않아요
-  if (a.role === 'admin' && (req.base || 0) !== ((cur && cur.updatedAt) || 0)) return { ok: false, error: 'conflict' };
+  // 달 전체를 바꾸니 다른 창에서 먼저 저장했는지 확인해요
+  if ((req.base || 0) !== ((cur && cur.updatedAt) || 0)) return { ok: false, error: 'conflict' };
   var x = cleanAtt_(req.att, staffIds_(d), ym);
-  if (a.role === 'leader') {
-    var mine = staffIds_(d, a.teamId), base = cur ? cleanAtt_(cur, staffIds_(d), ym) : { rows: {}, fix: {}, fin: {}, map: {}, file: null };
-    Object.keys(mine).forEach(function (sid) { if (x.fix[sid]) base.fix[sid] = x.fix[sid]; else delete base.fix[sid]; });
-    x = base;
-  }
   x.updatedAt = Date.now();
   x.updatedBy = actorName_(a);
   histAdd_([{ k: 'a|' + ym, label: ymLabel_(ym) + ' 근태', prev: cur, by: actorName_(a) }]);
