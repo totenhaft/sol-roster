@@ -625,11 +625,12 @@ var BUILTIN=[
   {id:'V',name:'연차',short:'연',kind:'paid',color:'leave',desc:'유급 휴가, 주 근무일에 포함'},
   {id:'O',name:'휴무',short:'휴',kind:'off',color:'off',desc:'정해진 휴무'},
   {id:'OT',name:'오버타임 사용',short:'OT',kind:'paid',color:'otuse',desc:'쌓인 OT로 하루 쉼 (그날 근무시간만큼 OT에서 빠져요)'},
-  {id:'OTD',name:'대체오프',short:'OT휴',kind:'paid',color:'otd',desc:'모은 OT로 하루 쉼: 평일 9시간(야간 3번), 토요일 6시간(야간 2번). 야간 진료 있는 날도 18시 퇴근한 하루로 봐요'},
+  {id:'OTD',name:'대체오프',short:'OT휴',kind:'paid',color:'otd',desc:'모은 OT로 하루 쉼: 평일 9시간(야간 3번), 토요일 3시간(야간 1번). 야간 진료 있는 날도 18시 퇴근한 하루로 봐요'},
   {id:'SUB',name:'대체휴무',short:'대휴',kind:'paid',color:'sub',desc:'공휴일에 근무한 대신 쉬는 날 (근태에서 공휴일 근무와 상계)'}
 ];
-/* 대체오프: 모은 OT로 하루 쉬어요. 평일 9시간(야간 3시간 × 3번), 토요일 6시간(× 2번). 야간 진료 있는 날도 18시까지인 하루로 봐요 */
-function otdMin(d){return d&&d.dow===6?360:540}
+/* 대체오프: 모은 OT로 하루 쉬어요. 평일 9시간(야간 3시간 × 3번), 토요일 3시간(× 1번만). 야간 진료 있는 날도 18시까지인 하루로 봐요 */
+function otdMin(d){return d&&d.dow===6?180:540}
+function otdMaxN(d){return d&&d.dow===6?1:3}
 function otdOk(d){return !!d&&((d.type==='full'&&d.dow>=1&&d.dow<=5)||(d.dow===6&&d.type!=='closed'))}
 /* 대체오프에 쓴 야간(n, 그 시간 nm)과 나머지 OT(o). 야간을 안 고르면 그날 시간 전부 OT에서 */
 function otdSrc(c,d){if(!c||!c.d)return null;var M=otdMin(d),nm=Math.min(M,c.nm||0);return {n:c.n||[],nm:nm,o:c.o!==undefined?Math.min(c.o,M-nm):M-nm}}
@@ -1311,14 +1312,14 @@ function setSrcAdj(sid,tid,iso,k,n,o){var L=staffLoc(sid);if(!L)return;var cr={}
 function otdLabel(ro,p,iso){var s=otdSrc(ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],di(iso));if(!s||!s.n.length)return '';return ' ('+s.n.map(mdShort).join('·')+' 야간'+(s.o?' + OT '+hLong(s.o):'')+')'}
 function otdSrcEditor(ro,p,tid,iso){var M=otdMin(di(iso)),s=otdSrc(ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],di(iso)),sel=s?s.n:[],nm=s?s.nm:0,o=s?s.o:M,cands=nightCands(p,iso);
   var h='<div class="adjsrc otdsrc" id="os-'+p.id+'"><div class="as-row"><span class="as-lab">모은 야간</span>';
-  h+=cands.length?'<div class="pills">'+cands.map(function(cn){var on=sel.indexOf(cn.iso)>=0,dis=!on&&(!!cn.usedOn||!cn.cr||nm+cn.cr>M||sel.length>=3);
-      return '<button class="pill'+(on?' on':'')+'" id="on-'+p.id+'-'+cn.iso+'" data-act="otdNight" data-k="'+p.id+'" data-t="'+tid+'" data-d="'+iso+'" data-n="'+cn.iso+'" aria-pressed="'+on+'"'+(dis?' disabled':'')+' title="'+esc(cn.usedOn?mdLabel(cn.usedOn)+'에 이미 썼어요':!cn.cr?'인정된 야간 시간이 없어요':on?'한 번 더 누르면 빠져요':nm+cn.cr>M?hLong(M)+'을 넘어요':'이 야간을 수당 대신 대체오프에 써요')+'">'+mdShort(cn.iso)+'('+DOWK[di(cn.iso).dow]+') 야간<small>'+(cn.usedOn?mdShort(cn.usedOn)+'에 씀':hLong(cn.cr)+(cn.later?' · 미리':''))+'</small></button>'}).join('')+'</div>'
+  h+=cands.length?'<div class="pills">'+cands.map(function(cn){var on=sel.indexOf(cn.iso)>=0,dis=!on&&(!!cn.usedOn||!cn.cr||nm+cn.cr>M||sel.length>=otdMaxN(di(iso)));
+      return '<button class="pill'+(on?' on':'')+'" id="on-'+p.id+'-'+cn.iso+'" data-act="otdNight" data-k="'+p.id+'" data-t="'+tid+'" data-d="'+iso+'" data-n="'+cn.iso+'" aria-pressed="'+on+'"'+(dis?' disabled':'')+' title="'+esc(cn.usedOn?mdLabel(cn.usedOn)+'에 이미 썼어요':!cn.cr?'인정된 야간 시간이 없어요':on?'한 번 더 누르면 빠져요':sel.length>=otdMaxN(di(iso))?(di(iso).dow===6?'토요일은 OT 3시간(야간 1번)만 써요':'야간은 3번까지예요'):nm+cn.cr>M?hLong(M)+'을 넘어요':'이 야간을 수당 대신 대체오프에 써요')+'">'+mdShort(cn.iso)+'('+DOWK[di(cn.iso).dow]+') 야간<small>'+(cn.usedOn?mdShort(cn.usedOn)+'에 씀':hLong(cn.cr)+(cn.later?' · 미리':''))+'</small></button>'}).join('')+'</div>'
     :'<span class="muted">지난달~다음 달 근무표에 야간이 없어요.</span>';
   h+='</div><p class="as-sum">'+(nm?'야간 '+sel.map(mdShort).join('·')+' '+hLong(nm)+(o?' + 쌓인 OT '+hLong(o):'')+' = <b>'+hLong(M)+'</b>으로 쉬어요. 고른 야간은 수당에서 빠져요.':'야간을 안 고르면 쌓인 OT에서 <b>'+hLong(M)+'</b>이 빠져요.')+' <span class="muted">'+otLeftText(p)+'</span></p>';
   return h+'</div>'}
-function setOtdSrc(sid,tid,iso,n){var L=staffLoc(sid),ro=roster(ui.ym,tid,true);if(!L||rawCode(ro,sid,iso)!=='OTD')return;var cr={};nightCands(L.p,iso).forEach(function(cn){cr[cn.iso]=cn.cr});n=n.filter(function(x){return cr[x]!==undefined}).slice(0,3);
+function setOtdSrc(sid,tid,iso,n){var L=staffLoc(sid),ro=roster(ui.ym,tid,true);if(!L||rawCode(ro,sid,iso)!=='OTD')return;var cr={};nightCands(L.p,iso).forEach(function(cn){cr[cn.iso]=cn.cr});n=n.filter(function(x){return cr[x]!==undefined}).slice(0,otdMaxN(di(iso)));
   var M=otdMin(di(iso)),nm=Math.min(M,n.reduce(function(s,x){return s+cr[x]},0));setIn(ro.adj,sid,iso,n.length?{d:1,n:n,nm:nm,o:M-nm}:'');dRoster(ui.ym,tid);clearDI()}
-function otdToast(sid){var p=pOf(sid);if(!p)return;var b=otBalance(p,ui.ym);toast(p.name+' 님 대체오프를 넣었어요. 모아 둔 야간을 고르면 그 야간으로, 안 고르면 쌓인 OT에서 빠져요(평일 9시간, 토요일 6시간).'+(b<0?' 지금은 OT를 '+hLong(-b)+' 미리 쓴 상태예요.':''))}
+function otdToast(sid){var p=pOf(sid);if(!p)return;var b=otBalance(p,ui.ym);toast(p.name+' 님 대체오프를 넣었어요. 모아 둔 야간을 고르면 그 야간으로, 안 고르면 쌓인 OT에서 빠져요(평일 9시간, 토요일 3시간).'+(b<0?' 지금은 OT를 '+hLong(-b)+' 미리 쓴 상태예요.':''))}
 function teamDayCount(t,ro,iso,d){var c=[0,0,0];t.staff.forEach(function(p){var v=cellCode(ro,p.id,iso),q=pres(v,d,adjOf(ro,p,iso,v));c[0]+=q[0];c[1]+=q[1];c[2]+=q[2]});
   var need=needOf(t,d),parts_=[];if(d.hasAM)parts_.push('<span class="'+(c[0]<need?'bad':'')+'">오전 '+c[0]+'/'+need+'</span>');if(d.hasPM)parts_.push('<span class="'+(c[1]<need?'bad':'')+'">오후 '+c[1]+'/'+need+'</span>');
   var nn=nightNeed(t,d);if(d.night&&(nn||c[2]))parts_.push('<span class="'+(c[2]<nn?'bad':'')+'">야간 '+c[2]+'/'+nn+'</span>');return parts_.join('')}
@@ -1367,7 +1368,7 @@ function secEditor(iso,secId,teams,Y){var d=di(iso),sec=calSections(ui.ym,teams)
   if(k==='night'&&d.dow!==0&&!d.night){h+='<p class="sec-help">이날은 야간 진료가 없어요. 야간을 열려면 관리자가 ‘진료 시간’의 날짜별 진료 시간에서 바꿔요.</p>';return '<div class="secpane pane-'+k+'">'+h+secFoot()+'</div>'}
   var lk=ui.leaveKind;if(isQ(lk)&&!qGap(TY[lk],d))lk='V';
   var ofk=ui.offKind==='SUB'||(ui.offKind==='OTD'&&otdOk(d))?ui.offKind:'O',code=k==='off'?ofk:k==='night'?(d.dow===0?'W':'N'):k==='leave'?lk:null,inner='',adds='';
-  if(k==='off'&&canTeam(sec.t.id)){h+='<div class="seg lv-seg" role="group" aria-label="넣을 종류">'+[['O','휴무'],['SUB','대체휴무'],['OTD','대체오프']].map(function(o){var no=o[0]==='OTD'&&!otdOk(d);return '<button data-act="offKind" data-k="'+o[0]+'" aria-pressed="'+(ofk===o[0])+'"'+(no?' disabled title="대체오프는 평일(종일 진료)과 토요일에만 넣어요"':o[0]==='OTD'?' title="모은 OT '+hLong(otdMin(d))+'으로 하루 쉬어요"':'')+'>'+o[1]+'</button>'}).join('')+'</div>'+(ofk==='OTD'?'<p class="sec-help">대체오프: OT '+hLong(otdMin(d))+'을 써서 하루 쉬어요'+(d.dow===6?' (토요일은 OT 3시간 × 2)':' (평일은 OT 3시간 × 3, 토요일은 6시간)')+'. 이름을 누른 뒤 아래에서 모아 둔 야간을 고르면 그 야간은 수당에서 빠지고, 안 고르면 쌓인 OT에서 빠져요.</p>':'')}
+  if(k==='off'&&canTeam(sec.t.id)){h+='<div class="seg lv-seg" role="group" aria-label="넣을 종류">'+[['O','휴무'],['SUB','대체휴무'],['OTD','대체오프']].map(function(o){var no=o[0]==='OTD'&&!otdOk(d);return '<button data-act="offKind" data-k="'+o[0]+'" aria-pressed="'+(ofk===o[0])+'"'+(no?' disabled title="대체오프는 평일(종일 진료)과 토요일에만 넣어요"':o[0]==='OTD'?' title="모은 OT '+hLong(otdMin(d))+'으로 하루 쉬어요"':'')+'>'+o[1]+'</button>'}).join('')+'</div>'+(ofk==='OTD'?'<p class="sec-help">대체오프: OT '+hLong(otdMin(d))+'을 써서 하루 쉬어요'+(d.dow===6?' (토요일은 OT 3시간 1개만)':' (평일은 OT 3시간 × 3, 토요일은 3시간)')+'. 이름을 누른 뒤 아래에서 모아 둔 야간을 고르면 그 야간은 수당에서 빠지고, 안 고르면 쌓인 OT에서 빠져요.</p>':'')}
   if(k==='leave'&&eds.length){h+='<div class="seg lv-seg" role="group" aria-label="넣을 종류">'+[['V','연차'],['HA','오전 반차'],['HP','오후 반차']].map(function(o){return '<button data-act="lvKind" data-k="'+o[0]+'" aria-pressed="'+(lk===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'+
     '<div class="qbox"><div class="pk-lab">반반차 · 0.25일</div><div class="qseg" role="group" aria-label="반반차 종류">'+QS.map(function(c){var g=qGap(TY[c],d);return '<button data-act="lvKind" data-k="'+c+'" aria-pressed="'+(lk===c)+'"'+(g?'':' disabled')+' title="'+esc(TY[c].name)+'">'+QLAB[c]+'<small>'+(g?hmRange(g)+' 쉼':'이날은 없어요')+'</small></button>'}).join('')+'</div></div>'}
   if(k==='etc'){Tl.forEach(function(t){var ro=roster(ui.ym,t.id),ed=canTeam(t.id),tmp='';
@@ -1390,7 +1391,7 @@ function secEditor(iso,secId,teams,Y){var d=di(iso),sec=calSections(ui.ym,teams)
       var gb=!dis&&k!=='night'?groupBlock(p.id,iso,code):[];if(gb.length)sub=(sub?sub+' · ':'')+'같이 못 쉼: '+gb.join('·');
       tmp+=pill(p,t,iso,code,false,sub,dis).replace('class="pill','class="pill'+(gb.length?' warn':'')+(ui.grpWarn&&ui.grpWarn.sid===p.id&&ui.grpWarn.iso===iso?' ask':''))});
     if(tmp)adds+=(Tl.length>1?'<div class="pk-team">'+esc(t.name)+'</div>':'')+'<div class="pills">'+tmp+'</div>'});
-  var help=!eds.length||(k==='off'&&!canTeam(sec.t.id))?'보기만 할 수 있어요.':k==='off'?'쉬는 사람 이름을 누르세요. 공휴일에 근무한 대신 쉬는 날은 위에서 <b>대체휴무</b>를, 모은 OT로 하루 쉬는 날(평일 9시간·토요일 6시간)은 <b>대체오프</b>를 고른 뒤 누르세요. 위 칸에 있는 이름을 다시 누르면 빠지고 근무로 돌아가요. 정기 휴무인 사람을 누르면 그날만 근무로 바뀌어요.':k==='leave'?'위에서 연차·반차·반반차를 고른 뒤 이름을 누르세요. 다시 누르면 빠져요. 반반차는 오전이나 오후 진료 시간 중 앞쪽 또는 뒤쪽 절반(보통 2시간)만 쉬어요.':d.dow===0?'일요일에 나오는 사람 이름을 누르세요.':'야간 근무할 사람 이름을 누르세요. 다시 누르면 빠져요.';
+  var help=!eds.length||(k==='off'&&!canTeam(sec.t.id))?'보기만 할 수 있어요.':k==='off'?'쉬는 사람 이름을 누르세요. 공휴일에 근무한 대신 쉬는 날은 위에서 <b>대체휴무</b>를, 모은 OT로 하루 쉬는 날(평일 9시간·토요일 3시간)은 <b>대체오프</b>를 고른 뒤 누르세요. 위 칸에 있는 이름을 다시 누르면 빠지고 근무로 돌아가요. 정기 휴무인 사람을 누르면 그날만 근무로 바뀌어요.':k==='leave'?'위에서 연차·반차·반반차를 고른 뒤 이름을 누르세요. 다시 누르면 빠져요. 반반차는 오전이나 오후 진료 시간 중 앞쪽 또는 뒤쪽 절반(보통 2시간)만 쉬어요.':d.dow===0?'일요일에 나오는 사람 이름을 누르세요.':'야간 근무할 사람 이름을 누르세요. 다시 누르면 빠져요.';
   block(inner,adds,help);
   if(k==='night'&&d.night){var nn=0,need=0;teams.forEach(function(t){var ro=roster(ui.ym,t.id);need+=nightNeed(t,d);t.staff.forEach(function(p){if(isNightCode(cellCode(ro,p.id,iso)))nn++})});if(need)h+='<p class="sec-help">야간 '+nn+'명 / 필요 '+need+'명</p>'}
   return '<div class="secpane pane-'+k+'">'+h+secFoot()+'</div>'}
@@ -1543,7 +1544,7 @@ function otWarn(sid){var p=pOf(sid);if(!p)return;var b=otBalance(p,ui.ym);toast(
 function otLeftText(p){var b=otBalance(p,ui.ym);return b<0?'미리 쓴 OT '+fmtMin(-b):'OT 남음 '+fmtMin(b)}
 function lvLeft(p,iso){var per=lvPer(p,iso),T=lvTotal(p,per,iso);if(!T)return '';return ' · 남은 연차 '+fmtNum(T.d-lvUsed(p,per))}
 function balancePanel(ym,teams){var eds=teams.filter(function(t){return canTeam(t.id)});if(!eds.length)return '';var y=ym.slice(0,4),mo=+ym.slice(5),asOf=monthEnd(ym),anyHire=eds.some(function(t){return t.staff.some(function(p){return p.hire})});
-  var h='<section class="panel" id="ledger"><h2>연차·OT 현황</h2><p>팀장과 관리자에게만 보여요. 총 연차와 입사일은 ‘팀·직원’에서 정하고(입사일을 넣은 직원은 입사일 기준 기간으로 세요), 근무표에 연차·반차·반반차를 넣으면 자동으로 빠져요. OT는 야간 근무(2시간 → 3시간)와 '+(isAdmin()?'<b>근태</b> 탭의':'아래')+' <b>수납 OT</b>가 자동으로 쌓이고, 그 밖의 OT는 아래에서 기록해요. 쓸 때는 포상 칸이나 날짜 화면의 시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>를 고르면 그만큼 빠져요. 모은 OT로 하루 쉬는 날은 <b>대체오프</b>를 골라요(평일 9시간, 토요일 6시간). 그 달 야간 OT가 남으면 월말에 수당으로 정산돼요.</p>';
+  var h='<section class="panel" id="ledger"><h2>연차·OT 현황</h2><p>팀장과 관리자에게만 보여요. 총 연차와 입사일은 ‘팀·직원’에서 정하고(입사일을 넣은 직원은 입사일 기준 기간으로 세요), 근무표에 연차·반차·반반차를 넣으면 자동으로 빠져요. OT는 야간 근무(2시간 → 3시간)와 '+(isAdmin()?'<b>근태</b> 탭의':'아래')+' <b>수납 OT</b>가 자동으로 쌓이고, 그 밖의 OT는 아래에서 기록해요. 쓸 때는 포상 칸이나 날짜 화면의 시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>를 고르면 그만큼 빠져요. 모은 OT로 하루 쉬는 날은 <b>대체오프</b>를 골라요(평일 9시간, 토요일 3시간). 그 달 야간 OT가 남으면 월말에 수당으로 정산돼요.</p>';
   h+='<div class="tblwrap"><table class="tbl ledger"><thead><tr><th>이름</th><th class="num">'+(anyHire?'연차':y+'년 연차')+'</th><th class="num">사용</th><th class="num">남음</th><th class="num">'+mo+'월 OT 적립</th><th class="num">'+mo+'월 OT 사용</th><th class="num">남은 OT</th></tr></thead><tbody>';
   eds.forEach(function(t){if(eds.length>1)h+='<tr class="lg-team"><th colspan="7">'+esc(t.name)+'</th></tr>';
     t.staff.forEach(function(p){var per=lvPer(p,asOf),T=lvTotal(p,per,asOf),tot=T?T.d:null,u=lvUsed(p,per),left=T?tot-u:null,om=otMonth(p,ym),ob=otBalance(p,ym);
@@ -1826,7 +1827,7 @@ function attRulesView(){var r=attRule(),adm=isAdmin()&&!ui.ro;
     '<li><b>야간 근무 2시간 = OT 휴무 '+fmtNum(2*r.rate)+'시간</b> (×'+fmtNum(r.rate)+'). 야간 진료가 있는 날 '+r.nEnd+' 무렵(10분 전부터)까지 지문이 있으면 야간 2시간으로 봐요. 근무표에 야간이 아니어도 실제로 남았으면 넣고 ‘확인할 점’에 표시해요.</li>'+
     '<li><b>수납 OT</b>: 마지막 수납이 정규 종료(야간 있는 날 '+r.nEnd+', 평일 '+r.wEnd+', 토요일 '+r.sEnd+')보다 늦으면, 넘은 시간을 5분 단위로 '+(r.round==='near'?'반올림':'올림')+'하고 +'+r.bonus+'분. 그날 관리자나 팀장이 아래 ‘수납 OT’에 기록해요.</li>'+
     '<li><b>공휴일 근무 = 대체휴무 하루</b>. 근무표의 오프 칸에서 ‘대체휴무’로 넣으면 그 달 공휴일 근무와 하나씩 상계돼요. 상계되지 않은 공휴일 근무 시간은 '+fmtNum(r.rate)+'배 수당으로 남아요.</li>'+
-    '<li>OT를 쓸 때는 근무표의 시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>, <b>대체오프</b>(OT 평일 9시간·토요일 6시간으로 하루)를 고르세요. 지문에 일찍 퇴근이 있으면 <b>OT 사용으로</b> 버튼으로 바로 넣을 수 있어요.</li></ol>';
+    '<li>OT를 쓸 때는 근무표의 시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>, <b>대체오프</b>(OT 평일 9시간·토요일 3시간으로 하루)를 고르세요. 지문에 일찍 퇴근이 있으면 <b>OT 사용으로</b> 버튼으로 바로 넣을 수 있어요.</li></ol>';
   if(adm)h+='<div class="att-rule-form"><div class="row"><label>수납 시간 처리 <select data-ar="round">'+ATT_ROUND.map(function(o){return '<option value="'+o[0]+'"'+(r.round===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></label><label>더하는 시간 <input type="number" data-ar="bonus" min="0" max="120" step="5" value="'+r.bonus+'">분</label><label>배율 <select data-ar="rate">'+[1,1.5,2].map(function(v){return '<option value="'+v+'"'+(r.rate===v?' selected':'')+'>×'+v+'</option>'}).join('')+'</select></label></div>'+
     '<div class="row"><label>평일 정규 종료 <input type="time" data-ar="wEnd" value="'+r.wEnd+'"></label><label>야간 있는 날 종료 <input type="time" data-ar="nEnd" value="'+r.nEnd+'"></label><label>토요일 정규 종료 <input type="time" data-ar="sEnd" value="'+r.sEnd+'"></label></div><p class="fine">'+(MODE==='server'?'바꾸면 바로 자동 저장돼요.':'바꾼 뒤 위의 ‘저장’을 누르세요.')+' 진료 시간 설정과 따로 근태 계산에만 써요.</p></div>';
   return h+'</details>'}
