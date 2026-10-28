@@ -770,7 +770,7 @@ function visibleTeams(){if(ui.team==='all')return S.teams;var t=teamById(ui.team
 var SITE='https://totenhaft.github.io/sol-roster/';
 var LINK_TABS=[['rules.html','취업규칙'],['law.html','근로기준법']];
 function pageUrl(f){return (MODE==='artifact'?SITE:'')+f}
-function tabsFor(){var r=role();if(r==='admin')return [['hours','진료 시간'],['types','근무 형태'],['rules','생성 조건'],['teams','팀·직원'],['roster','근무표'],['place','근무 배치'],['att','근태']];if(r==='leader')return [['teams','우리 팀 직원'],['roster','근무표'],['place','근무 배치'],['att','근태']];return [['roster','근무표'],['place','근무 배치'],['att','근태']]}
+function tabsFor(){var r=role();if(r==='admin')return [['hours','진료 시간'],['types','근무 형태'],['rules','생성 조건'],['teams','팀·직원'],['roster','근무표'],['place','근무 배치'],['att','근태']];if(r==='leader')return [['teams','우리 팀 직원'],['roster','근무표'],['place','근무 배치']];return [['roster','근무표'],['place','근무 배치']]}
 function fixTab(){var ok=tabsFor().some(function(t){return t[0]===ui.tab});if(!ok)ui.tab='roster';if(ui.team!=='all'&&!teamById(ui.team))ui.team='all'}
 
 /* ---------- calendar model ---------- */
@@ -1070,7 +1070,7 @@ function rosterTab(){
   h+=legend();
   var notes=dates.filter(function(iso){var d=di(iso);return d.hol||d.ov});
   h+='<p class="hint">'+(notes.length?'이달의 공휴일·진료 변경: '+notes.map(function(iso){var d=di(iso),p=parts(iso);return p[1]+'/'+p[2]+' '+esc(d.ov?(d.ov.closed?(d.ov.note||'임시 휴진'):((d.hol?d.hol+' · ':'')+(d.ov.note||hoursText(d.h)))):d.hol)}).join(', '):'이달은 공휴일이나 날짜별 진료 변경이 없어요.')+'</p>';
-  h+=balancePanel(ym,teams)+howDetails()+exportPanel();
+  h+=balancePanel(ym,teams)+(role()==='leader'?attDutView(ym,teams):'')+howDetails()+exportPanel();
   return h}
 function tableView(ym,dates,teams){var h='';
   h+='<div class="grid-wrap"><table class="grid" id="grid"><thead><tr><th class="name corner" rowspan="2" scope="col">직원</th>';
@@ -1505,7 +1505,7 @@ function leaveUsedMap(year){year=String(year);if(LVC[year])return LVC[year];var 
   S.teams.forEach(function(t){t.staff.forEach(function(p){if(m[p.id]===undefined)m[p.id]=(p.leave0&&p.leave0.y===+year)?p.leave0.d:0})});return LVC[year]=m}
 function lvLeft(p,iso){var y=iso.slice(0,4),tot=p.lt&&p.lt[y];if(!tot)return '';return ' · 남은 연차 '+fmtNum(tot-(leaveUsedMap(y)[p.id]||0))}
 function balancePanel(ym,teams){var eds=teams.filter(function(t){return canTeam(t.id)});if(!eds.length)return '';var y=ym.slice(0,4),mo=+ym.slice(5),used=leaveUsedMap(y);
-  var h='<section class="panel" id="ledger"><h2>연차·OT 현황</h2><p>팀장과 관리자에게만 보여요. 올해 총 연차는 ‘팀·직원’에서 정하고, 근무표에 연차·반차·반반차를 넣으면 자동으로 빠져요. OT는 야간 근무(2시간 → 3시간)와 <b>근태</b> 탭의 수납 OT가 자동으로 쌓이고, 그 밖의 OT는 아래에서 기록해요. 쓸 때는 포상 칸이나 날짜 화면의 시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>를 고르면 그만큼 빠져요. 그 달 야간 OT가 남으면 월말에 수당으로 정산돼요.</p>';
+  var h='<section class="panel" id="ledger"><h2>연차·OT 현황</h2><p>팀장과 관리자에게만 보여요. 올해 총 연차는 ‘팀·직원’에서 정하고, 근무표에 연차·반차·반반차를 넣으면 자동으로 빠져요. OT는 야간 근무(2시간 → 3시간)와 '+(isAdmin()?'<b>근태</b> 탭의':'아래')+' <b>수납 OT</b>가 자동으로 쌓이고, 그 밖의 OT는 아래에서 기록해요. 쓸 때는 포상 칸이나 날짜 화면의 시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>를 고르면 그만큼 빠져요. 그 달 야간 OT가 남으면 월말에 수당으로 정산돼요.</p>';
   h+='<div class="tblwrap"><table class="tbl ledger"><thead><tr><th>이름</th><th class="num">'+y+'년 연차</th><th class="num">사용</th><th class="num">남음</th><th class="num">'+mo+'월 OT 적립</th><th class="num">'+mo+'월 OT 사용</th><th class="num">남은 OT</th></tr></thead><tbody>';
   eds.forEach(function(t){if(eds.length>1)h+='<tr class="lg-team"><th colspan="7">'+esc(t.name)+'</th></tr>';
     t.staff.forEach(function(p){var tot=p.lt&&p.lt[y],u=used[p.id]||0,left=tot?tot-u:null,om=otMonth(p,ym),ob=otBalance(p,ym);
@@ -1692,8 +1692,8 @@ function attApply(){var I=ui.attImp;if(!I||!isAdmin())return;var yms=Object.keys
   yms.forEach(function(ym){var A=attOf(ym,true),src=I.P.months[ym],rows={},cnt=0;Object.keys(src).forEach(function(name){var k=I.map[name]||('n:'+name);if(k==='-')return;var row=rows[k]||(rows[k]={});Object.keys(src[name]).forEach(function(iso){row[iso]=src[name][iso];cnt++})});
     A.rows=rows;A.map=Object.assign({},A.map,I.map);A.file={name:I.name,at:now,by:who,n:cnt};used+=Object.keys(rows).length;dAtt(ym)});
   ui.attImp=null;if(yms.indexOf(ui.ym)<0&&yms.length)ui.ym=yms[0];clearDI();render();
-  toast(yms.map(function(ym){return +ym.slice(5)+'월'}).join('·')+' 지문 기록을 가져왔어요. 위의 ‘저장’을 눌러야 모두에게 보여요.')}
-function attFetch(ym){if(MODE!=='server'||S.att[ym]||ui.attTried[ym])return;if(Array.isArray(ui.attMonths)&&ui.attMonths.indexOf(ym)<0)return;ui.attTried[ym]=1;ui.attBusy=ym;
+  toast(yms.map(function(ym){return +ym.slice(5)+'월'}).join('·')+' 지문 기록을 가져왔어요.'+(MODE==='server'?' 자동 저장돼요.':' 위의 ‘저장’을 눌러야 모두에게 보여요.'))}
+function attFetch(ym){if(MODE!=='server'||!isAdmin()||S.att[ym]||ui.attTried[ym])return;if(Array.isArray(ui.attMonths)&&ui.attMonths.indexOf(ym)<0)return;ui.attTried[ym]=1;ui.attBusy=ym;
   api('att',{pin:pinArg(),ym:ym}).then(function(r){ui.attBusy='';if(r&&r.ok&&r.att&&!S.att[ym]){S.att[ym]=cleanAttMonth(r.att,ym)}clearDI();render()}).catch(function(){ui.attBusy='';render()})}
 
 /* ---------- the tab ---------- */
@@ -1790,7 +1790,7 @@ function attRulesView(){var r=attRule(),adm=isAdmin()&&!ui.ro;
     '<li><b>공휴일 근무 = 대체휴무 하루</b>. 근무표의 오프 칸에서 ‘대체휴무’로 넣으면 그 달 공휴일 근무와 하나씩 상계돼요. 상계되지 않은 공휴일 근무 시간은 '+fmtNum(r.rate)+'배 수당으로 남아요.</li>'+
     '<li>OT를 쓸 때는 근무표의 시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>를 고르세요. 지문에 일찍 퇴근이 있으면 <b>OT 사용으로</b> 버튼으로 바로 넣을 수 있어요.</li></ol>';
   if(adm)h+='<div class="att-rule-form"><div class="row"><label>수납 시간 처리 <select data-ar="round">'+ATT_ROUND.map(function(o){return '<option value="'+o[0]+'"'+(r.round===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></label><label>더하는 시간 <input type="number" data-ar="bonus" min="0" max="120" step="5" value="'+r.bonus+'">분</label><label>배율 <select data-ar="rate">'+[1,1.5,2].map(function(v){return '<option value="'+v+'"'+(r.rate===v?' selected':'')+'>×'+v+'</option>'}).join('')+'</select></label></div>'+
-    '<div class="row"><label>평일 정규 종료 <input type="time" data-ar="wEnd" value="'+r.wEnd+'"></label><label>야간 있는 날 종료 <input type="time" data-ar="nEnd" value="'+r.nEnd+'"></label><label>토요일 정규 종료 <input type="time" data-ar="sEnd" value="'+r.sEnd+'"></label></div><p class="fine">바꾼 뒤 위의 ‘저장’을 누르세요. 진료 시간 설정과 따로 근태 계산에만 써요.</p></div>';
+    '<div class="row"><label>평일 정규 종료 <input type="time" data-ar="wEnd" value="'+r.wEnd+'"></label><label>야간 있는 날 종료 <input type="time" data-ar="nEnd" value="'+r.nEnd+'"></label><label>토요일 정규 종료 <input type="time" data-ar="sEnd" value="'+r.sEnd+'"></label></div><p class="fine">'+(MODE==='server'?'바꾸면 바로 자동 저장돼요.':'바꾼 뒤 위의 ‘저장’을 누르세요.')+' 진료 시간 설정과 따로 근태 계산에만 써요.</p></div>';
   return h+'</details>'}
 function attCsv(ym){var teams=visibleTeams(),ppl=attPeople(ym,teams),rate=attRule().rate,rows=[[S.clinic+' '+ymLabel(ym)+' 근태 정산']];
   rows.push(['구분','팀','성명','야간 근무(시간)','야간 OT(×'+rate+')','수납·기타 OT(시간)','OT 사용(시간)','야간 대체(시간, 수당 제외)','남은 야간 근무('+rate+'배 지급)','공휴일 근무(시간)','대체휴무(일)','남은 공휴일 근무('+rate+'배 지급)','다음 달로 넘기는 OT(시간)','확인할 점','메모']);
@@ -1937,9 +1937,9 @@ function typeUse(code){var n=0;Object.keys(S.sched).forEach(function(ym){Object.
 function leaderNames(t){if(MODE==='server'&&ui.pins&&ui.pins.leaders)return ui.pins.leaders.filter(function(l){return l.teamId===t.id}).map(function(l){return l.name}).join(', ');return t.leader||''}
 function teamsTab(){var h='',admin=isAdmin(),srv=MODE==='server';
   if(admin){
-    h+='<section class="panel"><h2>팀</h2><p>팀마다 팀장이 자기 팀 직원과 근무표를 관리해요. 관리자는 모든 팀과 병원 설정을 관리해요.'+(srv?' 팀장은 아래 ‘팀장’에서 사람마다 등록해요. 한 팀에 여러 명도 돼요.':' 여러 사람이 함께 쓰려면 구글 드라이브 공유 서버에 연결하세요. 지금은 위쪽 ‘미리보기’로 팀장 화면을 볼 수 있어요.')+'</p><div class="tblwrap"><table class="tbl"><thead><tr><th>팀 이름</th><th>팀장</th><th>직원</th><th></th></tr></thead><tbody>';
-    S.teams.forEach(function(t){var id='tm-'+t.id+'-',ln=leaderNames(t);
-      h+='<tr><td><input type="text" id="'+id+'name" data-tm="'+t.id+'" data-k="name" value="'+esc(t.name)+'" aria-label="팀 이름"></td>'+
+    h+='<section class="panel"><h2>팀</h2><p>팀마다 팀장이 자기 팀 직원과 근무표를 관리해요. 관리자는 모든 팀과 병원 설정을 관리해요. ▲▼로 순서를 바꾸면 근무표의 팀 순서와 달력의 ‘○○오프’ 줄 순서도 같이 바뀌어요.'+(srv?' 팀장은 아래 ‘팀장’에서 사람마다 등록해요. 한 팀에 여러 명도 돼요.':' 여러 사람이 함께 쓰려면 구글 드라이브 공유 서버에 연결하세요. 지금은 위쪽 ‘미리보기’로 팀장 화면을 볼 수 있어요.')+'</p><div class="tblwrap"><table class="tbl"><thead><tr><th class="ord">순서</th><th>팀 이름</th><th>팀장</th><th>직원</th><th></th></tr></thead><tbody>';
+    S.teams.forEach(function(t,i){var id='tm-'+t.id+'-',ln=leaderNames(t),nm=esc(t.name||'팀');
+      h+='<tr><td class="ord"><button class="ob" data-act="teamMove" data-k="'+t.id+'|-1" id="'+id+'up"'+(i?'':' disabled')+' aria-label="'+nm+' 위로" title="위로">▲</button><button class="ob" data-act="teamMove" data-k="'+t.id+'|1" id="'+id+'dn"'+(i<S.teams.length-1?'':' disabled')+' aria-label="'+nm+' 아래로" title="아래로">▼</button></td><td><input type="text" id="'+id+'name" data-tm="'+t.id+'" data-k="name" value="'+esc(t.name)+'" aria-label="팀 이름"></td>'+
         (srv?'<td>'+(ln?esc(ln):'<span class="muted">아직 없음</span>')+'</td>':'<td><input type="text" id="'+id+'leader" data-tm="'+t.id+'" data-k="leader" value="'+esc(t.leader)+'" aria-label="팀장 이름" placeholder="예: 홍길동"></td>')+
         '<td class="num">'+t.staff.length+'명</td><td>'+(ui.confirm==='team:'+t.id?'<button class="btn small danger" data-act="teamDel" data-k="'+t.id+'">정말 삭제</button> <button class="btn small" data-act="cancel">취소</button>':'<button class="btn small" data-act="teamAsk" data-k="'+t.id+'">삭제</button>')+'</td></tr>'});
     h+='</tbody></table></div>';
@@ -2119,7 +2119,7 @@ app.addEventListener('click',function(e){
     var vi=g('ae-i'),vo=g('ae-o'),vn=g('ae-n'),vh=g('ae-h'),vx=g('ae-x');
     if(vi!==null&&hm(vi)!==(raw[0]||''))f.i=hm(vi);if(vo!==null&&hm(vo)!==(raw[1]||''))f.o=hm(vo);if(vn!==null&&vn!=='')f.n=int(vn,0,600);if(vh!==null&&vh!==''&&!isNaN(+vh))f.h=Math.round(+vh*60);if(vx)f.x=vx.trim().slice(0,60);
     var row=A.fix[k]||(A.fix[k]={});if(Object.keys(f).length)row[iso]=f;else delete row[iso];if(!Object.keys(row).length)delete A.fix[k];
-    dAtt(ui.ym);ui.attEdit=null;clearDI();render();toast('고쳤어요. 위의 ‘저장’을 눌러야 모두에게 보여요.')})();break;
+    dAtt(ui.ym);ui.attEdit=null;clearDI();render();toast('고쳤어요.'+(MODE==='server'?' 자동 저장돼요.':' 위의 ‘저장’을 눌러야 모두에게 보여요.'))})();break;
   case 'attClear':(function(){var x=attX(k,ui.ym),iso=t.dataset.d;if(!canAtt(x))return;var A=attOf(ui.ym);if(A&&A.fix[k]){delete A.fix[k][iso];if(!Object.keys(A.fix[k]).length)delete A.fix[k]}dAtt(ui.ym);ui.attEdit=null;clearDI();render()})();break;
   case 'attUseOt':(function(){var x=attX(k,ui.ym),iso=t.dataset.d,m=+t.dataset.m||0;if(!x||!x.t||!canTeam(x.t.id)||!m)return;var ro=roster(ui.ym,x.t.id,true),c=ro.adj[k]&&ro.adj[k][iso]||{};
     var sr0=adjSrc(c),nc={e:Math.min(480,(c.e||0)+m),o:(sr0?sr0.o:0)+m};if(sr0&&sr0.n.length){nc.n=sr0.n;nc.nm=sr0.nm}if(c.l!==undefined&&!c.e)nc.l=c.l;setAdj(k,x.t.id,iso,nc);clearDI();render();toast(x.p.name+' 님 '+mdLabel(iso)+' 근무표에 OT 조퇴 '+hLong(m)+'을 넣었어요.'+keepNote())})();break;
@@ -2130,7 +2130,7 @@ app.addEventListener('click',function(e){
     var n=0;eds.forEach(function(tm_){var ro=roster(ui.ym,tm_.id,true),sel=act==='dutDel'?[]:tm_.staff.filter(function(p){return ui.dutSel&&ui.dutSel[p.id]}).map(function(p){return p.id}),had=!!ro.dut[day];
       if(sel.length){ro.dut[day]={t:tm,s:sel};n+=sel.length;dRoster(ui.ym,tm_.id)}else if(had){delete ro.dut[day];dRoster(ui.ym,tm_.id)}});
     if(act==='dutSave'&&!n){toast('당번을 한 명 이상 고르세요.');return}
-    ui.dutFor=null;clearDI();render();toast(act==='dutDel'?mdLabel(day)+' 수납 OT 기록을 지웠어요.':mdLabel(day)+' 당번 '+n+'명에게 OT '+dutMin(day,tm)+'분을 기록했어요. 저장을 눌러 주세요.')})();break;
+    ui.dutFor=null;clearDI();render();toast(act==='dutDel'?mdLabel(day)+' 수납 OT 기록을 지웠어요.'+keepNote():mdLabel(day)+' 당번 '+n+'명에게 OT '+dutMin(day,tm)+'분을 기록했어요.'+keepNote())})();break;
   case 'team':ui.team=k;ui.resetOpen=false;ui.confirm=null;render();break;
   case 'goRoster':ui.team=k;ui.tab='roster';render();break;
   case 'month':ui.selDay=null;ui.selSec=null;ui.pw=null;ui.pday=null;ui.psel=null;ui.ym=shiftYM(ui.ym,+k);ui.resetOpen=false;clearDI();exampleFill();render();break;
@@ -2209,6 +2209,7 @@ app.addEventListener('click',function(e){
   case 'tyDel':(function(){S.types=S.types.filter(function(x){return x.id!==k});Object.keys(S.sched).forEach(function(ym){Object.keys(S.sched[ym]).forEach(function(tid){var ro=S.sched[ym][tid],ch=false;Object.keys(ro.cells).forEach(function(sid){Object.keys(ro.cells[sid]).forEach(function(iso){if(ro.cells[sid][iso]===k){delete ro.cells[sid][iso];setIn(ro.locks,sid,iso,'');ch=true}})});if(ch)dRoster(ym,tid)})});ui.confirm=null;if(ui.brush===k)ui.brush='V';dConfig();render()})();break;
   case 'teamAdd':(function(){var id=uid('t');S.teams.push({id:id,name:'새 팀',leader:'',need:{full:1,half:1,night:0},staff:[],updatedAt:0});dConfig();dTeam(id);render();var el=document.getElementById('tm-'+id+'-name');if(el){el.focus();el.select()}})();break;
   case 'teamAsk':ui.confirm='team:'+k;render();break;
+  case 'teamMove':(function(){var q=String(k).split('|'),i=S.teams.findIndex(function(x){return x.id===q[0]}),j=i+(+q[1]);if(i<0||j<0||j>=S.teams.length)return;var a=S.teams[i];S.teams[i]=S.teams[j];S.teams[j]=a;dConfig();render();var el=document.getElementById('tm-'+q[0]+'-'+(+q[1]<0?'up':'dn'));if(el&&!el.disabled)el.focus();else{el=document.getElementById('tm-'+q[0]+'-'+(+q[1]<0?'dn':'up'));if(el)el.focus()}})();break;
   case 'teamDel':S.teams=S.teams.filter(function(x){return x.id!==k});Object.keys(S.sched).forEach(function(ym){delete S.sched[ym][k]});delete ui.dirty.teams[k];Object.keys(ui.dirty.rosters).forEach(function(key){if(key.split('|')[1]===k)delete ui.dirty.rosters[key]});if(ui.team===k)ui.team='all';if(ui.preview===k)ui.preview='admin';ui.confirm=null;dConfig();render();break;
   case 'addStaff':(function(){var tm=teamById(k);if(!tm||!canTeam(k))return;var id=uid('s');tm.staff.push({id:id,name:'',weekDays:5,avail:[1,2,3,4,5,6].filter(function(dw){return S.hours[dw].type!=='closed'}),night:false});dTeam(k);render();var el=document.getElementById('st-'+id+'-name');if(el)el.focus()})();break;
   case 'staffAsk':ui.confirm='staff:'+k;render();break;
@@ -2345,7 +2346,7 @@ function saveServer(){var pin=pinArg(),steps=[];
   Object.keys(ui.dirty.teams).forEach(function(tid){steps.push(function(){var tm=teamById(tid);if(!tm||!canTeam(tid)){delete ui.dirty.teams[tid];return Promise.resolve()}var g=ui.dirty.teams[tid];
     return api('saveTeam',{pin:pin,base:tm.updatedAt||0,team:{id:tm.id,need:tm.need,staff:tm.staff,groups:tm.groups||[],posts:tm.posts||[]}}).then(function(r){if(!r.ok){r.what=tm.name+' 직원 명단';throw r}tm.updatedAt=r.updatedAt;tm.updatedBy=r.updatedBy||'';if(ui.dirty.teams[tid]===g)delete ui.dirty.teams[tid]})})});
   Object.keys(ui.dirty.rosters).forEach(function(key){steps.push(function(){return saveRo(key,pin,0)})});
-  Object.keys(ui.dirty.att||{}).forEach(function(ym){steps.push(function(){var A=attOf(ym);if(!A||!canEditAny()){delete ui.dirty.att[ym];return Promise.resolve()}var g=ui.dirty.att[ym];
+  Object.keys(ui.dirty.att||{}).forEach(function(ym){steps.push(function(){var A=attOf(ym);if(!A||!isAdmin()){delete ui.dirty.att[ym];return Promise.resolve()}var g=ui.dirty.att[ym];
     return api('saveAtt',{pin:pin,ym:ym,base:A.updatedAt||0,att:A}).then(function(r){if(!r.ok){r.what=ymLabel(ym)+' 근태';throw r}A.updatedAt=r.updatedAt;A.updatedBy=r.updatedBy||'';if(ui.dirty.att[ym]===g)delete ui.dirty.att[ym]})})});
   return steps.reduce(function(p,f){return p.then(f)},Promise.resolve())}
 /* one team-month: save it; if someone else saved it first, take their version, put my changes on top and save again */
