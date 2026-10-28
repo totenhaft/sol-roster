@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 19;
+var VERSION = 20;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -315,7 +315,7 @@ function cleanGroups_(a) {
     return { id: str_(g.id, 20), label: str_(g.label, 20), members: mem, max: int_(g.max || 1, 1, 9) };
   }).filter(function (g) { return g.id; });
 }
-function cleanAdj_(a, ids, ym) {
+function cleanAdj_(a, ids, ym, cells) {
   var outv = {};
   Object.keys(a || {}).forEach(function (sid) {
     if (!ids[sid]) return;
@@ -332,6 +332,11 @@ function cleanAdj_(a, ids, ym) {
         var nn = (Array.isArray(c.n) ? c.n : []).filter(function (d, i, arr) { return /^\d{4}-\d{2}-\d{2}$/.test(d) && d !== iso && arr.indexOf(d) === i; }).slice(0, 3);
         if (nn.length) { x.n = nn; x.nm = r5_(c.nm, 960); }
         if (x.o !== undefined || x.n) delete x.ot;
+      }
+      // 대체오프(OT 9시간으로 하루 쉼)에 쓴 야간(n, 그 시간 nm)과 나머지 OT(o)
+      if (c.d && !x.e && !x.l && ((cells || {})[sid] || {})[iso] === 'OTD') {
+        var dn = (Array.isArray(c.n) ? c.n : []).filter(function (d, i, arr) { return /^\d{4}-\d{2}-\d{2}$/.test(d) && d !== iso && arr.indexOf(d) === i; }).slice(0, 3);
+        if (dn.length) { x.d = 1; x.n = dn; x.nm = r5_(c.nm, 960); x.o = r5_(c.o, 960); }
       }
       if (Object.keys(x).length) row[iso] = x;
     });
@@ -515,7 +520,7 @@ function saveRoster_(req) {
     return outv;
   }
   histAdd_([{ k: 'r|' + ym + '|' + tid, team: tid, label: (d.teams[tid].name || '팀') + ' ' + ymLabel_(ym) + ' 근무표', prev: cur || null, by: actorName_(a) }]);
-  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), place: cleanNotes_(r.place, ids, ym), ot: cleanOt_(r.ot, ids, ym), dut: cleanDut_(r.dut, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
+  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym, r.cells), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), place: cleanNotes_(r.place, ids, ym), ot: cleanOt_(r.ot, ids, ym), dut: cleanDut_(r.dut, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
   writeData_(d);
   return { ok: true, updatedAt: m[tid].updatedAt, updatedBy: m[tid].updatedBy };
 }
