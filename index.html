@@ -1263,15 +1263,15 @@ function adjSelect(ro,p,tid,iso){var c=ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],v
   return '<label class="vh" for="adj-'+p.id+'">'+esc(p.name)+' 출퇴근 시간</label><select class="dl-adj'+(sr||pend||v0==='OT'?' is-ot':'')+'" id="adj-'+p.id+'" data-adjsel="'+p.id+'" data-t="'+tid+'">'+opts(o)+'<optgroup label="야간 대체·OT 사용 (수당·OT에서 빠져요)">'+opts(g2)+'</optgroup><optgroup label="시간 조정 (OT·야간과 상관없이)">'+opts(g1)+'</optgroup></select>'}
 /* a person's nights from the start of last month to the end of this month that can be taken as time off */
 function nightCands(p,iso){var L=staffLoc(p.id);if(!L)return [];var ym=iso.slice(0,7),used=nightSubMap(p.id),x=personX(p),rate=attRule().rate,out=[];
-  [shiftYM(ym,-1),ym].forEach(function(m){var ro=roster(m,L.team.id);monthDates(m).forEach(function(nd){if(nd===iso||!di(nd).night||absOf(p,nd))return;if(!isNightCode(cellCode(ro,p.id,nd)))return;
-    var X=attDay(x,nd,attOf(m));out.push({iso:nd,cr:X.night*rate,usedOn:used[nd]&&used[nd]!==iso?used[nd]:''})})});return out}
+  [shiftYM(ym,-1),ym,shiftYM(ym,1)].forEach(function(m){var ro=roster(m,L.team.id);monthDates(m).forEach(function(nd){if(nd===iso||!di(nd).night||absOf(p,nd))return;if(!isNightCode(cellCode(ro,p.id,nd)))return;
+    var X=attDay(x,nd,attOf(m));out.push({iso:nd,cr:X.night*rate,usedOn:used[nd]&&used[nd]!==iso?used[nd]:'',later:nd>iso})})});return out}
 /* 야간 대체 + OT 사용: pick the nights and the OT minutes; the time off is their sum */
 function adjSrcEditor(ro,p,tid,iso){var c=ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],sr=adjSrc(c),pend=ui.adjSrc&&ui.adjSrc.s===p.id&&ui.adjSrc.d===iso?ui.adjSrc.k:'';if(!sr&&!pend)return '';
   var k=sr?sr.k:pend,d=di(iso),v=cellCode(ro,p.id,iso),full=mins('W',d,null),sel=sr?sr.n:[],nm=sr?sr.nm:0,o=sr?sr.o:0,cands=nightCands(p,iso);
   var h='<div class="adjsrc" id="as-'+p.id+'"><div class="as-row"><span class="as-lab">야간 대체</span>';
   h+=cands.length?'<div class="pills">'+cands.map(function(cn){var on=sel.indexOf(cn.iso)>=0,dis=!on&&(!!cn.usedOn||!cn.cr||nm+cn.cr+o>full);
-      return '<button class="pill'+(on?' on':'')+'" id="an-'+p.id+'-'+cn.iso+'" data-act="adjNight" data-k="'+p.id+'" data-t="'+tid+'" data-n="'+cn.iso+'" aria-pressed="'+on+'"'+(dis?' disabled':'')+' title="'+esc(cn.usedOn?mdLabel(cn.usedOn)+'에 이미 썼어요':!cn.cr?'인정된 야간 시간이 없어요':on?'한 번 더 누르면 빠져요':'이 야간을 수당 대신 쉬는 시간으로 써요')+'">'+mdShort(cn.iso)+'('+DOWK[di(cn.iso).dow]+') 야간<small>'+(cn.usedOn?mdShort(cn.usedOn)+'에 씀':hLong(cn.cr))+'</small></button>'}).join('')+'</div>'
-    :'<span class="muted">지난달·이번 달 근무표에 야간이 없어요</span>';
+      return '<button class="pill'+(on?' on':'')+'" id="an-'+p.id+'-'+cn.iso+'" data-act="adjNight" data-k="'+p.id+'" data-t="'+tid+'" data-n="'+cn.iso+'" aria-pressed="'+on+'"'+(dis?' disabled':'')+' title="'+esc(cn.usedOn?mdLabel(cn.usedOn)+'에 이미 썼어요':!cn.cr?'인정된 야간 시간이 없어요':on?'한 번 더 누르면 빠져요':'이 야간을 수당 대신 쉬는 시간으로 써요')+'">'+mdShort(cn.iso)+'('+DOWK[di(cn.iso).dow]+') 야간<small>'+(cn.usedOn?mdShort(cn.usedOn)+'에 씀':hLong(cn.cr)+(cn.later?' · 미리':''))+'</small></button>'}).join('')+'</div>'
+    :'<span class="muted">지난달~다음 달 근무표에 야간이 없어요. 다음 달 근무표를 아직 안 짰다면 아래 OT를 미리 쓰세요. 다음에 하는 야간이나 OT로 자동으로 채워져요.</span>';
   h+='</div><div class="as-row"><label class="as-lab" for="aso-'+p.id+'">OT 사용</label><select id="aso-'+p.id+'" data-adjo="'+p.id+'" data-t="'+tid+'">'+[0].concat(OT_AMTS).filter(function(m){return m===o||nm+m<=full}).map(function(m){return '<option value="'+m+'"'+(m===o?' selected':'')+'>'+(m?hLong(m):'안 씀')+'</option>'}).join('')+'</select><span class="muted">'+otLeftText(p)+'</span></div>';
   var tot=nm+o,sp=tot?workSpan(v,d,adjOf(ro,p,iso,v)):null;
   h+='<p class="as-sum">'+(sp?'→ <b>'+(k==='e'?fmtHM(sp.to)+' 퇴근':fmtHM(sp.from)+' 출근')+'</b> · '+hLong(tot)+' 일찍'.replace('일찍',k==='e'?'일찍 퇴근':'늦게 출근')+esc(adjSrcLabel(ro,p,iso)):'야간이나 OT를 고르면 그 시간을 더한 만큼 '+(k==='e'?'일찍 퇴근':'늦게 출근')+'해요. 야간 1번은 보통 '+hLong(120*attRule().rate)+'이에요.')+'</p>';
@@ -1499,8 +1499,8 @@ function otMonthOld(p,ym){var m=S.sched[ym]||{},earn=0,use=0;Object.keys(m).forE
 /* OT left at the end of a month: carried-in + everything earned − everything used up to then */
 function otBalance(p,ym){return otAvail(personX(p),ym)}
 function otBalanceOld(p,ym){var b=p.ot0||0;Object.keys(S.sched).forEach(function(k){if(k<=ym){var x=otMonth(p,k);b+=x.earn-x.use}});return b}
-function otWarn(sid){var p=pOf(sid);if(!p)return;var b=otBalance(p,ui.ym);toast(b<0?(p.name+' 님은 남은 OT보다 '+hLong(-b)+' 더 썼어요. OT 기록을 확인해 주세요.'):(p.name+' 님 남은 OT '+fmtMin(b)))}
-function otLeftText(p){return 'OT 남음 '+fmtMin(otBalance(p,ui.ym))}
+function otWarn(sid){var p=pOf(sid);if(!p)return;var b=otBalance(p,ui.ym);toast(b<0?(p.name+' 님은 OT를 '+hLong(-b)+' 미리 썼어요. 다음에 하는 야간이나 OT로 자동으로 채워져요.'):(p.name+' 님 남은 OT '+fmtMin(b)))}
+function otLeftText(p){var b=otBalance(p,ui.ym);return b<0?'미리 쓴 OT '+fmtMin(-b):'OT 남음 '+fmtMin(b)}
 function leaveUsedMap(year){year=String(year);if(LVC[year])return LVC[year];var idx=leaveIndex(year),m={};Object.keys(idx).forEach(function(k){var sid=k.split('|')[0];if(m[sid]===undefined||idx[k]>m[sid])m[sid]=idx[k]});
   S.teams.forEach(function(t){t.staff.forEach(function(p){if(m[p.id]===undefined)m[p.id]=(p.leave0&&p.leave0.y===+year)?p.leave0.d:0})});return LVC[year]=m}
 function lvLeft(p,iso){var y=iso.slice(0,4),tot=p.lt&&p.lt[y];if(!tot)return '';return ' · 남은 연차 '+fmtNum(tot-(leaveUsedMap(y)[p.id]||0))}
@@ -1597,21 +1597,28 @@ function attMonth(x,ym){var k=x.p.id+'|'+ym;if(ATC[k])return ATC[k];var A=attOf(
    A night picked as 야간 대체 (in any month) is not paid and not put in the pool: that time off already used it. */
 var SRC={};
 function ledgerOf(x){var id=x.p.id;if(LGC[id])return LGC[id];var rate=attRule().rate,ms={};Object.keys(S.sched).forEach(function(m){ms[m]=1});Object.keys(S.att).forEach(function(m){ms[m]=1});
-  var bank=[],def=0,res={},src={},c0=x.p.ot0||0,sub=x.p.only?{}:nightSubMap(id),credit={};if(c0>0)bank.push({iso:'',kind:'carry',m:c0,left:c0,uses:[]});else if(c0<0)def=-c0;
+  var bank=[],def=0,res={},src={},debts=[],rep={},by={},c0=x.p.ot0||0,sub=x.p.only?{}:nightSubMap(id),credit={};if(c0>0)bank.push({iso:'',kind:'carry',m:c0,left:c0,uses:[]});else if(c0<0){def=-c0;debts.push({iso:'',left:-c0})}
+  /* OT used ahead (미리 쓴 OT) is paid back by the next OT or night, oldest first */
+  function payDebt(amt,iso,kind){var paid=0;while(amt>0&&debts.length){var d=debts[0],tk=Math.min(d.left,amt);d.left-=tk;amt-=tk;paid+=tk;(rep[d.iso]||(rep[d.iso]=[])).push({iso:iso,kind:kind,m:tk});(by[iso]||(by[iso]=[])).push({iso:d.iso,m:tk,kind:kind});if(d.left<=0)debts.shift()}def-=paid;return paid}
   var sum=function(){return bank.reduce(function(s,e){return s+e.left},0)};
   var yms=Object.keys(ms).sort(),MM={};yms.forEach(function(ym){MM[ym]=attMonth(x,ym);MM[ym].days.forEach(function(dd){if(dd.night)credit[dd.iso]=dd.night*rate})});
   yms.forEach(function(ym){var M=MM[ym],o={ym:ym,start:sum()-def,man:0,dut:0,nightMin:0,nightOT:0,nightSub:0,subList:[],use:0,useBank:0,useNight:0,useSub:0,entries:[]},pool=0;
     M.days.forEach(function(dd){var iso=dd.iso;
-      [[manOt(x,iso),'man',''],[dd.dut,'dut',dd.dutT]].forEach(function(c){var amt=c[0];if(!amt)return;o[c[1]]+=amt;var e={iso:iso,kind:c[1],t:c[2],m:amt,left:amt,uses:[]};o.entries.push(e);var pay=Math.min(def,amt);if(pay){def-=pay;e.left-=pay;e.uses.push(['',pay])}if(e.left>0)bank.push(e)});
+      [[manOt(x,iso),'man',''],[dd.dut,'dut',dd.dutT]].forEach(function(c){var amt=c[0];if(!amt)return;o[c[1]]+=amt;var e={iso:iso,kind:c[1],t:c[2],m:amt,left:amt,uses:[]};o.entries.push(e);var pay=payDebt(amt,iso,c[1]);if(pay){e.left-=pay;e.uses.push(['',pay])}if(e.left>0)bank.push(e)});
       if(dd.night){var nc=dd.night*rate;o.nightMin+=dd.night;o.nightOT+=nc;
-        if(sub[iso]){o.nightSub+=nc;o.subList.push([iso,sub[iso],nc])}else{var pay=Math.min(def,nc);def-=pay;pool+=nc-pay}}
+        if(sub[iso]){o.nightSub+=nc;o.subList.push([iso,sub[iso],nc])}else{var pay=payDebt(nc,iso,'night');if(pay){o.nightRepay=(o.nightRepay||0)+pay;o.nightSub+=pay;o.subList.push([iso,'',pay,(by[iso]||[]).map(function(z){return z.iso})])}pool+=nc-pay}}
       var u=dd.use||0;if(dd.useN){var got=dd.useN.n.reduce(function(s,n){return s+(credit[n]||0)},0);o.useSub+=Math.min(dd.useN.nm,got);u+=Math.max(0,dd.useN.nm-got)}
       if(u){var s0=src[iso]=[];o.use+=u;for(var k=0;k<bank.length&&u>0;k++){var e=bank[k];if(e.left<=0)continue;var tk=Math.min(e.left,u);e.left-=tk;u-=tk;e.uses.push([iso,tk]);o.useBank+=tk;s0.push({iso:e.iso,kind:e.kind,m:tk})}
-        var tn=Math.min(pool,u);pool-=tn;u-=tn;o.useNight+=tn;if(tn)s0.push({kind:'pool',m:tn});def+=u;if(u)s0.push({kind:'def',m:u});bank=bank.filter(function(e){return e.left>0})}});
+        var tn=Math.min(pool,u);pool-=tn;u-=tn;o.useNight+=tn;if(tn)s0.push({kind:'pool',m:tn});def+=u;if(u){s0.push({kind:'def',m:u});debts.push({iso:iso,left:u})}bank=bank.filter(function(e){return e.left>0})}});
     o.nightLeft=pool;o.nightPay=pool/rate;o.def=def;o.bankEnd=sum()-def;res[ym]=o});
-  SRC[id]=src;return LGC[id]=res}
+  SRC[id]={u:src,rep:rep,by:by};return LGC[id]=res}
 /* where the OT used on a day came from: "11/1 OT 20분" */
-function otSrcText(p,iso){ledgerOf(personX(p));var l=(SRC[p.id]||{})[iso]||[];return l.map(function(s){return s.kind==='pool'?'야간 OT '+hLong(s.m):s.kind==='def'?'OT 모자람 '+hLong(s.m):(s.iso?mdShort(s.iso)+' ':'이월 ')+(s.kind==='dut'?'수납 OT ':'OT ')+hLong(s.m)})}
+function otSrcText(p,iso){ledgerOf(personX(p));var R=SRC[p.id]||{},l=(R.u||{})[iso]||[],out=[];l.forEach(function(s){
+    if(s.kind==='pool')out.push('야간 OT '+hLong(s.m));
+    else if(s.kind==='def'){var left=s.m;((R.rep||{})[iso]||[]).forEach(function(z){if(left<=0)return;var tk=Math.min(left,z.m);left-=tk;out.push('미리 쓴 OT '+hLong(tk)+' → '+mdShort(z.iso)+(z.kind==='night'?' 야간으로':z.kind==='dut'?' 수납 OT로':' OT로')+' 채움')});if(left>0)out.push('미리 쓴 OT '+hLong(left))}
+    else out.push((s.iso?mdShort(s.iso)+' ':'이월 ')+(s.kind==='dut'?'수납 OT ':'OT ')+hLong(s.m))});return out}
+/* on a night or OT day: which earlier 미리 쓴 OT it paid back */
+function repaidBy(p,iso){ledgerOf(personX(p));return ((SRC[p.id]||{}).by||{})[iso]||[]}
 /* "(11/2 야간, 11/1 OT 20분)" next to the time on the calendar */
 function adjSrcLabel(ro,p,iso){var c=ro.adj&&ro.adj[p.id]&&ro.adj[p.id][iso],sr=adjSrc(c);if(!sr)return '';var a=sr.n.map(function(n){return mdShort(n)+' 야간'}),ot=sr.o?otSrcText(p,iso):[];if(sr.o&&!ot.length)ot=['OT '+hLong(sr.o)];return ' ('+a.concat(ot).join(', ')+')'}
 function ledgerAt(x,ym){var L=ledgerOf(x);if(L[ym])return L[ym];var prev=Object.keys(L).filter(function(m){return m<ym}).sort().pop(),b=prev?L[prev].bankEnd:(x.p.ot0||0);
@@ -1724,9 +1731,9 @@ function attSettleView(ym,teams){var A=attOf(ym),adm=isAdmin()&&!ui.ro,ppl=attPe
     var fin=function(q,val,auto){var over=R.fin[q]!==undefined;if(!adm)return '<b>'+(val?h2(val):'')+'</b>';
       return '<input type="number" class="fin-in'+(over?' over':'')+'" step="0.01" min="0" id="fin-'+q+'-'+esc(x.p.id)+'" data-fin="'+q+'" data-k="'+esc(x.p.id)+'" value="'+(over||val?h2(val):'')+'" aria-label="'+esc(x.p.name)+(q==='n'?' 남은 야간':' 남은 공휴일')+'">'+(over?'<button class="fin-rs" data-act="finReset" data-k="'+esc(x.p.id)+'" data-q="'+q+'" title="자동 값 '+h2(auto)+'으로 되돌리기">자동 '+h2(auto)+'</button>':'')};
     h+='<tr><th scope="row"><button class="linkbtn" data-act="attWho" data-k="'+esc(x.p.id)+'">'+esc(x.p.name||'이름 없음')+'</button>'+(R.M.has||!A?'':'<small class="muted"> 지문 없음</small>')+'</th>'+
-      '<td class="num">'+hh(L.nightMin)+'</td><td class="num">'+hh(L.nightOT)+'</td><td class="num">'+hh(L.dut+L.man)+'</td><td class="num">'+(L.use?hh(L.use):'')+'</td><td class="num"'+(L.subList.length?' title="'+esc(L.subList.map(function(z){return mdShort(z[0])+' 야간 → '+mdShort(z[1])+'에 씀'}).join(', '))+'"':'')+'>'+(L.nightSub?hh(L.nightSub):'')+'</td>'+
+      '<td class="num">'+hh(L.nightMin)+'</td><td class="num">'+hh(L.nightOT)+'</td><td class="num">'+hh(L.dut+L.man)+'</td><td class="num">'+(L.use?hh(L.use):'')+'</td><td class="num"'+(L.subList.length?' title="'+esc(L.subList.map(function(z){return z[3]?mdShort(z[0])+' 야간 → '+z[3].map(function(u){return u?mdShort(u):'이월'}).join('·')+' 미리 쓴 OT 채움 '+hLong(z[2]):mdShort(z[0])+' 야간 → '+mdShort(z[1])+'에 씀'}).join(', '))+'"':'')+'>'+(L.nightSub?hh(L.nightSub):'')+'</td>'+
       '<td class="num pay">'+fin('n',R.n,R.nightPay)+'</td><td class="num">'+hh(R.H.total)+'</td><td class="num">'+(R.H.subN?R.H.subN+'일':'')+'</td><td class="num pay">'+fin('h',R.h,R.holPay)+'</td>'+
-      '<td class="num">'+(L.bankEnd?(L.bankEnd<0?'<span class="bad">−'+h2(-L.bankEnd/60)+'</span>':h2(L.bankEnd/60)):'')+'</td>'+
+      '<td class="num">'+(L.bankEnd?(L.bankEnd<0?'<span class="bad" title="미리 쓴 OT: 다음에 하는 야간이나 OT로 채워져요">−'+h2(-L.bankEnd/60)+'</span><small class="muted"> 미리 씀</small>':h2(L.bankEnd/60)):'')+'</td>'+
       '<td>'+(R.M.issues?'<button class="tagbtn" data-act="attWho" data-k="'+esc(x.p.id)+'">'+R.M.issues+'건</button>':'')+(R.H.extra.length?'<span class="tag warn">대체휴무 '+R.H.extra.length+'일 근거 없음</span>':'')+(R.fin.x?'<span class="muted"> '+esc(R.fin.x)+'</span>':'')+'</td></tr>'});
   h+='</tbody><tfoot><tr><th scope="row">합계</th><td class="num">'+hh(tot.a)+'</td><td class="num">'+hh(tot.b)+'</td><td class="num">'+hh(tot.c)+'</td><td class="num">'+hh(tot.d)+'</td><td class="num">'+hh(tot.s)+'</td><td class="num pay"><b>'+h2(tot.n)+'</b></td><td class="num">'+hh(tot.e)+'</td><td class="num">'+(tot.f?tot.f+'일':'')+'</td><td class="num pay"><b>'+h2(tot.h)+'</b></td><td class="num">'+hh(tot.g)+'</td><td></td></tr></tfoot></table></div>';
   h+='<p class="fine">시간은 소수(6.00 = 6시간)예요. 야간 OT = 야간 근무 × '+fmtNum(rate)+'. OT를 쓰면 수납·기타 OT부터(오래된 것부터) 빠지고, 모자라면 그 달 야간 OT에서 빠져요. 남은 야간 = (야간 OT − 야간에서 쓴 OT) ÷ '+fmtNum(rate)+'. 수납·기타 OT는 다음 달로 넘어가요.</p>';
@@ -1744,7 +1751,7 @@ function attDetailView(ym,teams){var ppl=attPeople(ym,teams);if(!ppl.length)retu
     var fx=function(k){return dd.f&&dd.f[k]!==undefined?' fixed':''};
     h+='<tr class="'+(dd.flags.some(function(f){return f[0]==='bad'||f[0]==='warn'})?'has-issue':'')+'"><th scope="row" class="'+pc+'">'+q[1]+'/'+q[2]+' ('+DOWK[d.dow]+')</th><td>'+(tp?'<span class="sw c-'+tp.color+'">'+esc(tp.short)+'</span> ':'')+esc(code)+'</td><td class="tm">'+(dd.plan?fmtHM(dd.plan.from)+'~'+fmtHM(dd.plan.to)+(dd.plan.gap?'<br><small>'+hmRange(dd.plan.gap)+' 쉼</small>':''):'')+'</td>'+
       '<td class="tm'+fx('i')+'">'+esc(dd.ia||'')+'</td><td class="tm'+fx('o')+'">'+esc(dd.oa||'')+'</td><td class="num">'+(dd.work?hh(dd.work):'')+'</td><td class="num'+fx('n')+'">'+(dd.night?hh(dd.night):'')+'</td><td class="num">'+(dd.dut?'+'+dd.dut+'분<small> '+esc(dd.dutT)+'</small>':'')+'</td><td class="num">'+(dd.use?'−'+hLong(dd.use):'')+'</td><td class="num'+fx('h')+'">'+(dd.hol?hh(dd.hol):dd.sub?'대체휴무':'')+'</td>'+
-      '<td class="flags">'+dd.flags.map(function(f){return '<span class="tag '+f[0]+'">'+esc(f[1])+'</span>'+(f[2]==='early'&&can&&x.t&&!dd.use&&canTeam(x.t.id)?'<button class="tagbtn" data-act="attUseOt" data-k="'+esc(x.p.id)+'" data-d="'+dd.iso+'" data-m="'+r5(dd.early,480)+'" title="근무표에 OT 조퇴로 넣어요">OT 사용으로</button>':'')}).join('')+'</td>'+
+      '<td class="flags">'+repaidBy(x.p,dd.iso).map(function(z){return '<span class="tag info">'+(z.iso?mdShort(z.iso):'이월')+' 미리 쓴 OT '+hLong(z.m)+' 채움'+(z.kind==='night'?' (수당 제외)':'')+'</span>'}).join('')+dd.flags.map(function(f){return '<span class="tag '+f[0]+'">'+esc(f[1])+'</span>'+(f[2]==='early'&&can&&x.t&&!dd.use&&canTeam(x.t.id)?'<button class="tagbtn" data-act="attUseOt" data-k="'+esc(x.p.id)+'" data-d="'+dd.iso+'" data-m="'+r5(dd.early,480)+'" title="근무표에 OT 조퇴로 넣어요">OT 사용으로</button>':'')}).join('')+'</td>'+
       (can?'<td><button class="btn small" data-act="attEdit" data-d="'+dd.iso+'" aria-expanded="'+(ui.attEdit===dd.iso)+'">고치기</button></td>':'')+'</tr>';
     if(can&&ui.attEdit===dd.iso)h+='<tr class="att-edit"><td colspan="12">'+attEditor(x,dd)+'</td></tr>'});
   h+='</tbody></table></div>';
