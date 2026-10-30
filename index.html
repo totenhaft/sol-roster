@@ -571,7 +571,11 @@ a.tab{text-decoration:none}
 .days.must{margin-top:4px}
 .avseg{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
 .avseg .seg button{height:26px;padding:0 10px;font-size:12px}
-.avseg .tag{font-size:11.5px}
+.avsel{height:26px;font-size:12px;padding:0 6px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink-2);font-family:inherit;max-width:150px}
+.avsel.on{border-color:var(--sat);color:var(--sat);font-weight:600;box-shadow:inset 0 0 0 1px var(--sat)}
+.avtags{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:11.5px}
+.avtags .tchip{height:22px;padding:0 8px;font-size:11.5px}
+.avhint{margin:0 0 4px;font-size:11.5px;color:var(--sat)}
 .avwrap.mon{box-shadow:inset 3px 0 0 var(--sat);padding-left:8px;margin-left:-8px}
 .avwrap.mon .days .day.on:not([disabled]){box-shadow:inset 0 0 0 1.5px var(--sat)}
 .days.must .day.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
@@ -762,7 +766,7 @@ rebuildTypes();
 function allTypes(){return BUILTIN.slice(0,4).concat(BUILTIN.slice(4),S.types)}
 
 function freshDirty(){return {config:false,teams:{},rosters:{},att:{}}}
-var ui={avScope:{},rv:(lsGet(KEYS.view)==='table'?'table':'cal'),selDay:null,selSec:null,leaveKind:'V',etcAdd:null,adjKind:'e',adjAmt:'30',view:MODE==='server'?'loading':'app',tab:(sess&&sess.tab)||'roster',ym:(sess&&sess.ym)||null,team:(sess&&sess.team)||'all',brush:'V',
+var ui={avSel:{},rv:(lsGet(KEYS.view)==='table'?'table':'cal'),selDay:null,selSec:null,leaveKind:'V',etcAdd:null,adjKind:'e',adjAmt:'30',view:MODE==='server'?'loading':'app',tab:(sess&&sess.tab)||'roster',ym:(sess&&sess.ym)||null,team:(sess&&sess.team)||'all',brush:'V',
   preview:(sess&&sess.preview)||'admin',auth:null,pins:null,status:null,ro:false,dirty:freshDirty(),confirm:null,resetOpen:false,saving:false,
   selDate:null,importData:null,conflict:null,loginErr:'',lastSync:0,netErr:'',attTried:{},attMonths:null,dutSel:{},attEdit:null,base:{}};
 if(!ui.ym)ui.ym=defaultYM();
@@ -868,7 +872,12 @@ function moOf(p,ym){return (p&&p.mo&&p.mo[ym])||null}
 function avYm(p,ym){var o=moOf(p,ym);return o?o.a:p.avail}
 function mustYm(p,ym){var o=moOf(p,ym);return o?o.m:(p.must||[])}
 function avOn(p,iso){return avYm(p,iso.slice(0,7))}
-function avScope(p){var s=ui.avScope&&ui.avScope[p.id+'|'+ui.ym];return s||(moOf(p,ui.ym)?'mon':'def')}
+/* 팀·직원에서 요일을 정하는 달: 직원 줄마다 '매달 (기본)' 또는 고른 달 */
+function ymToday(){var t=new Date();return t.getFullYear()+'-'+pad(t.getMonth()+1)}
+function ymShort(ym){var y=+ym.slice(0,4);return (y===new Date().getFullYear()?'':String(y).slice(2)+'년 ')+(+ym.slice(5))+'월'}
+function avSel(p){var s=ui.avSel[p.id];return s&&s!=='def'?s:null}
+function avMonths(p){var b=shiftYM(ymToday(),-1),out=[];for(var i=0;i<14;i++)out.push(shiftYM(b,i));Object.keys(p.mo||{}).forEach(function(k){if(out.indexOf(k)<0)out.push(k)});return out.sort()}
+function sameSet(a,b){return a.length===b.length&&a.every(function(x){return b.indexOf(x)>=0})}
 function isMust(p,dw,iso){return (iso?mustYm(p,iso.slice(0,7)):(p.must||[])).indexOf(dw)>=0}
 function cleanMo(o){var r={};Object.keys(o||{}).filter(function(k){return /^\d{4}-\d{2}$/.test(k)}).sort().slice(-48).forEach(function(k){var x=o[k]||{},a=(Array.isArray(x.a)?x.a:[]).map(Number).filter(function(d,i,arr){return d>=0&&d<=6&&arr.indexOf(d)===i});r[k]={a:a,m:cleanMust(x.m,a)}});return r}
 
@@ -2041,14 +2050,16 @@ function teamPanel(t,admin){var tid=t.id,n=t.need,h='<section class="panel"><h2>
       return '<td><input type="number" min="0" max="30" id="nd-'+tid+'-'+r[0]+dw+'" data-nd="'+tid+'" data-k="'+r[0]+'|'+dw+'" value="'+needDow(t,dw,r[0])+'" aria-label="'+DOWK[dw]+'요일 '+r[1]+' 최소 인원"></td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>';
   var ncol=(admin&&S.teams.length>1)?10:9;
   h+='<div class="tblwrap"><table class="tbl"><thead><tr><th class="ord">순서</th><th>이름</th>'+(admin&&S.teams.length>1?'<th>팀</th>':'')+'<th>주 근무일</th><th>근무 가능 요일 · 꼭 근무</th><th>평소 근무시간</th><th>야간</th><th>연차 · OT</th><th>휴직</th><th></th></tr></thead><tbody>';
-  var lvAsOf=monthEnd(ui.ym),MO=+ui.ym.slice(5);t.staff.forEach(function(p,si){var id='st-'+p.id+'-',nm=esc(p.name||'직원'),lvP=lvPer(p,lvAsOf),mo=moOf(p,ui.ym),sc=avScope(p);if(sc==='mon'&&!mo)sc='def';var AV=sc==='mon'?mo.a:p.avail,MU=sc==='mon'?mo.m:(p.must||[]);
+  var lvAsOf=monthEnd(ui.ym),avFrom=shiftYM(ymToday(),-1);t.staff.forEach(function(p,si){var id='st-'+p.id+'-',nm=esc(p.name||'직원'),lvP=lvPer(p,lvAsOf),sm=avSel(p),mo=sm?moOf(p,sm):null,sc=sm||'def',AV=mo?mo.a:p.avail,MU=mo?mo.m:(p.must||[]),SM=sm?ymShort(sm):'',ovs=Object.keys(p.mo||{}).filter(function(k){return k>=avFrom}).sort();
     h+='<tr'+(p.abs?' class="on-abs"':'')+'><td class="ord"><button class="ob" id="'+id+'up" data-act="stMove" data-k="'+p.id+'" data-dir="-1" aria-label="'+nm+' 위로"'+(si===0?' disabled':'')+'>▲</button><button class="ob" id="'+id+'dn" data-act="stMove" data-k="'+p.id+'" data-dir="1" aria-label="'+nm+' 아래로"'+(si===t.staff.length-1?' disabled':'')+'>▼</button></td><td><input type="text" id="'+id+'name" data-st="'+p.id+'" data-k="name" value="'+esc(p.name)+'" aria-label="이름" placeholder="이름"></td>'+
       (admin&&S.teams.length>1?'<td><select id="'+id+'team" data-st="'+p.id+'" data-k="team" aria-label="팀 옮기기">'+S.teams.map(function(x){return '<option value="'+x.id+'"'+(x.id===tid?' selected':'')+'>'+esc(x.name)+'</option>'}).join('')+'</select></td>':'')+
       '<td><select id="'+id+'wd" data-st="'+p.id+'" data-k="weekDays" aria-label="주 근무일">'+[1,2,3,4,5,6,7].map(function(k){return '<option value="'+k+'"'+(p.weekDays===k?' selected':'')+'>주 '+k+'일</option>'}).join('')+'</select></td>'+
-      '<td><div class="avwrap'+(sc==='mon'?' mon':'')+'"><div class="avseg"><div class="seg" role="group" aria-label="'+nm+' 요일을 정할 범위"><button id="'+id+'scd" data-act="avScope" data-k="'+p.id+'|def" aria-pressed="'+(sc==='def')+'">매달 (기본)</button><button id="'+id+'scm" data-act="avScope" data-k="'+p.id+'|mon" aria-pressed="'+(sc==='mon')+'" title="'+MO+'월에만 다른 요일로 정해요">'+MO+'월만</button></div>'+
-        (sc==='mon'?'<button class="btn small" id="'+id+'avr" data-act="avReset" data-k="'+p.id+'" title="'+MO+'월 따로 정한 것을 지우고 기본을 따라요">기본으로</button>':mo?'<span class="tag info">'+MO+'월은 따로 정함</span>':'')+'</div>'+
-        '<div class="days" role="group" aria-label="'+(sc==='mon'?MO+'월 ':'')+'근무 가능 요일"><span class="dlab">가능</span>'+WEEK.map(function(dw){var on=AV.indexOf(dw)>=0;return '<button class="day'+(on?' on':'')+(dw===6?' sat':dw===0?' sun':'')+'" id="'+id+'d'+dw+'" data-act="avail" data-k="'+p.id+'" data-sc="'+sc+'" data-dw="'+dw+'" aria-pressed="'+on+'">'+DOWK[dw]+'</button>'}).join('')+'</div>'+
-        '<div class="days must" role="group" aria-label="'+(sc==='mon'?MO+'월 ':'')+'꼭 근무해야 하는 요일"><span class="dlab">꼭</span>'+WEEK.map(function(dw){var av=AV.indexOf(dw)>=0,on=MU.indexOf(dw)>=0;return '<button class="day'+(on?' on':'')+(dw===6?' sat':dw===0?' sun':'')+'" id="'+id+'m'+dw+'" data-act="must" data-k="'+p.id+'" data-sc="'+sc+'" data-dw="'+dw+'" aria-pressed="'+on+'"'+(av?'':' disabled')+' title="'+(av?DOWK[dw]+'요일엔 꼭 근무 (자동 생성이 휴무를 넣지 않아요)':'근무 가능 요일이 아니에요')+'">'+DOWK[dw]+'</button>'}).join('')+'</div></div></td>'+
+      '<td><div class="avwrap'+(sm?' mon':'')+'"><div class="avseg"><div class="seg"><button id="'+id+'scd" data-act="avDef" data-k="'+p.id+'" aria-pressed="'+(!sm)+'" title="따로 정하지 않은 모든 달에 적용돼요">매달 (기본)</button></div>'+
+        '<label class="vh" for="'+id+'avm">'+nm+' 요일을 따로 정할 달</label><select class="avsel'+(sm?' on':'')+'" id="'+id+'avm" data-avsel="'+p.id+'"><option value="">달별 설정</option>'+avMonths(p).map(function(k){return '<option value="'+k+'"'+(k===sm?' selected':'')+'>'+ymShort(k)+(moOf(p,k)?' · 따로 정함':'')+'</option>'}).join('')+'</select>'+
+        (sm?(mo?'<button class="btn small" id="'+id+'avr" data-act="avReset" data-k="'+p.id+'" title="'+SM+' 따로 정한 것을 지우고 기본을 따라요">기본으로</button>':''):(ovs.length?'<span class="avtags">'+ovs.map(function(k){return '<button class="tchip" id="'+id+'avt'+k+'" data-act="avPick" data-k="'+p.id+'|'+k+'" title="'+ymShort(k)+' 요일 보기">'+ymShort(k)+'</button>'}).join('')+'<span class="muted">따로 정함</span></span>':''))+'</div>'+
+        (sm&&!mo?'<p class="avhint">'+SM+'은 기본과 같아요. 요일을 누르면 '+SM+'만 바뀌어요.</p>':'')+
+        '<div class="days" role="group" aria-label="'+(sm?SM+' ':'')+'근무 가능 요일"><span class="dlab">가능</span>'+WEEK.map(function(dw){var on=AV.indexOf(dw)>=0;return '<button class="day'+(on?' on':'')+(dw===6?' sat':dw===0?' sun':'')+'" id="'+id+'d'+dw+'" data-act="avail" data-k="'+p.id+'" data-sc="'+sc+'" data-dw="'+dw+'" aria-pressed="'+on+'">'+DOWK[dw]+'</button>'}).join('')+'</div>'+
+        '<div class="days must" role="group" aria-label="'+(sm?SM+' ':'')+'꼭 근무해야 하는 요일"><span class="dlab">꼭</span>'+WEEK.map(function(dw){var av=AV.indexOf(dw)>=0,on=MU.indexOf(dw)>=0;return '<button class="day'+(on?' on':'')+(dw===6?' sat':dw===0?' sun':'')+'" id="'+id+'m'+dw+'" data-act="must" data-k="'+p.id+'" data-sc="'+sc+'" data-dw="'+dw+'" aria-pressed="'+on+'"'+(av?'':' disabled')+' title="'+(av?DOWK[dw]+'요일엔 꼭 근무 (자동 생성이 휴무를 넣지 않아요)':'근무 가능 요일이 아니에요')+'">'+DOWK[dw]+'</button>'}).join('')+'</div></div></td>'+
       '<td><span class="tr"><label class="vh" for="'+id+'late">늦게 출근</label><select id="'+id+'late" data-st="'+p.id+'" data-k="late">'+amtOpts(p.late,'l')+'</select><label class="vh" for="'+id+'early">일찍 퇴근</label><select id="'+id+'early" data-st="'+p.id+'" data-k="early">'+amtOpts(p.early,'e')+'</select></span>'+
         '<div class="perline">'+((p.per||[]).length?'<span class="perchips">'+p.per.map(function(x){return '<span class="tag info" title="'+esc(x.why||'')+'">'+esc(perShort(x))+'</span>'}).join('')+'</span>':'')+'<button class="btn small" id="'+id+'per" data-act="perEdit" data-k="'+p.id+'" aria-expanded="'+(ui.perEdit===p.id)+'">기간별 설정'+((p.per||[]).length?' ('+p.per.length+')':'')+'</button></div></td>'+
       '<td><div class="nchk"><label class="chk"><input type="checkbox" id="'+id+'night" data-st="'+p.id+'" data-k="night"'+(p.night?' checked':'')+'>가능</label><label class="chk"'+(p.night?'':' title="먼저 ‘가능’을 체크하세요"')+'><input type="checkbox" id="'+id+'nmust" data-st="'+p.id+'" data-k="nightMust"'+(p.nightMust?' checked':'')+(p.night?'':' disabled')+'>필수</label></div></td>'+
@@ -2069,7 +2080,7 @@ function teamPanel(t,admin){var tid=t.id,n=t.need,h='<section class="panel"><h2>
         '<p class="fine">끝나는 날을 모르면 비워 두세요. 휴직 기간에는 근무표에 ‘휴직’으로 보이고, 자동 생성·인원 계산·주 근무일 목표에서 빠져요. 복직하면 끝나는 날을 넣거나 ‘휴직 해제’를 누르세요.</p></div></td></tr>'}});
   h+='</tbody></table></div>';
   if(!t.staff.length)h+='<p class="muted" style="margin:10px 0 0">아직 직원이 없어요.</p>';
-  else h+='<p class="fine"><b>달마다 다른 요일</b>: 근무 가능 요일·꼭 근무 위의 <b>'+(+ui.ym.slice(5))+'월만</b>을 누르면 그 달만 따로 정해요. 다른 달은 맨 위에서 달을 넘겨서 정하고, 따로 정하지 않은 달은 <b>매달 (기본)</b>을 따라요. <b>꼭</b>: 그 요일엔 자동 생성이 휴무를 넣지 않아요(직접 넣은 휴무·연차는 그대로예요). <b>야간 필수</b>: 야간 진료가 있는 날마다 ‘필수’ 직원 중 최소 1명은 야간에 들어가요. 못 맞추면 위쪽에 ‘야간 필수 직원 없음’이 떠요.</p>';
+  else h+='<p class="fine"><b>달마다 다른 요일</b>: 요일 위의 <b>달별 설정</b>에서 달을 고르고 요일을 누르면 그 달만 바뀌어요. 따로 정하지 않은 달은 <b>매달 (기본)</b>을 따라요. <b>꼭</b>: 그 요일엔 자동 생성이 휴무를 넣지 않아요(직접 넣은 휴무·연차는 그대로예요). <b>야간 필수</b>: 야간 진료가 있는 날마다 ‘필수’ 직원 중 최소 1명은 야간에 들어가요. 못 맞추면 위쪽에 ‘야간 필수 직원 없음’이 떠요.</p>';
   h+='<div class="row" style="margin-top:12px"><button class="btn primary" data-act="addStaff" data-k="'+tid+'">+ 직원 추가</button><button class="btn" data-act="goRoster" data-k="'+tid+'">이 팀 근무표 보기</button></div>';
   h+='<div class="grpbox"><h3>같은 날 함께 쉬면 안 되는 직원</h3><p class="fine" style="margin:2px 0 10px">묶어 두면 자동 생성이 이 사람들의 휴무를 겹치지 않게 짜고, 달력에서 손으로 넣을 때도 한 번 더 물어봐요. 휴무·연차·반차·외근을 모두 쉬는 것으로 봐요.</p>'+grpCards(t.groups||[],[t],canTeam(t.id),t.id);
   var xg=S.groups.map(function(g){var m=g.members.map(staffLoc).filter(Boolean);return m.some(function(L){return L.team.id===t.id})&&m.length>1?esc(m.map(function(L){return L.p.name+'('+L.team.name+')'}).join('·')):''}).filter(Boolean);
@@ -2272,13 +2283,15 @@ app.addEventListener('click',function(e){
   case 'addStaff':(function(){var tm=teamById(k);if(!tm||!canTeam(k))return;var id=uid('s');tm.staff.push({id:id,name:'',weekDays:5,avail:[1,2,3,4,5,6].filter(function(dw){return S.hours[dw].type!=='closed'}),night:false});dTeam(k);render();var el=document.getElementById('st-'+id+'-name');if(el)el.focus()})();break;
   case 'staffAsk':ui.confirm='staff:'+k;render();break;
   case 'staffDel':(function(){var L=staffLoc(k);if(!L||!canTeam(L.team.id))return;L.team.staff=L.team.staff.filter(function(p){return p.id!==k});(L.team.groups||[]).forEach(function(g){var i=g.members.indexOf(k);if(i>=0)g.members.splice(i,1)});dTeam(L.team.id);if(isAdmin()){var ch=false;S.groups.forEach(function(g){var i=g.members.indexOf(k);if(i>=0){g.members.splice(i,1);ch=true}});if(ch)dConfig()}ui.confirm=null;render()})();break;
-  case 'avail':case 'must':(function(){var L=staffLoc(k);if(!L||!canTeam(L.team.id))return;var dw=+t.dataset.dw,mo=t.dataset.sc==='mon'?moOf(L.p,ui.ym):null,a=(mo?mo.a:L.p.avail).slice(),m=(mo?mo.m:(L.p.must||[])).slice();
+  case 'avail':case 'must':(function(){var L=staffLoc(k);if(!L||!canTeam(L.team.id))return;var p=L.p,dw=+t.dataset.dw,sm=t.dataset.sc&&t.dataset.sc!=='def'?t.dataset.sc:null,mo=sm?moOf(p,sm):null,a=(mo?mo.a:p.avail).slice(),m=(mo?mo.m:(p.must||[])).slice(),msg='';
     if(act==='avail'){var i=a.indexOf(dw);if(i>=0)a.splice(i,1);else a.push(dw)}else{var j=m.indexOf(dw);if(j>=0)m.splice(j,1);else{m.push(dw);if(a.indexOf(dw)<0)a.push(dw)}}
-    m=cleanMust(m,a);if(mo){mo.a=a;mo.m=m}else{L.p.avail=a;L.p.must=m}dTeam(L.team.id);render();var el=document.getElementById('st-'+k+'-'+(act==='avail'?'d':'m')+dw);if(el)el.focus()})();break;
-  case 'avScope':(function(){var q=String(k).split('|'),L=staffLoc(q[0]);if(!L||!canTeam(L.team.id))return;ui.avScope[q[0]+'|'+ui.ym]=q[1];
-    if(q[1]==='mon'&&!moOf(L.p,ui.ym)){var mo=Object.assign({},L.p.mo||{});mo[ui.ym]={a:L.p.avail.slice(),m:(L.p.must||[]).slice()};L.p.mo=cleanMo(mo);dTeam(L.team.id);toast((L.p.name||'직원')+' 님 '+(+ui.ym.slice(5))+'월 근무 요일을 따로 정해요. 지금은 기본과 같아요. 바꿀 요일을 누르세요.')}
-    render();var el=document.getElementById('st-'+q[0]+'-sc'+(q[1]==='mon'?'m':'d'));if(el)el.focus()})();break;
-  case 'avReset':(function(){var L=staffLoc(k);if(!L||!canTeam(L.team.id))return;var mo=Object.assign({},L.p.mo||{});delete mo[ui.ym];L.p.mo=mo;ui.avScope[k+'|'+ui.ym]='def';dTeam(L.team.id);render();toast((L.p.name||'직원')+' 님 '+(+ui.ym.slice(5))+'월도 기본(매달) 요일을 따라요.');var el=document.getElementById('st-'+k+'-scd');if(el)el.focus()})();break;
+    m=cleanMust(m,a);
+    if(!sm){p.avail=a;p.must=m}
+    else{var all=Object.assign({},p.mo||{});if(sameSet(a,p.avail)&&sameSet(m,cleanMust(p.must||[],p.avail))){delete all[sm];if(mo)msg=(p.name||'직원')+' 님 '+ymShort(sm)+'이 기본과 같아져서 기본을 따라요.'}else{all[sm]={a:a,m:m};if(!mo)msg=(p.name||'직원')+' 님 '+ymShort(sm)+'만 따로 정했어요. 다른 달은 그대로예요.'}p.mo=cleanMo(all)}
+    dTeam(L.team.id);render();if(msg)toast(msg);var el=document.getElementById('st-'+k+'-'+(act==='avail'?'d':'m')+dw);if(el)el.focus()})();break;
+  case 'avDef':ui.avSel[k]='def';render();(function(){var el=document.getElementById('st-'+k+'-scd');if(el)el.focus()})();break;
+  case 'avPick':(function(){var q=String(k).split('|');ui.avSel[q[0]]=q[1];render();var el=document.getElementById('st-'+q[0]+'-avm');if(el)el.focus()})();break;
+  case 'avReset':(function(){var L=staffLoc(k);if(!L||!canTeam(L.team.id))return;var sm=avSel(L.p);if(!sm)return;var mo=Object.assign({},L.p.mo||{});delete mo[sm];L.p.mo=mo;dTeam(L.team.id);render();toast((L.p.name||'직원')+' 님 '+ymShort(sm)+'도 기본(매달) 요일을 따라요.');var el=document.getElementById('st-'+k+'-avm');if(el)el.focus()})();break;
   case 'grpAdd':(function(){var g={id:uid('g'),label:'',members:[],max:1};if(k){var tm=teamById(k);if(!tm||!canTeam(k))return;(tm.groups||(tm.groups=[])).push(g);dTeam(k)}else{if(!isAdmin())return;S.groups.push(g);dConfig()}ui.grpEdit=g.id;render()})();break;
   case 'grpEdit':ui.grpEdit=k;render();break;
   case 'grpDone':(function(){var g=grpById(k);if(g&&g.members.map(staffLoc).filter(Boolean).length<2){toast('두 명 이상 고르거나 묶음을 삭제하세요.');return}ui.grpEdit=null;render()})();break;
@@ -2354,6 +2367,7 @@ app.addEventListener('change',function(e){var t=e.target;
   if(t.dataset.dhh&&ui.selDate&&S.dateHours[ui.selDate]&&S.dateHours[ui.selDate].h){var hh=S.dateHours[ui.selDate].h;hh[t.dataset.k]=t.type==='checkbox'?t.checked:t.value;dConfig();render();return}
   if(t.dataset.nd){var tm=teamById(t.dataset.nd);if(tm&&canTeam(tm.id)){var nk=t.dataset.k.split('|');if(nk.length===2){var nd=tm.need.dow||(tm.need.dow={}),nx=nd[nk[1]]||(nd[nk[1]]={});nx[nk[0]]=int(t.value,0,30);t.value=nx[nk[0]]}else{tm.need[nk[0]]=int(t.value,0,30);t.value=tm.need[nk[0]]}dTeam(tm.id)}return}
   if(t.dataset.ty&&(t.dataset.k==='kind'||t.dataset.k==='time')){var ty=S.types.find(function(x){return x.id===t.dataset.ty});if(ty){ty[t.dataset.k]=t.value;dConfig();render()}return}
+  if(t.dataset.avsel){ui.avSel[t.dataset.avsel]=t.value||'def';render();var avm=document.getElementById('st-'+t.dataset.avsel+'-avm');if(avm)avm.focus();return}
   if(t.dataset.st&&t.dataset.k!=='name'){var L=staffLoc(t.dataset.st);if(!L||!canTeam(L.team.id))return;var k2=t.dataset.k;
     if(k2==='night'||k2==='nightMust'){if(k2==='night'){L.p.night=t.checked;if(!t.checked)L.p.nightMust=false}else{L.p.nightMust=t.checked;if(t.checked)L.p.night=true}dTeam(L.team.id);render();return}
     else if(k2==='weekDays')L.p.weekDays=+t.value;else if(k2==='early'||k2==='late')L.p[k2]=half30(t.value);else if(k2==='leave0')L.p.leave0=cleanLeave0({y:+lvPer(L.p,monthEnd(ui.ym)).k,d:t.value});else if(k2==='hire'){L.p.hire=isISO(t.value)?t.value:'';dTeam(L.team.id);render();return}else if(k2==='post'){L.p.post=t.value;dTeam(L.team.id);render();return}
