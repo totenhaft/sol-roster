@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 21;
+var VERSION = 22;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -419,6 +419,16 @@ function cleanNeedDow_(o) {
   });
   return r;
 }
+// 달마다 다른 근무 가능 요일(a)·꼭 근무(m): { 'YYYY-MM': { a: [요일], m: [요일] } }
+function cleanMo_(o) {
+  var r = {};
+  Object.keys(o || {}).filter(function (k) { return /^\d{4}-\d{2}$/.test(k); }).sort().slice(-48).forEach(function (k) {
+    var x = o[k] || {}, a = (Array.isArray(x.a) ? x.a : []).map(Number).filter(function (d, i, arr) { return d >= 0 && d <= 6 && arr.indexOf(d) === i; });
+    var m = (Array.isArray(x.m) ? x.m : []).map(Number).filter(function (d, i, arr) { return a.indexOf(d) >= 0 && arr.indexOf(d) === i; });
+    r[k] = { a: a, m: m };
+  });
+  return r;
+}
 function cleanLt_(o) {
   var r = {};
   Object.keys(o || {}).forEach(function (y) {
@@ -467,6 +477,7 @@ function saveTeam_(req) {
       avail: (p.avail || []).map(Number).filter(function (x) { return x >= 0 && x <= 6; }), night: !!p.night,
       must: (p.must || []).map(Number).filter(function (x, i, a) { return x >= 0 && x <= 6 && a.indexOf(x) === i && (p.avail || []).map(Number).indexOf(x) >= 0; }),
       nightMust: !!(p.night && p.nightMust),
+      mo: cleanMo_(p.mo),   // 달마다 다른 근무 가능 요일·꼭 근무
       per: cleanPer_(p.per),
       early: half30_(p.early), late: half30_(p.late),
       leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 4) / 4)) } : null,
