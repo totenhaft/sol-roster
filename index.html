@@ -732,7 +732,7 @@ function normalize(s){
   var cIds={},kIds={},tIds={};COLORS.forEach(function(c){cIds[c[0]]=1});KINDS.forEach(function(c){kIds[c[0]]=1});TIMES.forEach(function(c){tIds[c[0]]=1});
   s.types=(s.types||[]).filter(function(t){return t&&t.id&&!BUILTIN_IDS[t.id]}).map(function(t){return {id:t.id,name:t.name||'근무 형태',short:String(t.short||t.name||'?').slice(0,2),color:cIds[t.color]?t.color:'slate',kind:kIds[t.kind]?t.kind:'out',time:tIds[t.time]?t.time:'full'}});
   var h0=s.teams||[];s.teams=(s.teams||[]).map(function(t){var n=t.need||{};return {id:t.id,name:t.name||'팀',leader:t.leader||'',need:{full:int(n.full,0,30),half:int(n.half,0,30),night:int(n.night,0,30),dow:cleanNeedDow(n.dow)},
-    staff:(t.staff||[]).map(function(p){return {id:p.id,name:p.name||'',weekDays:int(p.weekDays||5,1,7),avail:(p.avail||[1,2,3,4,5,6]).map(Number),must:cleanMust(p.must,p.avail||[1,2,3,4,5,6]),mo:cleanMo(p.mo),night:!!p.night,nightMust:!!(p.night&&p.nightMust),per:cleanPer(p.per),early:half30(p.early),late:half30(p.late),leave0:cleanLeave0(p.leave0),hire:isISO(p.hire)?p.hire:'',abs:cleanAbs(p.abs),post:String(p.post||'').slice(0,20),lt:cleanLt(p.lt),ot0:int(p.ot0,-60000,60000)}}),groups:[],posts:cleanPosts(t.posts),updatedAt:t.updatedAt||0,updatedBy:t.updatedBy||''}});
+    staff:(t.staff||[]).map(function(p){return {id:p.id,name:p.name||'',weekDays:int(p.weekDays||5,1,7),avail:(p.avail||[1,2,3,4,5,6]).map(Number),must:cleanMust(p.must,p.avail||[1,2,3,4,5,6]),mo:moTrim(cleanMo(p.mo),(p.avail||[1,2,3,4,5,6]).map(Number),cleanMust(p.must,p.avail||[1,2,3,4,5,6])),night:!!p.night,nightMust:!!(p.night&&p.nightMust),per:cleanPer(p.per),early:half30(p.early),late:half30(p.late),leave0:cleanLeave0(p.leave0),hire:isISO(p.hire)?p.hire:'',abs:cleanAbs(p.abs),post:String(p.post||'').slice(0,20),lt:cleanLt(p.lt),ot0:int(p.ot0,-60000,60000)}}),groups:[],posts:cleanPosts(t.posts),updatedAt:t.updatedAt||0,updatedBy:t.updatedBy||''}});
   (s.teams||[]).forEach(function(t,i){var raw=((h0[i]||{}).groups)||[],ids={};t.staff.forEach(function(p){ids[p.id]=1});
     t.groups=cleanGroups(raw).map(function(g){g.members=g.members.filter(function(x){return ids[x]});return g});
     var pids={};t.posts.forEach(function(x){pids[x.id]=1});t.staff.forEach(function(p){if(!pids[p.post])p.post=''})});
@@ -883,6 +883,8 @@ function avSel(p){var s=ui.avSel[p.id];return s&&s!=='def'?s:null}
 function avMonths(p){var b=shiftYM(ymToday(),-1),out=[];for(var i=0;i<14;i++)out.push(shiftYM(b,i));Object.keys(p.mo||{}).forEach(function(k){if(out.indexOf(k)<0)out.push(k)});return out.sort()}
 function sameSet(a,b){return a.length===b.length&&a.every(function(x){return b.indexOf(x)>=0})}
 function isMust(p,dw,iso){return (iso?mustYm(p,iso.slice(0,7)):(p.must||[])).indexOf(dw)>=0}
+/* a month set exactly like the default just follows the default */
+function moTrim(mo,a,m){Object.keys(mo).forEach(function(k){var x=mo[k];if(x.a.length===a.length&&x.a.every(function(d){return a.indexOf(d)>=0})&&x.m.length===m.length&&x.m.every(function(d){return m.indexOf(d)>=0}))delete mo[k]});return mo}
 function cleanMo(o){var r={};Object.keys(o||{}).filter(function(k){return /^\d{4}-\d{2}$/.test(k)}).sort().slice(-48).forEach(function(k){var x=o[k]||{},a=(Array.isArray(x.a)?x.a:[]).map(Number).filter(function(d,i,arr){return d>=0&&d<=6&&arr.indexOf(d)===i});r[k]={a:a,m:cleanMust(x.m,a)}});return r}
 
 /* ---------- rosters ---------- */
