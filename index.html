@@ -410,6 +410,21 @@ input[type=date]{height:34px;border:1px solid var(--line);border-radius:8px;back
 .pboard tbody th{background:var(--surface-2);font-weight:600;font-size:13px;text-align:center}
 .pboard tbody th small{display:block;font-size:11px;font-weight:400;color:var(--muted)}
 .pboard td.closed{background:repeating-linear-gradient(135deg,var(--hatch) 0 4px,transparent 4px 9px)}
+.pboard.ph2{min-width:860px}
+.pboard.ph2 .pb-corner{width:86px}
+.pboard.ph2 td{padding:4px 3px}
+.pboard.ph2 tbody th{font-size:12.5px;padding:4px}
+.pboard.ph2 .pd{border-left:2px solid var(--muted)}
+.pboard.ph2 .hpm{border-left:1px dashed var(--line)}
+.pboard.ph2 thead tr.phr th{font-size:11px;font-weight:600;color:var(--ink-2);padding:2px 4px;background:var(--surface-2)}
+.pboard.ph2 thead tr.phr th.hpm{color:var(--sat)}
+.pboard.ph2 td.hpm{background:color-mix(in srgb,var(--surface-2) 35%,transparent)}
+.pboard.ph2 td.hpm.short{background:var(--danger-soft)}
+.pboard.ph2 .pn{font-size:12.5px}
+.pboard.ph2 td.pc.can:hover,.pboard.ph2 td.pc.on{background:var(--accent-soft)}
+.pbox-n.two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pbh{min-width:0}
+.pbh-l{display:block;font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:2px}
 .pb-closed{color:var(--sun);font-weight:700}
 .pc{cursor:default;height:34px}
 .pc.can{cursor:pointer}
@@ -1482,6 +1497,12 @@ function placeSplit(t,iso){var ro=roster(iso.slice(0,7),t.id),d=di(iso),by={},cn
     if(A&&A===B)by[A].push({p:p,h:''});else{if(A)by[A].push({p:p,h:both?'am':''});if(B)by[B].push({p:p,h:both?'pm':''})}
     var fa=hv.am&&!A,fp=hv.pm&&!B;if(fa||fp)free.push({p:p,h:(fa&&fp)||!both?'':fa?'am':'pm'})});
   return R}
+/* people at a place (or with no place) in one half of the day, in staff order */
+function halfList(t,sp,x,half){return t.staff.filter(function(p){var f=sp.info[p.id];if(!f)return false;var at=half==='am'?f.A:f.B,here=half==='am'?f.hv.am:f.hv.pm;return here&&(x?at===x.id:!at)})}
+function halfShort(sp,x,half){var n=x.need||0,c=(sp.cnt[x.id]||{am:0,pm:0})[half];return n&&c<n?(c===0?'비어 있음':(n-c)+'명 부족'):''}
+/* a name in a 오전/오후 column: the column already says the half, so only 반반차·조퇴·늦출 times are added */
+function pNameH(ro,p,iso){var v=cellCode(ro,p.id,iso),g=isQ(v)?qGap(TY[v],di(iso)):null,tg=[g?hmRange(g)+' 쉼':'',timeTag(ro,p,iso)].filter(Boolean).join(' '),nt=noteOf(ro,p.id,iso);return '<span class="pn">'+esc(p.name||'이름 없음')+(nt?'<span class="nt">('+esc(nt)+')</span>':'')+(tg?'<small>'+esc(tg)+'</small>':'')+'</span>'}
+function dayHalves(d){return d.hasAM&&d.hasPM?['am','pm']:[d.hasPM&&!d.hasAM?'pm':'am']}
 /* how short a place is: '비어 있음', '오후 비어 있음', '1명 부족' … */
 function shortOf(sp,x){var c=sp.cnt[x.id]||{am:0,pm:0},d=sp.d,n=x.need||0,a=!!n&&d.hasAM&&c.am<n,b=!!n&&d.hasPM&&c.pm<n;
   function lack(k){return k===0?'비어 있음':(n-k)+'명 부족'}
@@ -1504,16 +1525,19 @@ function placeTab(){var teams=visibleTeams().filter(function(t){return t.staff.l
   else h+='<div class="pboards">'+board+'</div>'+(sel?'<div class="sheet-space" aria-hidden="true"></div><section class="dayed sheet" id="dayed" aria-label="배치 고치기">'+placeEditor(sel)+'</section>':'');
   teams.forEach(function(t){if(canTeam(t.id))h+=postSetup(t)});
   return h}
-function weekBoard(t,days){var posts=postsOf(t),ed=canTeam(t.id),sp={};days.forEach(function(iso){sp[iso]=placeSplit(t,iso)});
-  var h='<div class="pboard-wrap"><table class="pboard"><caption>'+esc(t.name)+' 배치표</caption><thead><tr><th class="pb-corner" scope="col">자리</th>'+days.map(function(iso){var d=di(iso),c=(d.dow===0||d.hol)?'sun':d.dow===6?'sat':'';return '<th scope="col" class="'+c+'"><b>'+d.day+'</b> '+DOWK[d.dow]+(d.hol?'<small>'+esc(d.hol)+'</small>':'')+'</th>'}).join('')+'</tr></thead><tbody>';
-  if(!posts.length)h+='<tr><td class="pb-empty" colspan="'+(days.length+1)+'">'+(ed?'아래 ‘배치 자리’에서 이 팀의 자리를 만들어 주세요.':'아직 자리가 없어요.')+'</td></tr>';
+function weekBoard(t,days){var posts=postsOf(t),ed=canTeam(t.id),sp={},HL={am:'오전',pm:'오후'};days.forEach(function(iso){sp[iso]=placeSplit(t,iso)});
+  var h='<div class="pboard-wrap"><table class="pboard ph2"><caption>'+esc(t.name)+' 배치표</caption><thead><tr><th class="pb-corner" scope="col" rowspan="2">자리</th>'+days.map(function(iso){var d=di(iso),c=(d.dow===0||d.hol)?'sun':d.dow===6?'sat':'';return '<th scope="colgroup" colspan="2" class="pd '+c+'"><b>'+d.day+'</b> '+DOWK[d.dow]+(d.hol?'<small>'+esc(d.hol)+'</small>':'')+'</th>'}).join('')+'</tr>';
+  h+='<tr class="phr">'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<th colspan="2" class="pd"></th>';var hs=dayHalves(d);return hs.length===2?'<th scope="col" class="pd ham">오전</th><th scope="col" class="hpm">오후</th>':'<th scope="col" colspan="2" class="pd ham">'+HL[hs[0]]+'</th>'}).join('')+'</tr></thead><tbody>';
+  if(!posts.length)h+='<tr><td class="pb-empty" colspan="'+(days.length*2+1)+'">'+(ed?'아래 ‘배치 자리’에서 이 팀의 자리를 만들어 주세요.':'아직 자리가 없어요.')+'</td></tr>';
+  function cell(x,iso,half,cs){var S_=sp[iso],ppl=halfList(t,S_,x,half),lb=halfShort(S_,x,half),on=ui.psel&&ui.psel.t===t.id&&ui.psel.p===x.id&&ui.psel.d===iso&&(ui.psel.h||'')===(cs?'':half);
+    return '<td'+(cs?' colspan="2"':'')+' class="pc '+(half==='am'||cs?'pd ham':'hpm')+(lb?' short':'')+(ed?' can':'')+(on?' on':'')+'" data-pt="'+t.id+'" data-pp="'+x.id+'" data-pd="'+iso+'"'+(cs?'':' data-ph="'+half+'"')+' role="button" tabindex="0" aria-label="'+esc(mdLabel(iso)+' '+HL[half]+' '+x.name+': '+(ppl.length?ppl.map(function(p){return p.name}).join(', '):'없음')+(lb?' · '+lb:''))+'">'+ppl.map(function(p){return pNameH(S_.ro,p,iso)}).join('')+(lb?'<span class="pb-need">'+lb+'</span>':'')+'</td>'}
   posts.forEach(function(x,ri){h+='<tr><th scope="row">'+esc(x.name)+(x.need?'<small>'+x.need+'명</small>':'')+'</th>';
-    days.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td class="closed">'+(ri===0?'<span class="pb-closed">휴진</span>':'')+'</td>';return}
-      var S_=sp[iso],ppl=S_.by[x.id],sh=shortOf(S_,x),on=ui.psel&&ui.psel.t===t.id&&ui.psel.p===x.id&&ui.psel.d===iso;
-      h+='<td class="pc'+(sh.any?' short':'')+(ed?' can':'')+(on?' on':'')+'" data-pt="'+t.id+'" data-pp="'+x.id+'" data-pd="'+iso+'" role="button" tabindex="0" aria-label="'+esc(mdLabel(iso)+' '+x.name+': '+(ppl.length?ppl.map(function(e){return e.p.name+(e.h==='am'?' 오전':e.h==='pm'?' 오후':'')}).join(', '):'없음')+(sh.label?' · '+sh.label:''))+'">'+ppl.map(function(e){return pName(S_.ro,e.p,iso,e.h)}).join('')+(sh.label?'<span class="pb-need">'+esc(sh.label)+'</span>':'')+'</td>'});
+    days.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td colspan="2" class="pd closed">'+(ri===0?'<span class="pb-closed">휴진</span>':'')+'</td>';return}
+      var hs=dayHalves(d);h+=hs.length===2?cell(x,iso,'am')+cell(x,iso,'pm'):cell(x,iso,hs[0],true)});
     h+='</tr>'});
-  if(posts.length){h+='<tr class="pb-free"><th scope="row">자리 미정</th>';days.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td class="closed"></td>';return}var f=sp[iso].free;h+='<td class="'+(f.length?'warn':'')+'">'+f.map(function(e){return pName(sp[iso].ro,e.p,iso,e.h)}).join('')+'</td>'});h+='</tr>'}
-  h+='<tr class="pb-away"><th scope="row">쉼</th>';days.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td class="closed"></td>';return}h+='<td>'+sp[iso].away.map(function(a){return awayName(a)}).join('')+sp[iso].part.map(function(a){return awayName(a,true)}).join('')+'</td>'});
+  if(posts.length){h+='<tr class="pb-free"><th scope="row">자리 미정</th>';days.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td colspan="2" class="pd closed"></td>';return}
+    var hs=dayHalves(d);hs.forEach(function(hf,k){var f=halfList(t,sp[iso],null,hf);h+='<td'+(hs.length===1?' colspan="2"':'')+' class="'+(k===0?'pd ham':'hpm')+(f.length?' warn':'')+'" data-fd="'+iso+'" data-fh="'+hf+'">'+f.map(function(p){return pNameH(sp[iso].ro,p,iso)}).join('')+'</td>'})});h+='</tr>'}
+  h+='<tr class="pb-away"><th scope="row">쉼</th>';days.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td colspan="2" class="pd closed"></td>';return}h+='<td colspan="2" class="pd" data-ad="'+iso+'">'+sp[iso].away.map(function(a){return awayName(a)}).join('')+sp[iso].part.map(function(a){return awayName(a,true)}).join('')+'</td>'});
   return h+'</tr></tbody></table></div>'}
 function dayBoard(teams,iso){var d=di(iso),h='<div class="pday">';
   if(d.type==='closed')return h+'<section class="panel empty">'+esc(mdLabel(iso))+'은 휴진이에요'+(d.why?' ('+esc(d.why)+')':'')+'.</section></div>';
@@ -1521,17 +1545,17 @@ function dayBoard(teams,iso){var d=di(iso),h='<div class="pday">';
     h+='<section class="pday-team"><h3>'+esc(t.name)+'</h3>';
     if(!posts.length){h+='<p class="muted">아직 자리가 없어요.</p></section>';return}
     h+='<div class="pday-grid">'+posts.map(function(x){var ppl=sp.by[x.id],sh=shortOf(sp,x),on=ui.psel&&ui.psel.t===t.id&&ui.psel.p===x.id&&ui.psel.d===iso;
-      return '<div class="pbox'+(sh.any?' short':'')+(ed?' can':'')+(on?' on':'')+'" data-pt="'+t.id+'" data-pp="'+x.id+'" data-pd="'+iso+'" role="button" tabindex="0" aria-label="'+esc(x.name+': '+(ppl.length?ppl.map(function(e){return e.p.name+(e.h==='am'?' 오전':e.h==='pm'?' 오후':'')}).join(', '):'없음')+(sh.label?' · '+sh.label:''))+'"><div class="pbox-h">'+esc(x.name)+(x.need?'<small>'+cntText(sp,x)+'/'+x.need+'</small>':'')+'</div><div class="pbox-n">'+ppl.map(function(e){return pName(sp.ro,e.p,iso,e.h)}).join('')+(sh.label?'<span class="pb-need">'+esc(sh.label)+'</span>':(ppl.length?'':'<span class="pb-need">—</span>'))+'</div></div>'}).join('')+'</div>';
+      return '<div class="pbox'+(sh.any?' short':'')+(ed?' can':'')+(on?' on':'')+'" data-pt="'+t.id+'" data-pp="'+x.id+'" data-pd="'+iso+'" role="button" tabindex="0" aria-label="'+esc(x.name+': '+(ppl.length?ppl.map(function(e){return e.p.name+(e.h==='am'?' 오전':e.h==='pm'?' 오후':'')}).join(', '):'없음')+(sh.label?' · '+sh.label:''))+'"><div class="pbox-h">'+esc(x.name)+(x.need?'<small>'+cntText(sp,x)+'/'+x.need+'</small>':'')+'</div><div class="pbox-n'+(d.hasAM&&d.hasPM?' two':'')+'">'+dayHalves(d).map(function(hf){var ps=halfList(t,sp,x,hf),lb=halfShort(sp,x,hf);return '<div class="pbh">'+(d.hasAM&&d.hasPM?'<span class="pbh-l">'+(hf==='am'?'오전':'오후')+'</span>':'')+ps.map(function(p){return pNameH(sp.ro,p,iso)}).join('')+(lb?'<span class="pb-need">'+lb+'</span>':(ps.length?'':'<span class="pb-need">—</span>'))+'</div>'}).join('')+'</div></div>'}).join('')+'</div>';
     if(sp.free.length)h+='<p class="pday-line warn"><b>자리 미정</b> '+sp.free.map(function(e){return pName(sp.ro,e.p,iso,e.h)}).join('')+'</p>';
     if(sp.away.length||sp.part.length)h+='<p class="pday-line"><b>쉼</b> '+sp.away.map(function(a){return awayName(a)}).join('')+sp.part.map(function(a){return awayName(a,true)}).join('')+'</p>';
     h+='</section>'});
   return h+'</div>'}
 function placeHome(teams,days){var items=[];
-  days.forEach(function(iso){if(di(iso).type==='closed')return;teams.forEach(function(t){var sp=placeSplit(t,iso);postsOf(t).forEach(function(x){var sh=shortOf(sp,x);if(sh.any)items.push([iso,t,x,sh.label||'모자람'])});if(sp.free.length&&postsOf(t).length)items.push([iso,t,null,'자리 미정 '+sp.free.length+'명'])})});
+  days.forEach(function(iso){if(di(iso).type==='closed')return;teams.forEach(function(t){var sp=placeSplit(t,iso);postsOf(t).forEach(function(x){var sh=shortOf(sp,x),a=halfShort(sp,x,'am')&&sp.d.hasAM,b=halfShort(sp,x,'pm')&&sp.d.hasPM;if(sh.any)items.push([iso,t,x,sh.label||'모자람',a&&!b&&sp.d.hasPM?'am':b&&!a&&sp.d.hasAM?'pm':''])});if(sp.free.length&&postsOf(t).length)items.push([iso,t,null,'자리 미정 '+sp.free.length+'명'])})});
   var h='<div class="dayed-head"><h3>이렇게 써요</h3></div><ol class="howto"><li>배치표에서 <b>칸</b>을 누르세요.<br><span class="muted">예: 화요일의 ‘1번 진료실’ 칸</span></li><li>여기에 나오는 <b>이름</b>을 누르면 그 자리에 들어가요. 다시 누르면 빠져요.</li><li>'+saveNote()+'</li></ol>';
   h+='<h4 class="dl-sub">확인할 것 '+(items.length?items.length+'건':'')+'</h4>';
   if(!items.length)return h+'<p class="dl-help">모든 자리가 채워졌어요.</p>';
-  return h+'<ul class="todo">'+items.slice(0,14).map(function(it){var q=parts(it[0]);return '<li><button class="todo-it" data-pt="'+it[1].id+'" data-pp="'+(it[2]?it[2].id:postsOf(it[1])[0].id)+'" data-pd="'+it[0]+'"><b>'+q[1]+'/'+q[2]+' ('+DOWK[di(it[0]).dow]+')</b> '+esc(it[1].name)+(it[2]?' '+esc(it[2].name):'')+' <span class="tag">'+esc(it[3])+'</span></button></li>'}).join('')+'</ul>'}
+  return h+'<ul class="todo">'+items.slice(0,14).map(function(it){var q=parts(it[0]);return '<li><button class="todo-it" data-pt="'+it[1].id+'" data-pp="'+(it[2]?it[2].id:postsOf(it[1])[0].id)+'" data-pd="'+it[0]+'"'+(it[4]?' data-ph="'+it[4]+'"':'')+'><b>'+q[1]+'/'+q[2]+' ('+DOWK[di(it[0]).dow]+')</b> '+esc(it[1].name)+(it[2]?' '+esc(it[2].name):'')+' <span class="tag">'+esc(it[3])+'</span></button></li>'}).join('')+'</ul>'}
 function placeEditor(sel){var t=teamById(sel.t),x=postById(t,sel.p),iso=sel.d,d=di(iso),ed=canTeam(t.id),q=parts(iso),two=d.hasAM&&d.hasPM,H=two?(ui.phalf||'all'):'all';
   var h='<div class="dayed-head"><button class="icon-btn" data-act="pSelStep" data-k="-1" aria-label="전날">‹</button><h3>'+q[1]+'월 '+q[2]+'일 ('+DOWK[d.dow]+')</h3><button class="icon-btn" data-act="pSelStep" data-k="1" aria-label="다음 날">›</button><button class="btn small" data-act="pClose">닫기</button></div>';
   h+='<div class="sec-bar"><span class="sec-chip">'+esc(t.name)+' · '+esc(x.name)+'</span></div>';
@@ -1579,15 +1603,16 @@ function placeFill(days){var filled=0,left=0;
           var p=cand[0],f=sp.info[p.id],am=f.q.am,pm=f.q.pm;if(nA&&f.hv.am&&!f.A)am=x.id;if(nB&&f.hv.pm&&!f.B)pm=x.id;placeSetPair(t,p,iso,am,pm);tl[p.id+'|'+x.id]=(tl[p.id+'|'+x.id]||0)+1;filled++}
         var c2=placeSplit(t,iso).cnt[x.id];left+=Math.max(0,d.hasAM?x.need-c2.am:0,d.hasPM?x.need-c2.pm:0)})})});
   return {filled:filled,left:left}}
-function placePrint(teams,days){var css='@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;margin:12px;font-size:11px}h1{font-size:15px;margin:0 0 8px;background:#FFF200;text-align:center;padding:4px}h2{font-size:13px;margin:12px 0 4px}table{border-collapse:collapse;width:100%;table-layout:fixed;page-break-inside:avoid}th,td{border:1px solid #BFC8C4;padding:3px 4px;text-align:center;vertical-align:middle;word-break:keep-all}thead th{background:#FCE4D6}tbody th{background:#F2F5F3;width:90px}.sun{color:#C2392D}.sat{color:#2352B0}.short{background:#FBE2DE;color:#C2392D}.x{background:#EEF1EF;color:#C2392D}.n{display:block}.n small{font-size:9px;color:#55615C;margin-left:2px}.away td{color:#64716C;font-size:10px}';
+function placePrint(teams,days){var css='@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;margin:12px;font-size:11px}h1{font-size:15px;margin:0 0 8px;background:#FFF200;text-align:center;padding:4px}h2{font-size:13px;margin:12px 0 4px}table{border-collapse:collapse;width:100%;table-layout:fixed;page-break-inside:avoid}th,td{border:1px solid #BFC8C4;padding:3px 4px;text-align:center;vertical-align:middle;word-break:keep-all}thead th{background:#FCE4D6}tbody th{background:#F2F5F3;width:90px}.sun{color:#C2392D}.sat{color:#2352B0}.short{background:#FBE2DE;color:#C2392D}.x{background:#EEF1EF;color:#C2392D}.n{display:block}.n small{font-size:9px;color:#55615C;margin-left:2px}.away td{color:#64716C;font-size:10px}.hh th{font-size:9.5px;font-weight:500;background:#FDF1E9;padding:1px}td{font-size:10.5px}';
   var lbl=days.length===1?mdLabel(days[0]):(function(){var a=parts(days[0]),b=parts(days[days.length-1]);return a[1]+'/'+a[2]+' ~ '+b[1]+'/'+b[2]})();
   var h='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(S.clinic+' 근무 배치표 '+lbl)+'</title>'+FONT_LINK+'<style>'+css+'</style></head><body><h1>'+esc(S.clinic)+' 근무 배치표 · '+esc(lbl)+'</h1>';
   teams.forEach(function(t){if(!postsOf(t).length)return;var sp={};days.forEach(function(iso){sp[iso]=placeSplit(t,iso)});
     function names(ro,es,iso){return es.map(function(e){var tg=pTag(ro,e.p,iso,e.h);return '<span class="n">'+esc(e.p.name)+(tg?'<small>'+esc(tg)+'</small>':'')+'</span>'}).join('')}
-    h+='<h2>'+esc(t.name)+'</h2><table><thead><tr><th>자리</th>'+days.map(function(iso){var d=di(iso);return '<th class="'+((d.dow===0||d.hol)?'sun':d.dow===6?'sat':'')+'">'+d.day+' ('+DOWK[d.dow]+')</th>'}).join('')+'</tr></thead><tbody>';
-    postsOf(t).forEach(function(x){h+='<tr><th>'+esc(x.name)+'</th>'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<td class="x">휴진</td>';var ps=sp[iso].by[x.id],sh=shortOf(sp[iso],x);return '<td class="'+(sh.any?'short':'')+'">'+names(sp[iso].ro,ps,iso)+(sh.label?'<span class="n">'+esc(sh.label)+'</span>':'')+'</td>'}).join('')+'</tr>'});
-    h+='<tr><th>자리 미정</th>'+days.map(function(iso){return di(iso).type==='closed'?'<td class="x"></td>':'<td>'+names(sp[iso].ro,sp[iso].free,iso)+'</td>'}).join('')+'</tr>';
-    h+='<tr class="away"><th>쉼</th>'+days.map(function(iso){return di(iso).type==='closed'?'<td class="x"></td>':'<td>'+sp[iso].away.concat(sp[iso].part).map(function(a){return '<span class="n">'+esc(a.p.name)+'<small>'+esc(a.why)+'</small></span>'}).join('')+'</td>'}).join('')+'</tr></tbody></table>'});
+    function hn(ro,ps,iso){return ps.map(function(p){var v=cellCode(ro,p.id,iso),g=isQ(v)?qGap(TY[v],di(iso)):null,tg=[g?hmRange(g)+' 쉼':'',timeTag(ro,p,iso)].filter(Boolean).join(' ');return '<span class="n">'+esc(p.name)+(tg?'<small>'+esc(tg)+'</small>':'')+'</span>'}).join('')}
+    h+='<h2>'+esc(t.name)+'</h2><table><thead><tr><th rowspan="2">자리</th>'+days.map(function(iso){var d=di(iso);return '<th colspan="2" class="'+((d.dow===0||d.hol)?'sun':d.dow===6?'sat':'')+'">'+d.day+' ('+DOWK[d.dow]+')</th>'}).join('')+'</tr><tr class="hh">'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<th colspan="2"></th>';var hs=dayHalves(d);return hs.length===2?'<th>오전</th><th>오후</th>':'<th colspan="2">'+(hs[0]==='am'?'오전':'오후')+'</th>'}).join('')+'</tr></thead><tbody>';
+    postsOf(t).forEach(function(x){h+='<tr><th>'+esc(x.name)+'</th>'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<td class="x" colspan="2">휴진</td>';var hs=dayHalves(d);return hs.map(function(hf){var ps=halfList(t,sp[iso],x,hf),lb=halfShort(sp[iso],x,hf);return '<td'+(hs.length===1?' colspan="2"':'')+' class="'+(lb?'short':'')+'">'+hn(sp[iso].ro,ps,iso)+(lb?'<span class="n">'+lb+'</span>':'')+'</td>'}).join('')}).join('')+'</tr>'});
+    h+='<tr><th>자리 미정</th>'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<td class="x" colspan="2"></td>';var hs=dayHalves(d);return hs.map(function(hf){return '<td'+(hs.length===1?' colspan="2"':'')+'>'+hn(sp[iso].ro,halfList(t,sp[iso],null,hf),iso)+'</td>'}).join('')}).join('')+'</tr>';
+    h+='<tr class="away"><th>쉼</th>'+days.map(function(iso){return di(iso).type==='closed'?'<td class="x" colspan="2"></td>':'<td colspan="2">'+sp[iso].away.concat(sp[iso].part).map(function(a){return '<span class="n">'+esc(a.p.name)+'<small>'+esc(a.why)+'</small></span>'}).join('')+'</td>'}).join('')+'</tr></tbody></table>'});
   return h+'<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},500)})<\/script></body></html>'}
 
 /* ----- 연차·OT 현황 ----- */
@@ -2203,7 +2228,7 @@ app.addEventListener('click',function(e){
   var pk=e.target.closest('.pill[data-pk]');if(pk){if(pk.disabled||!canTeam(pk.dataset.t))return;if(!grpGuard(pk.dataset.s,pk.dataset.t,pk.dataset.d,pk.dataset.pk))return;if(pickToggle(pk.dataset.s,pk.dataset.t,pk.dataset.d,pk.dataset.pk)){render();if(pk.dataset.pk==='OTD'&&rawCode(roster(ui.ym,pk.dataset.t),pk.dataset.s,pk.dataset.d)==='OTD')otdToast(pk.dataset.s)}return}
   var pl=e.target.closest('.pill[data-pls]');if(pl&&ui.psel){if(pl.disabled)return;var ptm=teamById(ui.psel.t);if(!ptm||!canTeam(ptm.id))return;var pp_=ptm.staff.filter(function(x){return x.id===pl.dataset.pls})[0];if(!pp_)return;
     var pdd=di(ui.psel.d);placeToggle(ptm,pp_,ui.psel.d,ui.psel.p,pdd.hasAM&&pdd.hasPM?(ui.phalf||'all'):'all');render();return}
-  var pcell=e.target.closest('[data-pp][data-pd]');if(pcell&&!e.target.closest('[data-act]')){var ns={t:pcell.dataset.pt,p:pcell.dataset.pp,d:pcell.dataset.pd},same=ui.psel&&ui.psel.t===ns.t&&ui.psel.p===ns.p&&ui.psel.d===ns.d&&!pcell.classList.contains('todo-it');ui.psel=same?null:ns;render();
+  var pcell=e.target.closest('[data-pp][data-pd]');if(pcell&&!e.target.closest('[data-act]')){var ns={t:pcell.dataset.pt,p:pcell.dataset.pp,d:pcell.dataset.pd,h:pcell.dataset.ph||''},same=ui.psel&&ui.psel.t===ns.t&&ui.psel.p===ns.p&&ui.psel.d===ns.d&&(ui.psel.h||'')===ns.h&&!pcell.classList.contains('todo-it');ui.psel=same?null:ns;if(ui.psel)ui.phalf=ns.h||'all';render();
     if(ui.psel){var f0=document.querySelector('#dayed .pill[data-pls]:not([disabled])');if(f0&&document.activeElement===document.body)try{f0.focus({preventScroll:true})}catch(x){}}return}
   var dayEl=e.target.closest('[data-day]');if(dayEl&&!e.target.closest('[data-act]')){var diso=dayEl.dataset.day,dsec=dayEl.dataset.sec||null;ui.etcAdd=null;ui.grpWarn=null;
     if(dayEl.classList.contains('todo-it')){ui.selDay=diso;ui.selSec=null}else if(ui.selDay===diso&&ui.selSec===dsec){ui.selDay=null;ui.selSec=null}else{ui.selDay=diso;ui.selSec=dsec}
@@ -2255,7 +2280,7 @@ app.addEventListener('click',function(e){
   case 'pView':(function(){if(k==='day'&&ui.pv!=='day'){var wk=placeDays().filter(function(x){return x.slice(0,7)===ui.ym&&di(x).type!=='closed'});if(wk.length)ui.pday=wk[0]}else if(k==='week'&&ui.pv==='day'&&ui.pday){ui.pw=mondayOf(ui.pday)}ui.pv=k;ui.psel=null;render()})();break;
   case 'pClose':ui.psel=null;render();break;
   case 'pSel':if(ui.psel){ui.psel.p=k;render()}break;
-  case 'pHalf':ui.phalf=k;render();break;
+  case 'pHalf':ui.phalf=k;if(ui.psel)ui.psel.h=k==='all'?'':k;render();break;
   case 'pStep':(function(){if(ui.pv==='day'){var nd=addDays(placeDay(),+k);ui.pday=nd;ui.ym=nd.slice(0,7)}else{var nw=addDays(placeWeek(),7*(+k));ui.pw=nw;ui.ym=addDays(nw,3).slice(0,7)}ui.psel=null;clearDI();exampleFill();render()})();break;
   case 'pSelStep':(function(){if(!ui.psel)return;var nd=addDays(ui.psel.d,+k);ui.psel.d=nd;if(ui.pv==='day'){ui.pday=nd;ui.ym=nd.slice(0,7)}else{ui.pw=mondayOf(nd);ui.ym=addDays(ui.pw,3).slice(0,7)}clearDI();exampleFill();render();var b=document.querySelector('[data-act="pSelStep"][data-k="'+k+'"]');if(b)b.focus()})();break;
   case 'pFill':(function(){var r=placeFill(placeDays());render();toast(r.filled?'빈 자리 '+r.filled+'곳을 채웠어요'+(r.left?' · 사람이 모자라 '+r.left+'자리는 비어 있어요':'')+'.'+keepNote():r.left?'자리 미정인 사람이 없어서 '+r.left+'자리를 못 채웠어요.':'채울 빈 자리가 없어요.')})();break;
