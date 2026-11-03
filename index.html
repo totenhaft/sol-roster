@@ -623,6 +623,17 @@ a.tab{text-decoration:none}
 .perlist li{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:13px}
 .pr-range{font-variant-numeric:tabular-nums;font-weight:600}
 .perform{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;flex-basis:100%}
+/* 원장이 없는 진료실 (다른 팀 자리를 따라가는 자리) */
+.pboard td.pc.doff,.pbox.doff{background:color-mix(in srgb,var(--surface-2) 70%,transparent)}
+.pb-off{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.pboard tbody th small.pdep{color:var(--accent);font-size:10.5px}
+.pdep-note{color:var(--muted)}
+.pdep-link{background:var(--accent-soft);border-radius:10px;padding:8px 12px;margin:0 0 12px;font-size:13.5px}
+.pdep-link p{margin:4px 0}
+.pdep-by{font-size:12.5px}
+/* 좁은 오전·오후 칸: 시간(11:00~)·메모는 이름 아래 줄로 */
+.pboard.ph2 .pn small,.pboard.ph2 .pn .nt{display:block;margin-left:0;line-height:1.2}
+.pboard.ph2 td{overflow-wrap:anywhere}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
@@ -730,7 +741,8 @@ function cleanMust(a,avail){var av=(avail||[]).map(Number),out=[];(Array.isArray
 function cleanLeave0(x){if(!x||!x.y)return null;return {y:int(x.y,2000,2100),d:Math.max(0,Math.min(400,Math.round((parseFloat(x.d)||0)*4)/4))}}
 function cleanLt(o){var r={};Object.keys(o||{}).forEach(function(y){if(!/^\d{4}$/.test(y))return;var v=Math.round((parseFloat(o[y])||0)*4)/4;if(v>0&&v<=400)r[y]=v});return r}
 function cleanOt(a){var o={};Object.keys(a||{}).forEach(function(sid){var row={};Object.keys(a[sid]||{}).forEach(function(iso){var v=r5(a[sid][iso],600);if(v>0)row[iso]=v});if(Object.keys(row).length)o[sid]=row});return o}
-function cleanPosts(a){return (Array.isArray(a)?a:[]).slice(0,30).map(function(x){x=x||{};return {id:String(x.id||uid('p')).slice(0,20),name:String(x.name||'자리').slice(0,20),need:int(x.need,0,9)}})}
+function cleanPosts(a){return (Array.isArray(a)?a:[]).slice(0,30).map(function(x){x=x||{};return {id:String(x.id||uid('p')).slice(0,20),name:String(x.name||'자리').slice(0,20),need:int(x.need,0,9),dep:DEP_RE.test(String(x.dep||''))?String(x.dep):''}})}
+var DEP_RE=/^[A-Za-z0-9_-]{1,20}\|[A-Za-z0-9_-]{1,20}$/;
 function cleanLabels(o){o=o||{};var r={};['night','leave','etc'].forEach(function(k){var v=String(o[k]||'').trim().slice(0,12);if(v)r[k]=v});return r}
 function isISO(x){return /^\d{4}-\d{2}-\d{2}$/.test(String(x||''))}
 function cleanAbs(a){if(!a||!isISO(a.from))return null;return {from:a.from,to:isISO(a.to)&&a.to>=a.from?a.to:'',why:String(a.why||'휴직').slice(0,12)||'휴직'}}
@@ -1040,7 +1052,7 @@ function stats(ym,teams){var dates=monthDates(ym),weeks=weeksOf(ym),per={},days=
 /* ---------- render ---------- */
 var GRID=null;
 function render(){
-  clearDI();rebuildTypes();fixTab();
+  PSC={};clearDI();rebuildTypes();fixTab();
   var fid=document.activeElement&&document.activeElement.id,body;
   if(ui.view==='loading')body='<section class="panel empty">근무표를 불러오는 중이에요…</section>';
   else if(ui.view==='setup')body=setupView();
@@ -1457,12 +1469,22 @@ function dayHome(ym,teams,st,gc){var items=[];
 var POST_PRESETS=['1번 진료실','2번 진료실','3번 진료실','데스크','수술실','검사실','상담실'];
 function postsOf(t){return (t&&t.posts)||[]}
 function postById(t,id){return postsOf(t).filter(function(x){return x.id===id})[0]||null}
+/* a place that is needed only while a place of another team has someone (외래팀 1번 진료실 ← 원장 1번 진료실). x.dep='팀id|자리id' */
+var PSC={},DEPBUSY=0;
+function depOf(x){if(!x||!x.dep)return null;var i=x.dep.indexOf('|'),t2=teamById(x.dep.slice(0,i)),y=t2&&postById(t2,x.dep.slice(i+1));return y&&!y.dep?{t:t2,x:y}:null}
+function depOn(x,iso,half){var dp=depOf(x);if(!dp)return true;var k=dp.t.id+'|'+iso,sp=PSC[k];
+  if(!sp){if(DEPBUSY)return true;DEPBUSY=1;try{sp=placeSplit(dp.t,iso)}finally{DEPBUSY=0}PSC[k]=sp}
+  return ((sp.cnt[dp.x.id]||{})[half]||0)>0}
+/* how many a place needs in one half of a day (0 while the place it follows is empty) */
+function needH(x,sp,half){return x.need&&depOn(x,sp.iso,half)?x.need:0}
+/* '원장 없음' when the place it follows is empty in that half */
+function depOff(x,sp,half){var dp=depOf(x);return dp&&!depOn(x,sp.iso,half)?dp.t.name+' 없음':''}
 /* working inside the clinic that day (외근·교육·휴무·연차 are not placed) */
 function workIn(ro,p,iso){if(absOf(p,iso))return false;var v=cellCode(ro,p.id,iso);return !!v&&isWork(v)&&TY[v].kind==='in'}
 /* a person's place on a day, morning and afternoon. ro.place: ''=usual place, 'X'=X all day, '-'=no place, 'A|B'=A in the morning, B in the afternoon (each ''=usual, '-'=none) */
-function placeRes(t,p,x){if(x==='-')return '';if(x&&postById(t,x))return x;return p.post&&postById(t,p.post)?p.post:''}
-function placePair(t,ro,p,iso){var r=(ro.place&&ro.place[p.id]&&ro.place[p.id][iso])||'',i=r.indexOf('|');return {am:placeRes(t,p,i>=0?r.slice(0,i):r),pm:placeRes(t,p,i>=0?r.slice(i+1):r)}}
-function placeSetPair(t,p,iso,am,pm){var ym=iso.slice(0,7),ro=roster(ym,t.id,true),u=p.post&&postById(t,p.post)?p.post:'',enc=function(x){return x===u?'':(x||'-')},a=enc(am),b=enc(pm);setIn(ro.place,p.id,iso,a===b?a:a+'|'+b);dRoster(ym,t.id)}
+function placeRes(t,p,x,iso,half){if(x==='-')return '';if(x&&postById(t,x))return x;var u=p.post&&postById(t,p.post);return u&&(!iso||depOn(u,iso,half))?p.post:''}
+function placePair(t,ro,p,iso){var r=(ro.place&&ro.place[p.id]&&ro.place[p.id][iso])||'',i=r.indexOf('|');return {am:placeRes(t,p,i>=0?r.slice(0,i):r,iso,'am'),pm:placeRes(t,p,i>=0?r.slice(i+1):r,iso,'pm')}}
+function placeSetPair(t,p,iso,am,pm){var ym=iso.slice(0,7),ro=roster(ym,t.id,true),enc=function(x,h){return x===placeRes(t,p,'',iso,h)?'':(x||'-')},a=enc(am,'am'),b=enc(pm,'pm');setIn(ro.place,p.id,iso,a===b?a:a+'|'+b);dRoster(ym,t.id)}
 /* half: 'all' | 'am' | 'pm' */
 function placeSet(t,p,iso,post,half){var q=placePair(t,roster(iso.slice(0,7),t.id),p,iso);if(half!=='pm')q.am=post;if(half!=='am')q.pm=post;placeSetPair(t,p,iso,q.am,q.pm)}
 /* pressing a name in the place editor: in → out, out → in (for the chosen half) */
@@ -1487,7 +1509,7 @@ function pName(ro,p,iso,h){var tg=pTag(ro,p,iso,h),nt=noteOf(ro,p.id,iso);return
 function awayName(a,part){return '<span class="pn'+(part?' part':'')+'">'+esc(a.p.name||'')+'<small>'+esc(a.why)+'</small></span>'}
 /* everyone of a team on a day, sorted into places, morning and afternoon */
 function placeSplit(t,iso){var ro=roster(iso.slice(0,7),t.id),d=di(iso),by={},cnt={},free=[],away=[],part=[],info={};postsOf(t).forEach(function(x){by[x.id]=[];cnt[x.id]={am:0,pm:0}});
-  var R={by:by,cnt:cnt,free:free,away:away,part:part,info:info,ro:ro,d:d};if(d.type==='closed')return R;
+  var R={by:by,cnt:cnt,free:free,away:away,part:part,info:info,ro:ro,d:d,iso:iso};if(d.type==='closed')return R;
   t.staff.forEach(function(p){if(absOf(p,iso))return;var v=cellCode(ro,p.id,iso);
     if(!workIn(ro,p,iso)){away.push({p:p,why:v?TY[v].name:(avOn(p,iso).indexOf(d.dow)<0?'정기 휴무':'휴무')});return}
     var hv=halves(ro,p,iso),q=placePair(t,ro,p,iso),A=hv.am?q.am:'',B=hv.pm?q.pm:'',pw=partWhy(ro,p,iso),both=hv.am&&hv.pm;info[p.id]={hv:hv,q:q,A:A,B:B};
@@ -1499,14 +1521,14 @@ function placeSplit(t,iso){var ro=roster(iso.slice(0,7),t.id),d=di(iso),by={},cn
   return R}
 /* people at a place (or with no place) in one half of the day, in staff order */
 function halfList(t,sp,x,half){return t.staff.filter(function(p){var f=sp.info[p.id];if(!f)return false;var at=half==='am'?f.A:f.B,here=half==='am'?f.hv.am:f.hv.pm;return here&&(x?at===x.id:!at)})}
-function halfShort(sp,x,half){var n=x.need||0,c=(sp.cnt[x.id]||{am:0,pm:0})[half];return n&&c<n?(c===0?'비어 있음':(n-c)+'명 부족'):''}
+function halfShort(sp,x,half){var n=needH(x,sp,half),c=(sp.cnt[x.id]||{am:0,pm:0})[half];return n&&c<n?(c===0?'비어 있음':(n-c)+'명 부족'):''}
 /* a name in a 오전/오후 column: the column already says the half, so only 반반차·조퇴·늦출 times are added */
 function pNameH(ro,p,iso){var v=cellCode(ro,p.id,iso),g=isQ(v)?qGap(TY[v],di(iso)):null,tg=[g?hmRange(g)+' 쉼':'',timeTag(ro,p,iso)].filter(Boolean).join(' '),nt=noteOf(ro,p.id,iso);return '<span class="pn">'+esc(p.name||'이름 없음')+(nt?'<span class="nt">('+esc(nt)+')</span>':'')+(tg?'<small>'+esc(tg)+'</small>':'')+'</span>'}
 function dayHalves(d){return d.hasAM&&d.hasPM?['am','pm']:[d.hasPM&&!d.hasAM?'pm':'am']}
 /* how short a place is: '비어 있음', '오후 비어 있음', '1명 부족' … */
-function shortOf(sp,x){var c=sp.cnt[x.id]||{am:0,pm:0},d=sp.d,n=x.need||0,a=!!n&&d.hasAM&&c.am<n,b=!!n&&d.hasPM&&c.pm<n;
-  function lack(k){return k===0?'비어 있음':(n-k)+'명 부족'}
-  var lb=!a&&!b?'':(a&&b&&c.am===c.pm)?lack(c.am):(a?'오전 '+lack(c.am):'')+(a&&b?' · ':'')+(b?'오후 '+lack(c.pm):'');return {any:a||b,label:lb}}
+function shortOf(sp,x){var c=sp.cnt[x.id]||{am:0,pm:0},d=sp.d,na=d.hasAM?needH(x,sp,'am'):0,nb=d.hasPM?needH(x,sp,'pm'):0,a=!!na&&c.am<na,b=!!nb&&c.pm<nb;
+  function lack(k,n){return k===0?'비어 있음':(n-k)+'명 부족'}
+  var lb=!a&&!b?'':(a&&b&&c.am===c.pm)?lack(c.am,na):(a?'오전 '+lack(c.am,na):'')+(a&&b?' · ':'')+(b?'오후 '+lack(c.pm,nb):'');return {any:a||b,label:lb}}
 function cntText(sp,x){var c=sp.cnt[x.id]||{am:0,pm:0},d=sp.d;return (d.hasAM&&d.hasPM&&c.am!==c.pm)?'오전 '+c.am+'·오후 '+c.pm:String(d.hasAM?c.am:c.pm)}
 function placeTab(){var teams=visibleTeams().filter(function(t){return t.staff.length});
   if(!S.teams.length)return '<section class="panel empty">아직 팀이 없어요.</section>';
@@ -1529,9 +1551,9 @@ function weekBoard(t,days){var posts=postsOf(t),ed=canTeam(t.id),sp={},HL={am:'�
   var h='<div class="pboard-wrap"><table class="pboard ph2"><caption>'+esc(t.name)+' 배치표</caption><thead><tr><th class="pb-corner" scope="col" rowspan="2">자리</th>'+days.map(function(iso){var d=di(iso),c=(d.dow===0||d.hol)?'sun':d.dow===6?'sat':'';return '<th scope="colgroup" colspan="2" class="pd '+c+'"><b>'+d.day+'</b> '+DOWK[d.dow]+(d.hol?'<small>'+esc(d.hol)+'</small>':'')+'</th>'}).join('')+'</tr>';
   h+='<tr class="phr">'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<th colspan="2" class="pd"></th>';var hs=dayHalves(d);return hs.length===2?'<th scope="col" class="pd ham">오전</th><th scope="col" class="hpm">오후</th>':'<th scope="col" colspan="2" class="pd ham">'+HL[hs[0]]+'</th>'}).join('')+'</tr></thead><tbody>';
   if(!posts.length)h+='<tr><td class="pb-empty" colspan="'+(days.length*2+1)+'">'+(ed?'아래 ‘배치 자리’에서 이 팀의 자리를 만들어 주세요.':'아직 자리가 없어요.')+'</td></tr>';
-  function cell(x,iso,half,cs){var S_=sp[iso],ppl=halfList(t,S_,x,half),lb=halfShort(S_,x,half),on=ui.psel&&ui.psel.t===t.id&&ui.psel.p===x.id&&ui.psel.d===iso&&(ui.psel.h||'')===(cs?'':half);
-    return '<td'+(cs?' colspan="2"':'')+' class="pc '+(half==='am'||cs?'pd ham':'hpm')+(lb?' short':'')+(ed?' can':'')+(on?' on':'')+'" data-pt="'+t.id+'" data-pp="'+x.id+'" data-pd="'+iso+'"'+(cs?'':' data-ph="'+half+'"')+' role="button" tabindex="0" aria-label="'+esc(mdLabel(iso)+' '+HL[half]+' '+x.name+': '+(ppl.length?ppl.map(function(p){return p.name}).join(', '):'없음')+(lb?' · '+lb:''))+'">'+ppl.map(function(p){return pNameH(S_.ro,p,iso)}).join('')+(lb?'<span class="pb-need">'+lb+'</span>':'')+'</td>'}
-  posts.forEach(function(x,ri){h+='<tr><th scope="row">'+esc(x.name)+(x.need?'<small>'+x.need+'명</small>':'')+'</th>';
+  function cell(x,iso,half,cs){var S_=sp[iso],ppl=halfList(t,S_,x,half),lb=halfShort(S_,x,half),off=depOff(x,S_,half),on=ui.psel&&ui.psel.t===t.id&&ui.psel.p===x.id&&ui.psel.d===iso&&(ui.psel.h||'')===(cs?'':half);
+    return '<td'+(cs?' colspan="2"':'')+' class="pc '+(half==='am'||cs?'pd ham':'hpm')+(lb?' short':'')+(off?' doff':'')+(ed?' can':'')+(on?' on':'')+'" data-pt="'+t.id+'" data-pp="'+x.id+'" data-pd="'+iso+'"'+(cs?'':' data-ph="'+half+'"')+' role="button" tabindex="0" aria-label="'+esc(mdLabel(iso)+' '+HL[half]+' '+x.name+': '+(ppl.length?ppl.map(function(p){return p.name}).join(', '):'없음')+(lb?' · '+lb:'')+(off?' · '+off:''))+'">'+ppl.map(function(p){return pNameH(S_.ro,p,iso)}).join('')+(lb?'<span class="pb-need">'+lb+'</span>':'')+(off?'<span class="pb-off">'+esc(off)+'</span>':'')+'</td>'}
+  posts.forEach(function(x,ri){var dp=depOf(x);h+='<tr><th scope="row">'+esc(x.name)+(x.need?'<small>'+x.need+'명</small>':'')+(dp?'<small class="pdep">'+esc(dp.t.name)+' 있을 때</small>':'')+'</th>';
     days.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td colspan="2" class="pd closed">'+(ri===0?'<span class="pb-closed">휴진</span>':'')+'</td>';return}
       var hs=dayHalves(d);h+=hs.length===2?cell(x,iso,'am')+cell(x,iso,'pm'):cell(x,iso,hs[0],true)});
     h+='</tr>'});
@@ -1544,8 +1566,8 @@ function dayBoard(teams,iso){var d=di(iso),h='<div class="pday">';
   teams.forEach(function(t){var posts=postsOf(t),ed=canTeam(t.id),sp=placeSplit(t,iso);
     h+='<section class="pday-team"><h3>'+esc(t.name)+'</h3>';
     if(!posts.length){h+='<p class="muted">아직 자리가 없어요.</p></section>';return}
-    h+='<div class="pday-grid">'+posts.map(function(x){var ppl=sp.by[x.id],sh=shortOf(sp,x),on=ui.psel&&ui.psel.t===t.id&&ui.psel.p===x.id&&ui.psel.d===iso;
-      return '<div class="pbox'+(sh.any?' short':'')+(ed?' can':'')+(on?' on':'')+'" data-pt="'+t.id+'" data-pp="'+x.id+'" data-pd="'+iso+'" role="button" tabindex="0" aria-label="'+esc(x.name+': '+(ppl.length?ppl.map(function(e){return e.p.name+(e.h==='am'?' 오전':e.h==='pm'?' 오후':'')}).join(', '):'없음')+(sh.label?' · '+sh.label:''))+'"><div class="pbox-h">'+esc(x.name)+(x.need?'<small>'+cntText(sp,x)+'/'+x.need+'</small>':'')+'</div><div class="pbox-n'+(d.hasAM&&d.hasPM?' two':'')+'">'+dayHalves(d).map(function(hf){var ps=halfList(t,sp,x,hf),lb=halfShort(sp,x,hf);return '<div class="pbh">'+(d.hasAM&&d.hasPM?'<span class="pbh-l">'+(hf==='am'?'오전':'오후')+'</span>':'')+ps.map(function(p){return pNameH(sp.ro,p,iso)}).join('')+(lb?'<span class="pb-need">'+lb+'</span>':(ps.length?'':'<span class="pb-need">—</span>'))+'</div>'}).join('')+'</div></div>'}).join('')+'</div>';
+    h+='<div class="pday-grid">'+posts.map(function(x){var ppl=sp.by[x.id],sh=shortOf(sp,x),on=ui.psel&&ui.psel.t===t.id&&ui.psel.p===x.id&&ui.psel.d===iso,offAll=dayHalves(d).every(function(hf){return depOff(x,sp,hf)});
+      return '<div class="pbox'+(sh.any?' short':'')+(offAll?' doff':'')+(ed?' can':'')+(on?' on':'')+'" data-pt="'+t.id+'" data-pp="'+x.id+'" data-pd="'+iso+'" role="button" tabindex="0" aria-label="'+esc(x.name+': '+(ppl.length?ppl.map(function(e){return e.p.name+(e.h==='am'?' 오전':e.h==='pm'?' 오후':'')}).join(', '):'없음')+(sh.label?' · '+sh.label:''))+'"><div class="pbox-h">'+esc(x.name)+(x.need&&!offAll?'<small>'+cntText(sp,x)+'/'+x.need+'</small>':'')+'</div><div class="pbox-n'+(d.hasAM&&d.hasPM?' two':'')+'">'+dayHalves(d).map(function(hf){var ps=halfList(t,sp,x,hf),lb=halfShort(sp,x,hf),off=depOff(x,sp,hf);return '<div class="pbh">'+(d.hasAM&&d.hasPM?'<span class="pbh-l">'+(hf==='am'?'오전':'오후')+'</span>':'')+ps.map(function(p){return pNameH(sp.ro,p,iso)}).join('')+(lb?'<span class="pb-need">'+lb+'</span>':off?'<span class="pb-off">'+esc(off)+'</span>':(ps.length?'':'<span class="pb-need">—</span>'))+'</div>'}).join('')+'</div></div>'}).join('')+'</div>';
     if(sp.free.length)h+='<p class="pday-line warn"><b>자리 미정</b> '+sp.free.map(function(e){return pName(sp.ro,e.p,iso,e.h)}).join('')+'</p>';
     if(sp.away.length||sp.part.length)h+='<p class="pday-line"><b>쉼</b> '+sp.away.map(function(a){return awayName(a)}).join('')+sp.part.map(function(a){return awayName(a,true)}).join('')+'</p>';
     h+='</section>'});
@@ -1567,6 +1589,7 @@ function placeEditor(sel){var t=teamById(sel.t),x=postById(t,sel.p),iso=sel.d,d=
   var inn=t.staff.filter(at);
   if(two&&ed)h+='<div class="seg lv-seg phalf" role="group" aria-label="넣을 시간">'+['all','am','pm'].map(function(k){return '<button data-act="pHalf" data-k="'+k+'" aria-pressed="'+(H===k)+'">'+HL[k]+'</button>'}).join('')+'</div>';
   h+='<p class="sec-help">'+(ed?(H==='all'?'이 자리에서 일할 사람을 누르세요. 오전·오후를 나눠 넣으려면 위에서 <b>오전</b>이나 <b>오후</b>를 고르세요.':'<b>'+HL[H]+'</b>에 이 자리에서 일할 사람을 누르세요.')+' 위 칸에 있는 이름을 다시 누르면 빠져요.':'보기만 할 수 있어요.')+(x.need?' 필요 '+x.need+'명 · 지금 '+(two?'오전 '+c.am+'명 · 오후 '+c.pm+'명':c.am+'명'):'')+'</p>';
+  var dp=depOf(x);if(dp){var offs=dayHalves(d).filter(function(hf){return depOff(x,sp,hf)});h+='<p class="sec-help pdep-note">'+(offs.length?'<b>'+(offs.length===dayHalves(d).length?'오늘은':HL[offs[0]]+'엔')+' ‘'+esc(dp.t.name+' · '+dp.x.name)+'’에 사람이 없어서</b> 이 자리는 비워 둬도 돼요.':'‘'+esc(dp.t.name+' · '+dp.x.name)+'’에 사람이 있는 날에만 필요한 자리예요.')+'</p>'}
   h+='<div class="pk-in">'+(inn.length?'<div class="pills">'+inn.map(function(p){var f=sp.info[p.id],hh=(f.A===x.id&&f.B===x.id)||!(f.hv.am&&f.hv.pm)?'':f.A===x.id?'am':'pm',tg=pTag(sp.ro,p,iso,hh);return '<button class="pill on" id="pl-'+p.id+'" data-pls="'+p.id+'" aria-pressed="true"'+(ed?'':' disabled')+'>'+esc(p.name)+(tg?'<small>'+esc(tg)+'</small>':'')+(p.post===x.id?'<small>기본</small>':'')+'</button>'}).join('')+'</div>':'<p class="pk-empty">'+(H==='all'?'아직 아무도 없어요':HL[H]+'엔 아직 아무도 없어요')+'</p>')+'</div>';
   if(ed){var others=t.staff.filter(function(p){var f=sp.info[p.id];return f&&!at(p)&&(H==='all'?(f.hv.am||f.hv.pm):f.hv[H])});
     if(others.length)h+='<div class="pk-add"><div class="pk-lab">이름을 누르면 '+(H==='all'?'':HL[H]+'에 ')+'이 자리에 들어가요</div><div class="pills">'+others.map(function(p){var f=sp.info[p.id],tg=[halfTag(sp.ro,p,iso),timeTag(sp.ro,p,iso)].filter(Boolean).join(' ');return '<button class="pill" id="pl-'+p.id+'" data-pls="'+p.id+'" aria-pressed="false">'+esc(p.name)+'<small>'+esc(desc(f)+(tg?' · '+tg:''))+'</small></button>'}).join('')+'</div></div>';
@@ -1575,15 +1598,25 @@ function placeEditor(sel){var t=teamById(sel.t),x=postById(t,sel.p),iso=sel.d,d=
   h+='<div class="pk-lab">다른 자리</div><div class="pills">'+postsOf(t).map(function(y){var sh=shortOf(sp,y);return '<button class="pill'+(y.id===x.id?' on':'')+(sh.any?' warn':'')+'" data-act="pSel" data-k="'+y.id+'">'+esc(y.name)+'<small>'+cntText(sp,y)+(y.need?'/'+y.need:'')+'</small></button>'}).join('')+'</div>';
   h+='<div class="sec-foot"><span class="muted">'+saveNote()+'</span></div>';
   return '<div class="secpane pane-place">'+h+'</div>'}
+/* places of other teams this team's places can follow (not ones that follow something themselves) */
+function depChoices(t){var a=[];S.teams.forEach(function(t2){if(t2.id===t.id)return;postsOf(t2).forEach(function(y){if(!y.dep)a.push({v:t2.id+'|'+y.id,l:t2.name+' · '+y.name})})});return a}
+/* for each place of this team, the places of other teams that follow it: {pid:['외래팀 1번 진료실']} */
+function depFollowers(t){var m={};S.teams.forEach(function(t2){if(t2.id===t.id)return;postsOf(t2).forEach(function(x){var dp=depOf(x);if(dp&&dp.t.id===t.id)(m[dp.x.id]=m[dp.x.id]||[]).push(t2.name+' '+x.name)})});return m}
+/* another team whose every place has a same-named place here (원장: 1~4번 진료실 ⊂ 외래팀) — offered once, while nothing is linked yet */
+function depSame(t){var mine=postsOf(t).filter(function(x){return !x.dep}),fol=depFollowers(t),out=[];if(!mine.length||postsOf(t).some(function(x){return x.dep})||Object.keys(fol).length)return out;
+  S.teams.forEach(function(t2){if(t2.id===t.id||postsOf(t2).some(function(y){return depOf(y)&&depOf(y).t.id===t.id}))return;var names=[];mine.forEach(function(x){var y=postsOf(t2).filter(function(y){return !y.dep&&y.name.trim()===x.name.trim()})[0];if(y)names.push(x.name)});if(names.length&&names.length===postsOf(t2).filter(function(y){return !y.dep}).length)out.push({t:t2,names:names})});return out}
 function postSetup(t){var posts=postsOf(t),h='<section class="panel"><h2>'+esc(t.name)+' 배치 자리</h2><p>배치표에 쓸 자리를 정해요. <b>필요 인원</b>을 정하면 모자랄 때 빨간색으로 알려 주고, ‘빈 자리 채우기’가 그 수만큼 채워요.</p>';
   var pre=POST_PRESETS.filter(function(n){return !posts.some(function(x){return x.name===n})});
   h+='<div class="row" style="margin-bottom:12px"><span class="muted" style="font-size:13px">자주 쓰는 자리</span>'+pre.map(function(n){return '<button class="mchip" data-act="postAdd" data-k="'+t.id+'" data-v="'+esc(n)+'">+ '+esc(n)+'</button>'}).join('')+
     '<label class="vh" for="pa-'+t.id+'">새 자리 이름</label><input type="text" id="pa-'+t.id+'" maxlength="20" placeholder="직접 입력 (예: 시야검사실)"><button class="btn small" data-act="postAdd" data-k="'+t.id+'">추가</button></div>';
-  if(posts.length){h+='<div class="tblwrap"><table class="tbl"><thead><tr><th class="ord">순서</th><th>자리 이름</th><th>하루 필요 인원</th><th>기본으로 이 자리인 사람</th><th></th></tr></thead><tbody>';
+  var lk=depSame(t);if(lk.length)h+='<div class="pdep-link">'+lk.map(function(g){return '<p><b>'+esc(g.t.name)+'</b> 팀에도 '+esc(g.names.join(', '))+' 자리가 있어요. 이 팀 자리를 <b>'+esc(g.t.name)+' 자리에 사람이 있는 날에만</b> 필요하게 하려면 → <button class="btn small" data-act="postLink" data-k="'+t.id+'" data-v="'+g.t.id+'">'+esc(g.t.name)+' 자리에 맞추기</button></p>'}).join('')+'</div>';
+  if(posts.length){h+='<div class="tblwrap"><table class="tbl"><thead><tr><th class="ord">순서</th><th>자리 이름</th><th>하루 필요 인원</th><th>필요한 때</th><th>기본으로 이 자리인 사람</th><th></th></tr></thead><tbody>';
+    var dch=depChoices(t),fol=depFollowers(t);
     posts.forEach(function(x,i){var id='po-'+x.id+'-',who=t.staff.filter(function(p){return p.post===x.id}).map(function(p){return p.name}).join(', ');
       h+='<tr><td class="ord"><button class="ob" id="'+id+'up" data-act="postMove" data-k="'+t.id+'" data-p="'+x.id+'" data-dir="-1" aria-label="'+esc(x.name)+' 위로"'+(i===0?' disabled':'')+'>▲</button><button class="ob" id="'+id+'dn" data-act="postMove" data-k="'+t.id+'" data-p="'+x.id+'" data-dir="1" aria-label="'+esc(x.name)+' 아래로"'+(i===posts.length-1?' disabled':'')+'>▼</button></td>'+
         '<td><input type="text" id="'+id+'name" data-post="'+t.id+'" data-p="'+x.id+'" data-k="name" maxlength="20" value="'+esc(x.name)+'" aria-label="자리 이름"></td>'+
         '<td><select id="'+id+'need" data-post="'+t.id+'" data-p="'+x.id+'" data-k="need" aria-label="'+esc(x.name)+' 하루 필요 인원">'+[0,1,2,3,4,5].map(function(n){return '<option value="'+n+'"'+(x.need===n?' selected':'')+'>'+(n?n+'명':'정하지 않음')+'</option>'}).join('')+'</select></td>'+
+        '<td>'+(fol[x.id]?'<span class="muted pdep-by">따라오는 자리: '+esc(fol[x.id].join(', '))+'</span>':'<select id="'+id+'dep" data-post="'+t.id+'" data-p="'+x.id+'" data-k="dep" aria-label="'+esc(x.name)+' 필요한 때"><option value="">늘 필요</option>'+dch.map(function(o){return '<option value="'+o.v+'"'+(x.dep===o.v?' selected':'')+'>'+esc(o.l)+'에 사람이 있을 때만</option>'}).join('')+'</select>')+'</td>'+
         '<td class="desc">'+(who?esc(who):'<span class="muted">없음</span>')+'</td>'+
         '<td>'+(ui.confirm==='post:'+x.id?'<button class="btn small danger" data-act="postDel" data-k="'+t.id+'" data-p="'+x.id+'">정말 삭제</button> <button class="btn small" data-act="cancel">취소</button>':'<button class="btn small" data-act="postAsk" data-k="'+x.id+'">삭제</button>')+'</td></tr>'});
     h+='</tbody></table></div>';
@@ -1592,25 +1625,28 @@ function postSetup(t){var posts=postsOf(t),h='<section class="panel"><h2>'+esc(t
   else h+='<p class="muted" style="margin:0">아직 자리가 없어요. 위에서 자주 쓰는 자리를 누르거나 직접 입력해 추가하세요.</p>';
   return h+'</section>'}
 /* fill places that are short with people who have no place yet (morning and afternoon), taking turns over the month */
-function placeFill(days){var filled=0,left=0;
-  visibleTeams().forEach(function(t){if(!canTeam(t.id)||!postsOf(t).length)return;var tally={};
+function placeFill(days){var filled=0,left=0,tgt={};
+  S.teams.forEach(function(t){postsOf(t).forEach(function(x){var dp=depOf(x);if(dp)tgt[dp.t.id]=1})});
+  /* the teams others follow (원장) first, so 외래팀 sees which rooms are open */
+  var order=visibleTeams().slice().sort(function(a,b){return (tgt[b.id]?1:0)-(tgt[a.id]?1:0)});
+  order.forEach(function(t){if(!canTeam(t.id)||!postsOf(t).length)return;var tally={};
     function tallyFor(ym){if(tally[ym])return tally[ym];var m={};monthDates(ym).forEach(function(iso){var sp=placeSplit(t,iso);Object.keys(sp.by).forEach(function(pid){sp.by[pid].forEach(function(e){m[e.p.id+'|'+pid]=(m[e.p.id+'|'+pid]||0)+1})})});return tally[ym]=m}
     days.forEach(function(iso){var d=di(iso);if(d.type==='closed')return;var tl=tallyFor(iso.slice(0,7));
       postsOf(t).forEach(function(x){if(!x.need)return;
-        for(var guard=0;guard<60;guard++){var sp=placeSplit(t,iso),c=sp.cnt[x.id],nA=d.hasAM&&c.am<x.need,nB=d.hasPM&&c.pm<x.need;if(!nA&&!nB)break;
+        for(var guard=0;guard<60;guard++){var sp=placeSplit(t,iso),c=sp.cnt[x.id],nA=d.hasAM&&c.am<needH(x,sp,'am'),nB=d.hasPM&&c.pm<needH(x,sp,'pm');if(!nA&&!nB)break;
           var gain=function(p){var f=sp.info[p.id];return f?((nA&&f.hv.am&&!f.A)?1:0)+((nB&&f.hv.pm&&!f.B)?1:0):0},cand=t.staff.filter(function(p){return gain(p)>0});if(!cand.length)break;
           cand.sort(function(a,b){return (gain(b)-gain(a))||((tl[a.id+'|'+x.id]||0)-(tl[b.id+'|'+x.id]||0))||Math.random()-0.5});
           var p=cand[0],f=sp.info[p.id],am=f.q.am,pm=f.q.pm;if(nA&&f.hv.am&&!f.A)am=x.id;if(nB&&f.hv.pm&&!f.B)pm=x.id;placeSetPair(t,p,iso,am,pm);tl[p.id+'|'+x.id]=(tl[p.id+'|'+x.id]||0)+1;filled++}
-        var c2=placeSplit(t,iso).cnt[x.id];left+=Math.max(0,d.hasAM?x.need-c2.am:0,d.hasPM?x.need-c2.pm:0)})})});
+        var sp2=placeSplit(t,iso),c2=sp2.cnt[x.id];left+=Math.max(0,d.hasAM?needH(x,sp2,'am')-c2.am:0,d.hasPM?needH(x,sp2,'pm')-c2.pm:0)})})});
   return {filled:filled,left:left}}
-function placePrint(teams,days){var css='@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;margin:12px;font-size:11px}h1{font-size:15px;margin:0 0 8px;background:#FFF200;text-align:center;padding:4px}h2{font-size:13px;margin:12px 0 4px}table{border-collapse:collapse;width:100%;table-layout:fixed;page-break-inside:avoid}th,td{border:1px solid #BFC8C4;padding:3px 4px;text-align:center;vertical-align:middle;word-break:keep-all}thead th{background:#FCE4D6}tbody th{background:#F2F5F3;width:90px}.sun{color:#C2392D}.sat{color:#2352B0}.short{background:#FBE2DE;color:#C2392D}.x{background:#EEF1EF;color:#C2392D}.n{display:block}.n small{font-size:9px;color:#55615C;margin-left:2px}.away td{color:#64716C;font-size:10px}.hh th{font-size:9.5px;font-weight:500;background:#FDF1E9;padding:1px}td{font-size:10.5px}';
+function placePrint(teams,days){var css='@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;margin:12px;font-size:11px}h1{font-size:15px;margin:0 0 8px;background:#FFF200;text-align:center;padding:4px}h2{font-size:13px;margin:12px 0 4px}table{border-collapse:collapse;width:100%;table-layout:fixed;page-break-inside:avoid}th,td{border:1px solid #BFC8C4;padding:3px 4px;text-align:center;vertical-align:middle;word-break:keep-all}thead th{background:#FCE4D6}tbody th{background:#F2F5F3;width:90px}.sun{color:#C2392D}.sat{color:#2352B0}.short{background:#FBE2DE;color:#C2392D}.x{background:#EEF1EF;color:#C2392D}.n{display:block}.n small{font-size:9px;color:#55615C;margin-left:2px}.away td{color:#64716C;font-size:10px}.hh th{font-size:9.5px;font-weight:500;background:#FDF1E9;padding:1px}.do{background:#F1F3F2}.o{color:#8A9590;font-size:9.5px}td{font-size:10.5px}';
   var lbl=days.length===1?mdLabel(days[0]):(function(){var a=parts(days[0]),b=parts(days[days.length-1]);return a[1]+'/'+a[2]+' ~ '+b[1]+'/'+b[2]})();
   var h='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(S.clinic+' 근무 배치표 '+lbl)+'</title>'+FONT_LINK+'<style>'+css+'</style></head><body><h1>'+esc(S.clinic)+' 근무 배치표 · '+esc(lbl)+'</h1>';
   teams.forEach(function(t){if(!postsOf(t).length)return;var sp={};days.forEach(function(iso){sp[iso]=placeSplit(t,iso)});
     function names(ro,es,iso){return es.map(function(e){var tg=pTag(ro,e.p,iso,e.h);return '<span class="n">'+esc(e.p.name)+(tg?'<small>'+esc(tg)+'</small>':'')+'</span>'}).join('')}
     function hn(ro,ps,iso){return ps.map(function(p){var v=cellCode(ro,p.id,iso),g=isQ(v)?qGap(TY[v],di(iso)):null,tg=[g?hmRange(g)+' 쉼':'',timeTag(ro,p,iso)].filter(Boolean).join(' ');return '<span class="n">'+esc(p.name)+(tg?'<small>'+esc(tg)+'</small>':'')+'</span>'}).join('')}
     h+='<h2>'+esc(t.name)+'</h2><table><thead><tr><th rowspan="2">자리</th>'+days.map(function(iso){var d=di(iso);return '<th colspan="2" class="'+((d.dow===0||d.hol)?'sun':d.dow===6?'sat':'')+'">'+d.day+' ('+DOWK[d.dow]+')</th>'}).join('')+'</tr><tr class="hh">'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<th colspan="2"></th>';var hs=dayHalves(d);return hs.length===2?'<th>오전</th><th>오후</th>':'<th colspan="2">'+(hs[0]==='am'?'오전':'오후')+'</th>'}).join('')+'</tr></thead><tbody>';
-    postsOf(t).forEach(function(x){h+='<tr><th>'+esc(x.name)+'</th>'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<td class="x" colspan="2">휴진</td>';var hs=dayHalves(d);return hs.map(function(hf){var ps=halfList(t,sp[iso],x,hf),lb=halfShort(sp[iso],x,hf);return '<td'+(hs.length===1?' colspan="2"':'')+' class="'+(lb?'short':'')+'">'+hn(sp[iso].ro,ps,iso)+(lb?'<span class="n">'+lb+'</span>':'')+'</td>'}).join('')}).join('')+'</tr>'});
+    postsOf(t).forEach(function(x){h+='<tr><th>'+esc(x.name)+'</th>'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<td class="x" colspan="2">휴진</td>';var hs=dayHalves(d);return hs.map(function(hf){var ps=halfList(t,sp[iso],x,hf),lb=halfShort(sp[iso],x,hf),off=depOff(x,sp[iso],hf);return '<td'+(hs.length===1?' colspan="2"':'')+' class="'+(lb?'short':off?'do':'')+'">'+hn(sp[iso].ro,ps,iso)+(lb?'<span class="n">'+lb+'</span>':'')+(off?'<span class="n o">'+esc(off)+'</span>':'')+'</td>'}).join('')}).join('')+'</tr>'});
     h+='<tr><th>자리 미정</th>'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<td class="x" colspan="2"></td>';var hs=dayHalves(d);return hs.map(function(hf){return '<td'+(hs.length===1?' colspan="2"':'')+'>'+hn(sp[iso].ro,halfList(t,sp[iso],null,hf),iso)+'</td>'}).join('')}).join('')+'</tr>';
     h+='<tr class="away"><th>쉼</th>'+days.map(function(iso){return di(iso).type==='closed'?'<td class="x" colspan="2"></td>':'<td colspan="2">'+sp[iso].away.concat(sp[iso].part).map(function(a){return '<span class="n">'+esc(a.p.name)+'<small>'+esc(a.why)+'</small></span>'}).join('')+'</td>'}).join('')+'</tr></tbody></table>'});
   return h+'<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},500)})<\/script></body></html>'}
@@ -2180,8 +2216,8 @@ function touched(){var el=document.getElementById('savestate');if(el)el.innerHTM
   if(MODE!=='server'){clearTimeout(draftTimer);draftTimer=setTimeout(function(){lsSet(KEYS.draft,JSON.stringify({at:Date.now(),state:S}))},600)}}
 var GEN=0;
 function dConfig(){ui.dirty.config=++GEN;S.example=false;touched()}
-function dTeam(tid){ui.dirty.teams[tid]=++GEN;S.example=false;touched()}
-function dRoster(ym,tid){ui.dirty.rosters[ym+'|'+tid]=++GEN;touched()}
+function dTeam(tid){PSC={};ui.dirty.teams[tid]=++GEN;S.example=false;touched()}
+function dRoster(ym,tid){PSC={};ui.dirty.rosters[ym+'|'+tid]=++GEN;touched()}
 
 /* ---------- drag selection ---------- */
 var sel=null,selCells=[],skipClick=false;
@@ -2287,6 +2323,7 @@ app.addEventListener('click',function(e){
   case 'pPrint':(function(){var ds=placeDays(),a=parts(ds[0]),b=parts(ds[ds.length-1]);offerFile(S.clinic+' 근무 배치표 '+(ds.length===1?a[1]+'월 '+a[2]+'일':a[1]+'.'+a[2]+'-'+b[1]+'.'+b[2])+'.html',placePrint(visibleTeams().filter(function(x){return x.staff.length}),ds))})();break;
   case 'postAdd':(function(){var tm=teamById(k);if(!tm||!canTeam(k))return;var inp=document.getElementById('pa-'+k),nm=(t.dataset.v||(inp&&inp.value)||'').trim().slice(0,20);if(!nm){toast('자리 이름을 입력하세요.');if(inp)inp.focus();return}
     if(!tm.posts)tm.posts=[];if(tm.posts.some(function(x){return x.name===nm})){toast('이미 있는 자리예요.');return}tm.posts.push({id:uid('p'),name:nm,need:1});dTeam(k);render();toast(nm+' 자리를 만들었어요.'+keepNote())})();break;
+  case 'postLink':(function(){var tm=teamById(k),t2=teamById(t.dataset.v);if(!tm||!t2||!canTeam(k))return;var n=0;postsOf(tm).forEach(function(x){if(x.dep)return;var y=postsOf(t2).filter(function(y){return !y.dep&&y.name.trim()===x.name.trim()})[0];if(y){x.dep=t2.id+'|'+y.id;n++}});if(n){dTeam(k);render();toast(tm.name+' 자리 '+n+'곳을 '+t2.name+' 자리에 맞췄어요. '+t2.name+' 자리에 사람이 없는 날엔 비워 둬도 돼요.')}})();break;
   case 'postMove':(function(){var tm=teamById(k);if(!tm||!canTeam(k))return;var a=tm.posts,x=postById(tm,t.dataset.p),i=a.indexOf(x),j=i+(+t.dataset.dir);if(!x||j<0||j>=a.length)return;a.splice(i,1);a.splice(j,0,x);dTeam(k);render()})();break;
   case 'postAsk':ui.confirm='post:'+k;render();break;
   case 'postDel':(function(){var tm=teamById(k);if(!tm||!canTeam(k))return;var pid=t.dataset.p;tm.posts=tm.posts.filter(function(x){return x.id!==pid});tm.staff.forEach(function(p){if(p.post===pid)p.post=''});if(ui.psel&&ui.psel.p===pid)ui.psel=null;ui.confirm=null;dTeam(k);render()})();break;
@@ -2418,7 +2455,7 @@ app.addEventListener('change',function(e){var t=e.target;
   if(t.dataset.ld){ldUpdate(t.dataset.ld,t.dataset.k,t.value);return}
   if(t.dataset.memo||t.dataset.note){render();return}
   if(t.id==='otWho'||t.id==='otDay'||t.id==='otAmt'){ui[t.id]=t.value;return}
-  if(t.dataset.post){var ptm3=teamById(t.dataset.post);if(!ptm3||!canTeam(ptm3.id))return;var px3=postById(ptm3,t.dataset.p);if(!px3)return;if(t.dataset.k==='need')px3.need=int(t.value,0,9);if(!px3.name.trim())px3.name='자리';dTeam(ptm3.id);render();return}
+  if(t.dataset.post){var ptm3=teamById(t.dataset.post);if(!ptm3||!canTeam(ptm3.id))return;var px3=postById(ptm3,t.dataset.p);if(!px3)return;if(t.dataset.k==='need')px3.need=int(t.value,0,9);if(t.dataset.k==='dep')px3.dep=DEP_RE.test(t.value)?t.value:'';if(!px3.name.trim())px3.name='자리';dTeam(ptm3.id);render();return}
   if(t.dataset.adjsel){if(!canTeam(t.dataset.t))return;ui.etcAdd=null;var asid=t.dataset.adjsel,atid=t.dataset.t,aro=roster(ui.ym,atid,true),arc=rawCode(aro,asid,ui.selDay),wasOT=arc==='OT'||arc==='OTD';
     if(t.value==='otday'){setCode(asid,atid,ui.selDay,'OT','add');render();otWarn(asid);return}
     if(t.value==='otd'){if(setCode(asid,atid,ui.selDay,'OTD','add')){render();otdToast(asid)}else{render()}return}
