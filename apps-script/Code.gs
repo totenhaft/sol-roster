@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 22;
+var VERSION = 23;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -488,7 +488,9 @@ function saveTeam_(req) {
   // 근무 배치 자리 (1번 진료실, 데스크 …): 팀장이 정해요
   tm.posts = (Array.isArray(t.posts) ? t.posts : []).slice(0, 30).map(function (x) {
     x = x || {};
-    return { id: str_(x.id, 20), name: str_(x.name, 20), need: int_(x.need, 0, 9) };
+    // dep: '팀id|자리id' — 그 자리(예: 원장 1번 진료실)에 사람이 있을 때만 필요한 자리
+    var dep = String(x.dep || '');
+    return { id: str_(x.id, 20), name: str_(x.name, 20), need: int_(x.need, 0, 9), dep: /^[A-Za-z0-9_-]{1,20}\|[A-Za-z0-9_-]{1,20}$/.test(dep) ? dep : '' };
   }).filter(function (x) { return x.id; });
   var postIds = {};
   tm.posts.forEach(function (x) { postIds[x.id] = 1; });
