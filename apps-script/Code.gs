@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 23;
+var VERSION = 24;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -236,7 +236,10 @@ function load_(req) {
   }
   delete d.handbook;   // 취업규칙은 rules.html에서 따로 불러와요
   // 근태(지문 기록)는 관리자에게만 보내요. 그것도 최근 몇 달만 함께 보내고, 나머지는 근태 탭에서 그 달을 열 때 따로 불러와요
-  var att = d.att || {}, months = Object.keys(att).sort(), cut = ymShift_(ymNow_(), -3), recent = {};
+  var att = d.att || {}, months = Object.keys(att).sort(), cut = ymShift_(ymNow_(), -3), recent = {}, nt = {};
+  // 야간 시간(지문 기록 기준)만은 모두에게 보내요: 로그인하지 않은 직원도 자기 OT를 관리자 화면과 같게 봐요
+  months.forEach(function (m) { if (att[m] && att[m].nt && Object.keys(att[m].nt).length) nt[m] = att[m].nt; });
+  d.attNt = nt;
   if (a && a.role === 'admin') months.forEach(function (m) { if (m >= cut) recent[m] = att[m]; });
   else months = [];
   d.att = recent;
@@ -723,7 +726,7 @@ function cleanDut_(o, ids, ym) {
 function attKeyOk_(k, ids) { return !!ids[k] || (String(k).indexOf('n:') === 0 && String(k).length <= 32); }
 function cleanAtt_(a, ids, ym) {
   a = a || {};
-  var out = { rows: {}, fix: {}, fin: {}, map: {}, file: null };
+  var out = { rows: {}, fix: {}, fin: {}, map: {}, file: null, nt: {} };
   Object.keys(a.rows || {}).slice(0, 200).forEach(function (k) {
     if (!attKeyOk_(k, ids)) return;
     var row = {};
@@ -758,6 +761,16 @@ function cleanAtt_(a, ids, ym) {
   });
   Object.keys(a.map || {}).slice(0, 200).forEach(function (n) { var v = str_(a.map[n], 40); if (v) out.map[str_(n, 30)] = v; });
   if (a.file && a.file.name) out.file = { name: str_(a.file.name, 80), at: Number(a.file.at) || 0, by: str_(a.file.by, 30), n: int_(a.file.n, 0, 100000) };
+  // nt: 지문 기록으로 정한 야간 시간(분). 직원·팀장 화면의 OT가 관리자 화면과 같게 나오도록 모두에게 보내요
+  Object.keys(a.nt || {}).slice(0, 200).forEach(function (k) {
+    if (!ids[k]) return;
+    var row = {};
+    Object.keys(a.nt[k] || {}).forEach(function (iso) {
+      if (iso.indexOf(ym) !== 0 || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+      row[iso] = int_(a.nt[k][iso], 0, 600);
+    });
+    if (Object.keys(row).length) out.nt[k] = row;
+  });
   return out;
 }
 function staffIds_(d, teamId) {
