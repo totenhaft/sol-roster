@@ -657,6 +657,10 @@ a.tab{text-decoration:none}
 .lvpre{margin:0 0 8px}
 @media (max-width:520px){.lvnums.four{grid-template-columns:repeat(2,1fr)}.lvgrid{grid-template-columns:1fr}#lvWho{min-width:0;flex:1}}
 .lvcard .otlist+.fine{margin-top:14px}
+/* 원장출근 줄: 출근하는 사람 + 근무 시간 */
+.cl-label.s-work{color:var(--work-ink)}
+.cd.s-work .it small{color:var(--work-ink);font-weight:600}
+.labcal{margin-top:10px}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
@@ -766,7 +770,9 @@ function cleanLt(o){var r={};Object.keys(o||{}).forEach(function(y){if(!/^\d{4}$
 function cleanOt(a){var o={};Object.keys(a||{}).forEach(function(sid){var row={};Object.keys(a[sid]||{}).forEach(function(iso){var v=r5(a[sid][iso],600);if(v>0)row[iso]=v});if(Object.keys(row).length)o[sid]=row});return o}
 function cleanPosts(a){return (Array.isArray(a)?a:[]).slice(0,30).map(function(x){x=x||{};return {id:String(x.id||uid('p')).slice(0,20),name:String(x.name||'자리').slice(0,20),need:int(x.need,0,9),dep:DEP_RE.test(String(x.dep||''))?String(x.dep):''}})}
 var DEP_RE=/^[A-Za-z0-9_-]{1,20}\|[A-Za-z0-9_-]{1,20}$/;
-function cleanLabels(o){o=o||{};var r={};['night','leave','etc'].forEach(function(k){var v=String(o[k]||'').trim().slice(0,12);if(v)r[k]=v});return r}
+function cleanLabels(o){o=o||{};var r={};['night','leave','etc'].forEach(function(k){var v=String(o[k]||'').trim().slice(0,12);if(v)r[k]=v});
+  /* cal: 팀별 달력 줄 — 'off' 쉬는 사람(○○오프) / 'work' 출근하는 사람(○○출근) */
+  var c={};Object.keys(o.cal||{}).slice(0,40).forEach(function(k){var v=o.cal[k];if(v==='work'||v==='off')c[String(k).slice(0,20)]=v});if(Object.keys(c).length)r.cal=c;return r}
 function isISO(x){return /^\d{4}-\d{2}-\d{2}$/.test(String(x||''))}
 function cleanAbs(a){if(!a||!isISO(a.from))return null;return {from:a.from,to:isISO(a.to)&&a.to>=a.from?a.to:'',why:String(a.why||'휴직').slice(0,12)||'휴직'}}
 function cleanAdj(a){var o={};Object.keys(a||{}).forEach(function(sid){var row={};Object.keys(a[sid]||{}).forEach(function(iso){var c=a[sid][iso]||{},x={};if(c.e!==undefined)x.e=r5(c.e);if(c.l!==undefined)x.l=r5(c.l);if(c.ot&&(x.e||x.l))x.ot=1;
@@ -1290,14 +1296,23 @@ function leaveAll(){if(LVC.all)return LVC.all;var ent=[];Object.keys(S.sched).fo
   return LVC.all={idx:out,run:run}}
 function leaveIndex(){return leaveAll().idx}
 function lvUsed(p,per){var r=leaveAll().run[p.id+'|'+per.k];return r===undefined?lv0(p,per.k):r}
-function offLabel(t){var n=String(t.name||'').replace(/\s*팀$/,'');return (n||t.name||'팀')+'오프'}
+/* 원장처럼 출근하는 사람을 보는 게 편한 팀은 '원장출근' 줄 (정하지 않았으면 이름에 '원장'이 들어간 팀만) */
+function calWork(t){var c=(S.labels&&S.labels.cal||{})[t.id];return c?c==='work':/원장/.test(String(t.name||''))}
+function offLabel(t){var n=String(t.name||'').replace(/\s*팀$/,'');return (n||t.name||'팀')+(calWork(t)?'출근':'오프')}
+function hShort(m){var h=Math.floor(m/60),mm=m%60;return h+(mm?':'+(mm<10?'0':'')+mm:'')}
+/* '9~17', '반반' gap as '9~11·13~18', 외근·교육 name first, and the room when it isn't the usual one */
+function workTag(ro,t,p,iso,d,v,sp0){var tp=TY[v],sp=workSpan(v,d,adjOf(ro,p,iso,v));if(!sp)return '';
+  var s=(tp.kind==='out'?tp.name+' ':'')+(sp.gap?hShort(sp.from)+'~'+hShort(sp.gap[0])+'·'+hShort(sp.gap[1])+'~'+hShort(sp.to):hShort(sp.from)+'~'+hShort(sp.to));
+  var f=sp0&&sp0.info[p.id];if(f){var A=f.hv.am?f.A:'',B=f.hv.pm?f.B:'',nm=function(id){var x=postById(t,id);return x?x.name:''};
+    if((A||B)&&!((!A||A===p.post)&&(!B||B===p.post)))s+=' · '+(A&&B&&A!==B?'오전 '+nm(A)+' 오후 '+nm(B):nm(A||B))}
+  return s}
 /* in the 오프 cell: a set day off, or a weekday this person never works (set in 팀·직원) */
 function fixedOff(ro,p,iso,d){return !absOf(p,iso)&&d.type!=='closed'&&avOn(p,iso).indexOf(d.dow)<0&&!rawCode(ro,p.id,iso)}
 function inOff(ro,p,iso,d){var v=cellCode(ro,p.id,iso);return d.type!=='closed'&&!absOf(p,iso)&&(v==='O'||v==='SUB'||v==='OTD'||fixedOff(ro,p,iso,d))}
 function nightUsual(dow){var h=S.hours[dow];return !!(h&&h.type!=='closed'&&h.night)}
 function calSections(ym,teams){var L=S.labels||{},dates=monthDates(ym),hasNight=dates.some(function(iso){return di(iso).night||nightUsual(di(iso).dow)}),sunOpen=dates.some(function(iso){var d=di(iso);return d.dow===0&&d.type!=='closed'}),secs=[];
   if(hasNight||sunOpen||L.night)secs.push({k:'night',id:'night',label:L.night||(sunOpen?(hasNight?'야간/일요근무':'일요근무'):'야간'),cls:'s-night'});
-  teams.forEach(function(t){secs.push({k:'off',id:'off:'+t.id,t:t,label:offLabel(t),cls:'s-off'})});
+  teams.forEach(function(t){var w=calWork(t);secs.push({k:'off',id:'off:'+t.id,t:t,label:offLabel(t),cls:w?'s-off s-work':'s-off',work:w})});
   secs.push({k:'leave',id:'leave',label:L.leave||'연차',cls:'s-leave'},{k:'etc',id:'etc',label:L.etc||'포상',cls:'s-etc'});return secs}
 function nameItem(name,note,extra,cls,noteLast){var n='<span class="nt">('+esc(note)+')</span>',x=extra?' <small>'+extra+'</small>':'';
   return '<span class="it'+(cls?' '+cls:'')+'">'+esc(name||'이름 없음')+(noteLast?x+(note?n:''):(note?n:'')+x)+'</span>'}
@@ -1308,6 +1323,8 @@ function secItems(sec,iso,d,teams,Y){var out=[];
   if(sec.k==='night'){if(d.dow!==0&&!d.night&&nightUsual(d.dow))out.push('<span class="it nonight">야간없음</span>');
     teams.forEach(function(t){var ro=roster(ui.ym,t.id);t.staff.forEach(function(p){var v=cellCode(ro,p.id,iso);if(!v)return;
     if((d.dow===0&&isWork(v)&&TY[v].kind==='in')||(isNightCode(v)&&d.night))out.push(nameItem(p.name,noteOf(ro,p.id,iso),v==='HN'?'오후·야간':isQ(v)&&qGap(TY[v],d)?'반반 '+hmRange(qGap(TY[v],d))+' 쉼':''))})});return out}
+  if(sec.k==='off'&&sec.work){var t=sec.t,ro=roster(ui.ym,t.id),sp0=postsOf(t).length?placeSplit(t,iso):null;if(d.dow===0)return out;
+    t.staff.forEach(function(p){var v=cellCode(ro,p.id,iso);if(!v||!isWork(v)||absOf(p,iso))return;out.push(nameItem(p.name,noteOf(ro,p.id,iso),esc(workTag(ro,t,p,iso,d,v,sp0))))});return out}
   if(sec.k==='off'){var t=sec.t,ro=roster(ui.ym,t.id);if(d.dow===0)return out;t.staff.forEach(function(p){if(inOff(ro,p,iso,d)){var ov=cellCode(ro,p.id,iso);out.push(nameItem(p.name,noteOf(ro,p.id,iso),ov==='SUB'?'대휴':ov==='OTD'?esc('대체오프'+otdLabel(ro,p,iso)):''))}});return out}
   teams.forEach(function(t){var ro=roster(ui.ym,t.id);t.staff.forEach(function(p){var v=cellCode(ro,p.id,iso),nt=noteOf(ro,p.id,iso);if(!v)return;
     if(sec.k==='leave'){if(leaveAmt(v))out.push(nameItem(p.name,nt,leaveTag(v,Y[p.id+'|'+iso],iso)));else if(isWork(v)&&gr(ro,p.id,iso)==='P')out.push(nameItem(p.name,nt,'휴무희망','req'));return}
@@ -1458,8 +1475,13 @@ function secEditor(iso,secId,teams,Y){var d=di(iso),sec=calSections(ui.ym,teams)
       if(tmp)adds+=(Tl.length>1?'<div class="pk-team">'+esc(t.name)+'</div>':'')+'<div class="pills">'+tmp+'</div>'});
     block(inner,adds,eds.length?'시간 칸에서 <b>일찍 퇴근·늦게 출근 — 야간·OT 고르기</b>를 고르면, <b>야간 대체</b>(야간 1번 = 보통 3시간)와 <b>OT</b>를 골라 더한 만큼 쉬어요. 야간 대체로 쓴 야간은 근태의 야간 수당에서 빠져요. 조퇴·늦은 출근 시간이나 '+(S.types.length?esc(S.types.map(function(t){return t.name}).join('·'))+' 같은 일정':'일정')+'을 넣어요. 메모에 사유(예: 10/16 연장근무)를 적으면 달력에 괄호로 보여요.':'보기만 할 수 있어요.');
     return '<div class="secpane pane-'+k+'">'+h+secFoot()+'</div>'}
-  Tl.forEach(function(t){var ro=roster(ui.ym,t.id),ed=canTeam(t.id),tmp='';
+  Tl.forEach(function(t){var ro=roster(ui.ym,t.id),ed=canTeam(t.id),tmp='',sp0=sec.work&&postsOf(t).length?placeSplit(t,iso):null;
     t.staff.forEach(function(p){var v=cellCode(ro,p.id,iso),y=Y[p.id+'|'+iso];
+      /* 출근 줄: 위 칸 = 출근하는 사람(누르면 고른 휴무로), 아래 = 쉬는 사람(누르면 다시 출근) */
+      if(sec.work){var ab=absOf(p,iso),wk=v&&isWork(v)&&!ab;
+        if(wk){inner+='<div class="pk-row">'+pill(p,t,iso,code,true,'',!ed)+'<span class="pk-sub">'+esc(workTag(ro,t,p,iso,d,v,sp0))+'</span>'+(ed?noteIn(p,t,ro,iso):(noteOf(ro,p.id,iso)?'<span class="pk-sub">('+esc(noteOf(ro,p.id,iso))+')</span>':''))+'</div>';return}
+        if(!ed)return;var off=inOff(ro,p,iso,d),fx=off&&fixedOff(ro,p,iso,d);
+        tmp+=pill(p,t,iso,off?(fx?'W':v):code,false,ab?(p.abs.why||'휴직'):off?(fx?DOWK[d.dow]+'요일 정기 휴무':v==='SUB'?'대체휴무':v==='OTD'?'대체오프':'휴무'):statusText(ro,p,iso,d)||(v?TY[v].name:'안 나오는 날'),!off);return}
       var isIn=k==='leave'?!!leaveAmt(v):k==='off'?inOff(ro,p,iso,d):(d.dow===0?(isWork(v)&&TY[v].kind==='in'):isNightCode(v));
       if(isIn){var fx=k==='off'&&fixedOff(ro,p,iso,d);inner+=inRow(p,t,ro,fx?'W':k==='leave'?leavePart(v):k==='off'?v:code,k==='leave'?leaveTag(v,y,iso)+(isCombo(v)?' · 야간':'')+lvLeft(p,iso):k==='night'&&isCombo(v)?(v==='HN'?'오전 반차':TY[leavePart(v)].name+(qGap(TY[v],d)?' · '+hmRange(qGap(TY[v],d))+' 쉼':'')):fx?DOWK[d.dow]+'요일 정기 휴무':v==='SUB'?'대체휴무 (공휴일 근무 대신)':v==='OTD'?'대체오프 · OT '+hLong(otdMin(d))+otdLabel(ro,p,iso):'');if(v==='OTD'&&canTeam(t.id))inner+=otdSrcEditor(ro,p,t.id,iso);return}
       if(!ed)return;
@@ -1468,7 +1490,7 @@ function secEditor(iso,secId,teams,Y){var d=di(iso),sec=calSections(ui.ym,teams)
       var gb=!dis&&k!=='night'?groupBlock(p.id,iso,code):[];if(gb.length)sub=(sub?sub+' · ':'')+'같이 못 쉼: '+gb.join('·');
       tmp+=pill(p,t,iso,code,false,sub,dis).replace('class="pill','class="pill'+(gb.length?' warn':'')+(ui.grpWarn&&ui.grpWarn.sid===p.id&&ui.grpWarn.iso===iso?' ask':''))});
     if(tmp)adds+=(Tl.length>1?'<div class="pk-team">'+esc(t.name)+'</div>':'')+'<div class="pills">'+tmp+'</div>'});
-  var help=!eds.length||(k==='off'&&!canTeam(sec.t.id))?'보기만 할 수 있어요.':k==='off'?'쉬는 사람 이름을 누르세요. 공휴일에 근무한 대신 쉬는 날은 위에서 <b>대체휴무</b>를, 모은 OT로 하루 쉬는 날(평일 9시간·토요일 3시간)은 <b>대체오프</b>를 고른 뒤 누르세요. 위 칸에 있는 이름을 다시 누르면 빠지고 근무로 돌아가요. 정기 휴무인 사람을 누르면 그날만 근무로 바뀌어요.':k==='leave'?'위에서 연차·반차·반반차를 고른 뒤 이름을 누르세요. 다시 누르면 빠져요. 반반차는 오전이나 오후 진료 시간 중 앞쪽 또는 뒤쪽 절반(보통 2시간)만 쉬어요.':d.dow===0?'일요일에 나오는 사람 이름을 누르세요.':'야간 근무할 사람 이름을 누르세요. 다시 누르면 빠져요.';
+  var help=!eds.length||(k==='off'&&!canTeam(sec.t.id))?'보기만 할 수 있어요.':k==='off'&&sec.work?'위 칸은 이날 <b>출근하는 사람</b>이에요. 이름을 누르면 쉬는 날(위에서 고른 휴무·대체휴무·대체오프)로 바뀌고, 아래 이름을 누르면 다시 출근으로 돌아가요. 연차는 연차 칸에서 넣으세요.':k==='off'?'쉬는 사람 이름을 누르세요. 공휴일에 근무한 대신 쉬는 날은 위에서 <b>대체휴무</b>를, 모은 OT로 하루 쉬는 날(평일 9시간·토요일 3시간)은 <b>대체오프</b>를 고른 뒤 누르세요. 위 칸에 있는 이름을 다시 누르면 빠지고 근무로 돌아가요. 정기 휴무인 사람을 누르면 그날만 근무로 바뀌어요.':k==='leave'?'위에서 연차·반차·반반차를 고른 뒤 이름을 누르세요. 다시 누르면 빠져요. 반반차는 오전이나 오후 진료 시간 중 앞쪽 또는 뒤쪽 절반(보통 2시간)만 쉬어요.':d.dow===0?'일요일에 나오는 사람 이름을 누르세요.':'야간 근무할 사람 이름을 누르세요. 다시 누르면 빠져요.';
   block(inner,adds,help);
   if(k==='night'&&d.night){var nn=0,need=0;teams.forEach(function(t){var ro=roster(ui.ym,t.id);need+=nightNeed(t,d);t.staff.forEach(function(p){if(isNightCode(cellCode(ro,p.id,iso)))nn++})});if(need)h+='<p class="sec-help">야간 '+nn+'명 / 필요 '+need+'명</p>'}
   return '<div class="secpane pane-'+k+'">'+h+secFoot()+'</div>'}
@@ -2120,8 +2142,8 @@ function typesTab(){
   if(ui.confirm&&ui.confirm.indexOf('ty:')===0){var used=typeUse(ui.confirm.slice(3));if(used)h+='<p class="err" style="margin-top:8px">이 근무 형태가 근무표 '+used+'칸에 쓰여 있어요. 삭제하면 그 칸은 비워져요.</p>'}
   h+='<div class="row" style="margin-top:12px"><button class="btn primary" data-act="tyAdd">+ 근무 형태 추가</button></div></section>';
   var L=S.labels||{};
-  h+='<section class="panel"><h2>달력 줄 이름</h2><p>근무표 달력의 줄 이름을 지금 쓰는 시트와 같게 바꿀 수 있어요. 비워 두면 기본 이름을 써요. 팀별 오프 줄은 팀 이름에 ‘오프’를 붙여서 보여요(예: 외래팀 → 외래오프).</p><div class="row">'+
-    [['night','야간 줄','야간 (일요일 진료가 있으면 야간/일요근무)'],['leave','연차 줄','연차'],['etc','조퇴·외근 줄','포상']].map(function(o){return '<label class="tr" for="lab-'+o[0]+'">'+o[1]+' <input type="text" id="lab-'+o[0]+'" data-lab="'+o[0]+'" maxlength="12" value="'+esc(L[o[0]]||'')+'" placeholder="'+esc(o[2])+'"></label>'}).join('')+'</div></section>';
+  h+='<section class="panel"><h2>달력 줄 이름</h2><p>근무표 달력의 줄 이름을 지금 쓰는 시트와 같게 바꿀 수 있어요. 비워 두면 기본 이름을 써요. 팀별 줄은 팀 이름에 ‘오프’를 붙여 쉬는 사람을 보여요(예: 외래팀 → 외래오프). 원장처럼 <b>출근하는 사람</b>을 보는 게 편한 팀은 아래에서 바꾸면 ‘원장출근’ 줄에 출근하는 사람과 근무 시간이 보여요.</p><div class="row">'+
+    [['night','야간 줄','야간 (일요일 진료가 있으면 야간/일요근무)'],['leave','연차 줄','연차'],['etc','조퇴·외근 줄','포상']].map(function(o){return '<label class="tr" for="lab-'+o[0]+'">'+o[1]+' <input type="text" id="lab-'+o[0]+'" data-lab="'+o[0]+'" maxlength="12" value="'+esc(L[o[0]]||'')+'" placeholder="'+esc(o[2])+'"></label>'}).join('')+'</div>'+(S.teams.length?'<div class="row labcal">'+S.teams.map(function(t){var w=calWork(t),n=String(t.name||'').replace(/\s*팀$/,'')||'팀';return '<label class="tr" for="lc-'+t.id+'">'+esc(t.name||'팀')+' <select id="lc-'+t.id+'" data-labcal="'+t.id+'"><option value="off"'+(w?'':' selected')+'>쉬는 사람 ('+esc(n)+'오프)</option><option value="work"'+(w?' selected':'')+'>출근하는 사람 ('+esc(n)+'출근)</option></select></label>'}).join('')+'</div>':'')+'</section>';
   return h}
 function segCtl(key,opts,label){var cur=S.rules[key];return '<div class="seg" role="group" aria-label="'+esc(label)+'">'+opts.map(function(o){return '<button data-act="rule" data-k="'+key+'" data-v="'+o[0]+'" aria-pressed="'+(cur===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'}
 function ruleRow(title,desc,ctl){return '<div class="rule"><div><h3>'+title+'</h3><p>'+desc+'</p></div><div class="ctl">'+ctl+'</div></div>'}
@@ -2521,6 +2543,7 @@ app.addEventListener('input',function(e){var t=e.target;
   if(t.dataset.dh==='note'&&ui.selDate&&S.dateHours[ui.selDate]){S.dateHours[ui.selDate].note=t.value;dConfig();return}
 });
 app.addEventListener('change',function(e){var t=e.target;
+  if(t.dataset.labcal){if(!isAdmin())return;var nl2=Object.assign({},S.labels),cc=Object.assign({},nl2.cal||{});cc[t.dataset.labcal]=t.value==='work'?'work':'off';nl2.cal=cc;S.labels=cleanLabels(nl2);dConfig();render();return}
   if(t.id==='attFile'){var af=t.files&&t.files[0];t.value='';if(af&&isAdmin())attPick(af);return}
   if(t.dataset.amap!==undefined&&ui.attImp){ui.attImp.map[t.dataset.amap]=t.value==='n:'?'n:'+t.dataset.amap:t.value;return}
   if(t.id==='attWho'){ui.attWho=t.value;ui.attEdit=null;render();return}
