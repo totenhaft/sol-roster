@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 25;
+var VERSION = 26;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -490,6 +490,8 @@ function saveTeam_(req) {
       leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 4) / 4)) } : null,
       hire: /^\d{4}-\d{2}-\d{2}$/.test(String(p.hire || '')) ? String(p.hire) : '',   // 입사일: 연차 기준일
       abs: cleanAbs_(p.abs), post: str_(p.post, 20),
+      // 원장출근 줄: 숨김, 숨겨도 보이는 요일, 시간 표시 끄기
+      calHide: !!p.calHide, calShow: (p.calShow || []).map(Number).filter(function (x, i, a) { return x >= 0 && x <= 6 && a.indexOf(x) === i; }), calNoT: !!p.calNoT,
       lt: cleanLt_(p.lt), ot0: int_(p.ot0, -60000, 60000) };
   });
   // 근무 배치 자리 (1번 진료실, 데스크 …): 팀장이 정해요
@@ -541,7 +543,7 @@ function saveRoster_(req) {
     return outv;
   }
   histAdd_([{ k: 'r|' + ym + '|' + tid, team: tid, label: (d.teams[tid].name || '팀') + ' ' + ymLabel_(ym) + ' 근무표', prev: cur || null, by: actorName_(a) }]);
-  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym, r.cells), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), place: cleanNotes_(r.place, ids, ym), ot: cleanOt_(r.ot, ids, ym), dut: cleanDut_(r.dut, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
+  m[tid] = { cells: clean(r.cells), locks: clean(r.locks), reqs: clean(r.reqs), adj: cleanAdj_(r.adj, ids, ym, r.cells), memo: cleanMemo_(r.memo, ym, 40), notes: cleanNotes_(r.notes, ids, ym), place: cleanNotes_(r.place, ids, ym), vis: cleanNotes_(r.vis, ids, ym), ot: cleanOt_(r.ot, ids, ym), dut: cleanDut_(r.dut, ids, ym), gen: !!r.gen, updatedAt: Date.now(), updatedBy: actorName_(a) };
   writeData_(d);
   return { ok: true, updatedAt: m[tid].updatedAt, updatedBy: m[tid].updatedBy };
 }
