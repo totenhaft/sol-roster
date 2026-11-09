@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 26;
+var VERSION = 27;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -391,6 +391,18 @@ function saveConfig_(req) {
 }
 
 // calendar row names (야간 / 연차 / 포상), blank = default
+function cleanDt_(o) {
+  var r = {};
+  Object.keys(o || {}).forEach(function (k) {
+    if (!/^[0-6]$/.test(k)) return;
+    var x = o[k] || {}, y = {};
+    if (x.e !== undefined && x.e !== null && x.e !== '') y.e = half30_(x.e);
+    if (x.l !== undefined && x.l !== null && x.l !== '') y.l = half30_(x.l);
+    if (Object.keys(y).length) r[k] = y;
+  });
+  return Object.keys(r).length ? r : null;
+}
+
 function cleanLabels_(o) {
   o = o || {};
   var r = {};
@@ -487,10 +499,12 @@ function saveTeam_(req) {
       mo: cleanMo_(p.mo),   // 달마다 다른 근무 가능 요일·꼭 근무
       per: cleanPer_(p.per),
       early: half30_(p.early), late: half30_(p.late),
+      dt: cleanDt_(p.dt),   // 요일별 평소 근무시간 {요일:{e,l}}
       leave0: p.leave0 && p.leave0.y ? { y: int_(p.leave0.y, 2000, 2100), d: Math.max(0, Math.min(400, Math.round(Number(p.leave0.d || 0) * 4) / 4)) } : null,
       hire: /^\d{4}-\d{2}-\d{2}$/.test(String(p.hire || '')) ? String(p.hire) : '',   // 입사일: 연차 기준일
       abs: cleanAbs_(p.abs), post: str_(p.post, 20),
       // 원장출근 줄: 숨김, 숨겨도 보이는 요일, 시간 표시 끄기
+      pt: !!p.pt,   // 파트타임: 근무표에서 정한 날만 출근, 자동 생성에서 빠져요
       calHide: !!p.calHide, calShow: (p.calShow || []).map(Number).filter(function (x, i, a) { return x >= 0 && x <= 6 && a.indexOf(x) === i; }), calNoT: !!p.calNoT,
       lt: cleanLt_(p.lt), ot0: int_(p.ot0, -60000, 60000) };
   });
