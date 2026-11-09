@@ -196,7 +196,7 @@ function pinsInfo_(d) {
 }
 
 /* ---------- actions ---------- */
-var VERSION = 24;
+var VERSION = 25;
 function statusOf_(d, p) {
   return {
     ok: true, version: VERSION, hasAdmin: !!p.ADMIN_PIN, viewPin: !!p.VIEW_PIN, clinic: d.config.clinic,
@@ -395,6 +395,10 @@ function cleanLabels_(o) {
   o = o || {};
   var r = {};
   ['night', 'leave', 'etc'].forEach(function (k) { var v = str_(o[k], 12).trim(); if (v) r[k] = v; });
+  // cal: 팀별 달력 줄 — 'off' 쉬는 사람(원장오프) / 'work' 출근하는 사람(원장출근)
+  var c = {};
+  Object.keys(o.cal || {}).slice(0, 40).forEach(function (k) { var v = o.cal[k]; if (v === 'work' || v === 'off') c[str_(k, 20)] = v; });
+  if (Object.keys(c).length) r.cal = c;
   return r;
 }
 
