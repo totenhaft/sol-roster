@@ -1741,6 +1741,8 @@ var NSC={};
 function nightSubMap(pid){if(NSC[pid])return NSC[pid];var m={};Object.keys(S.sched).forEach(function(ym){Object.keys(S.sched[ym]).forEach(function(tid){var R=S.sched[ym][tid],a=R.adj&&R.adj[pid],cl=(R.cells&&R.cells[pid])||{};if(a)Object.keys(a).forEach(function(iso){if(a[iso].d&&cl[iso]!=='OTD')return;(a[iso].n||[]).forEach(function(n){if(!m[n])m[n]=iso})})})});return NSC[pid]=m}
 function personX(p){var L=staffLoc(p.id);return {p:p,t:L?L.team:null}}
 function otMonth(p,ym){var L=ledgerAt(personX(p),ym);return {earn:L.man+L.dut+L.nightOT,use:L.use,man:L.man,dut:L.dut,night:L.nightOT}}
+/* 그달 야간 근무 횟수: OT와 같은 기준(근태 지문 기록이 있으면 그것, 없으면 근무표의 야간) — 오늘 이후는 예정 */
+function nightCount(p,ym){var t=todayIso(),n=0,f=0;attMonth(personX(p),ym).days.forEach(function(dd){if(dd.night>0){n++;if(dd.iso>t)f++}});return {n:n,plan:f}}
 function otMonthOld(p,ym){var m=S.sched[ym]||{},earn=0,use=0;Object.keys(m).forEach(function(tid){var ro=m[tid],e=ro.ot&&ro.ot[p.id];if(e)Object.keys(e).forEach(function(iso){earn+=e[iso]});
   if((ro.cells&&ro.cells[p.id])||(ro.adj&&ro.adj[p.id]))monthDates(ym).forEach(function(iso){if(rawCode(ro,p.id,iso)||(ro.adj[p.id]&&ro.adj[p.id][iso]))use+=otUse(ro,p,iso)})});return {earn:earn,use:use}}
 /* OT left at the end of a month: carried-in + everything earned − everything used up to then */
@@ -1751,10 +1753,11 @@ function otLeftText(p){var b=otBalance(p,ui.ym);return b<0?'미리 쓴 OT '+fmtM
 function lvLeft(p,iso){var per=lvPer(p,iso),T=lvTotal(p,per,iso);if(!T)return '';return ' · 남은 연차 '+fmtNum(T.d-lvUsed(p,per))}
 function balancePanel(ym,teams){var eds=teams.filter(function(t){return canTeam(t.id)});if(!eds.length)return '';var y=ym.slice(0,4),mo=+ym.slice(5),asOf=monthEnd(ym),anyHire=eds.some(function(t){return t.staff.some(function(p){return p.hire})});
   var h='<section class="panel" id="ledger"><h2>연차·OT 현황</h2><p>팀장과 관리자에게만 보여요. 총 연차와 입사일은 ‘팀·직원’에서 정하고(입사일을 넣은 직원은 입사일 기준 기간으로 세요), 근무표에 연차·반차·반반차를 넣으면 자동으로 빠져요. OT는 야간 근무(2시간 → 3시간)와 '+(isAdmin()?'<b>근태</b> 탭의':'아래')+' <b>수납 OT</b>가 자동으로 쌓이고, 그 밖의 OT는 아래에서 기록해요. 쓸 때는 포상 칸이나 날짜 화면의 시간 칸에서 <b>OT 조퇴·OT 늦출</b>(5분 단위)이나 <b>OT 하루 전체</b>를 고르면 그만큼 빠져요. 모은 OT로 하루 쉬는 날은 <b>대체오프</b>를 골라요(평일 9시간, 토요일 3시간). 그 달 야간 OT가 남으면 월말에 수당으로 정산돼요.</p>';
-  h+='<div class="tblwrap"><table class="tbl ledger"><thead><tr><th>이름</th><th class="num">'+(anyHire?'연차':y+'년 연차')+'</th><th class="num">사용</th><th class="num">남음</th><th class="num">'+mo+'월 OT 적립</th><th class="num">'+mo+'월 OT 사용</th><th class="num">남은 OT</th></tr></thead><tbody>';
-  eds.forEach(function(t){if(eds.length>1)h+='<tr class="lg-team"><th colspan="7">'+esc(t.name)+'</th></tr>';
-    t.staff.forEach(function(p){var per=lvPer(p,asOf),T=lvTotal(p,per,asOf),tot=T?T.d:null,u=lvUsed(p,per),left=T?tot-u:null,om=otMonth(p,ym),ob=otBalance(p,ym);
+  h+='<div class="tblwrap"><table class="tbl ledger"><thead><tr><th>이름</th><th class="num">'+(anyHire?'연차':y+'년 연차')+'</th><th class="num">사용</th><th class="num">남음</th><th class="num" title="'+mo+'월에 야간 근무한 횟수 (오늘 이후는 예정)">야간 근무 횟수</th><th class="num">'+mo+'월 OT 적립</th><th class="num">'+mo+'월 OT 사용</th><th class="num">남은 OT</th></tr></thead><tbody>';
+  eds.forEach(function(t){if(eds.length>1)h+='<tr class="lg-team"><th colspan="8">'+esc(t.name)+'</th></tr>';
+    t.staff.forEach(function(p){var per=lvPer(p,asOf),T=lvTotal(p,per,asOf),tot=T?T.d:null,u=lvUsed(p,per),left=T?tot-u:null,om=otMonth(p,ym),ob=otBalance(p,ym),nc=nightCount(p,ym);
       h+='<tr><th scope="row">'+esc(p.name||'이름 없음')+(p.hire?'<small class="lv-per">'+perLabel(per)+'</small>':'')+'</th><td class="num">'+(T?fmtNum(tot)+(T.auto?'<small class="muted"> 법정</small>':''):'<span class="muted">미입력</span>')+'</td><td class="num">'+fmtNum(u)+'</td><td class="num'+(left!==null&&left<0?' bad':'')+'"><b>'+(left===null?'–':fmtNum(left))+'</b></td>'+
+        '<td class="num">'+(nc.n?nc.n+'회'+(nc.plan?'<small class="muted"> 예정 '+nc.plan+'</small>':''):'–')+'</td>'+
         '<td class="num" title="'+esc('수납 '+hLong(om.dut||0)+' · 기타 '+hLong(om.man||0)+' · 야간 '+hLong(om.night||0))+'">'+(om.earn?'+'+hLong(om.earn):'–')+'</td><td class="num">'+(om.use?'−'+hLong(om.use):'–')+'</td><td class="num'+(ob<0?' bad':'')+'"><b>'+fmtMin(ob)+'</b></td></tr>'})});
   h+='</tbody></table></div>';
   var ds=monthDates(ym),t0=new Date(),ti=isoOf(t0.getFullYear(),t0.getMonth()+1,t0.getDate()),defD=ui.otDay&&ds.indexOf(ui.otDay)>=0?ui.otDay:ui.selDay&&ds.indexOf(ui.selDay)>=0?ui.selDay:ds.indexOf(ti)>=0?ti:ds[0];
