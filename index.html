@@ -675,6 +675,23 @@ a.tab{text-decoration:none}
 .ptchk{display:flex;margin-top:6px;font-size:13px}
 .pt-note{margin:0 0 6px;font-size:12.5px;color:var(--work-ink);font-weight:600}
 .avwrap.ptoff{opacity:.45}
+/* 떠 있는 버튼: 달 넘기기(양옆)·맨 위로(오른쪽 아래) */
+.fmon{position:fixed;top:50%;transform:translateY(-50%);z-index:24;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;width:40px;height:68px;padding:0;border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 88%,transparent);color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.12);cursor:pointer;opacity:.72;transition:opacity .15s,background .15s;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.fmon.prev{left:max(4px,env(safe-area-inset-left,0px));border-radius:0 12px 12px 0;border-left:0}
+.fmon.next{right:max(4px,env(safe-area-inset-right,0px));border-radius:12px 0 0 12px;border-right:0}
+.fmon span{font-size:26px;line-height:1;font-weight:500}
+.fmon small{font-size:11px;font-weight:600;color:var(--muted);line-height:1.2}
+.fmon:hover,.fmon:focus-visible{opacity:1;background:var(--surface)}
+.fmon:hover small,.fmon:focus-visible small{color:var(--accent)}
+.ftop{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:24;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 3px 12px rgba(0,0,0,.18);font-size:22px;line-height:1;cursor:pointer;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .18s,transform .18s,visibility .18s}
+.ftop.show{opacity:1;visibility:visible;transform:none}
+.ftop:hover,.ftop:focus-visible{background:var(--accent);color:#fff;border-color:var(--accent)}
+@media (max-width:640px){.fmon{width:30px;height:54px}.fmon span{font-size:22px}.fmon small{font-size:10px}.ftop{width:42px;height:42px}}
+@media (prefers-reduced-motion:reduce){.ftop,.fmon{transition:none}}
+@media print{.fmon,.ftop{display:none!important}}
+/* 넓은 화면: 양옆 화살표가 내용을 가리지 않게 여백 */
+@media (min-width:900px){.main.has-fnav{padding-left:max(52px,env(safe-area-inset-left,0px));padding-right:max(52px,env(safe-area-inset-right,0px))}}
+@media (min-width:900px){.ftop{right:max(3px,env(safe-area-inset-right,0px))}}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
@@ -1102,6 +1119,14 @@ function stats(ym,teams){var dates=monthDates(ym),weeks=weeksOf(ym),per={},days=
 
 /* ---------- render ---------- */
 var GRID=null;
+/* 아래로 내려서 일할 때도 쓰는 달 넘기기(화면 양옆)와 맨 위로(오른쪽 아래) */
+function fnavOn(){return ui.view==='app'&&(ui.tab==='roster'||ui.tab==='place'||ui.tab==='att'||ui.tab==='lv')}
+function floatNav(){if(ui.view!=='app')return '';var h='';
+  if(fnavOn()){var pv=shiftYM(ui.ym,-1),nx=shiftYM(ui.ym,1),ml=function(ym){return (+ym.slice(5))+'월'};
+    h+='<button class="fmon prev" id="fPrev" data-act="month" data-k="-1" aria-label="이전 달 ('+ml(pv)+')" title="'+ml(pv)+'로"><span aria-hidden="true">‹</span><small>'+ml(pv)+'</small></button>'+
+      '<button class="fmon next" id="fNext" data-act="month" data-k="1" aria-label="다음 달 ('+ml(nx)+')" title="'+ml(nx)+'로"><span aria-hidden="true">›</span><small>'+ml(nx)+'</small></button>'}
+  return h+'<button class="ftop'+((window.scrollY||0)>400?' show':'')+'" id="toTop" data-act="toTop" aria-label="맨 위로" title="맨 위로"><span aria-hidden="true">↑</span></button>'}
+var topRaf=0;window.addEventListener('scroll',function(){if(topRaf)return;topRaf=requestAnimationFrame(function(){topRaf=0;var b=document.getElementById('toTop');if(b)b.classList.toggle('show',(window.scrollY||0)>400)})},{passive:true});
 function render(){
   PSC={};clearDI();rebuildTypes();fixTab();
   var fid=document.activeElement&&document.activeElement.id,body;
@@ -1112,7 +1137,7 @@ function render(){
   else body=banners()+histPanel()+(ui.tab==='hours'?hoursTab():ui.tab==='types'?typesTab():ui.tab==='rules'?rulesTab():ui.tab==='teams'?teamsTab():ui.tab==='place'?placeTab():ui.tab==='att'?attTab():ui.tab==='lv'?lvTab():rosterTab());
   var showTeams=ui.view==='app'&&(ui.tab==='roster'||ui.tab==='teams'||ui.tab==='place'||ui.tab==='att')&&S.teams.length>0&&!(role()==='leader'&&ui.tab==='teams');
   var de0=document.getElementById('dayed'),dsc=de0?de0.scrollTop:0,dday=ui.shownDay,sy=window.scrollY||0,anc=app.querySelector('.cd-date.sel'),aiso=anc&&anc.dataset.day,at=anc?anc.getBoundingClientRect().top:0;
-  app.innerHTML=header()+'<main class="wrap main">'+(showTeams?teamBar():'')+body+'</main>';
+  app.innerHTML=header()+'<main class="wrap main'+(fnavOn()?' has-fnav':'')+'">'+(showTeams?teamBar():'')+body+'</main>'+floatNav();
   var de1=document.getElementById('dayed');if(de1&&dsc&&dday===ui.selDay)de1.scrollTop=dsc;ui.shownDay=ui.selDay;
   var bar=app.querySelector('.bar');if(bar)document.documentElement.style.setProperty('--barh',bar.offsetHeight+'px');
 
@@ -2454,6 +2479,7 @@ app.addEventListener('click',function(e){
     ui.dutFor=null;clearDI();render();toast(act==='dutDel'?mdLabel(day)+' 수납 OT 기록을 지웠어요.'+keepNote():mdLabel(day)+' 당번 '+n+'명에게 OT '+dutMin(day,tm)+'분을 기록했어요.'+keepNote())})();break;
   case 'team':ui.team=k;ui.resetOpen=false;ui.confirm=null;render();break;
   case 'goRoster':ui.team=k;ui.tab='roster';render();break;
+  case 'toTop':(function(){var rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;window.scrollTo({top:0,behavior:rm?'auto':'smooth'});var f=document.getElementById('prevM');if(f)try{f.focus({preventScroll:true})}catch(e){}})();break;
   case 'month':ui.selDay=null;ui.selSec=null;ui.pw=null;ui.pday=null;ui.psel=null;ui.ym=shiftYM(ui.ym,+k);ui.resetOpen=false;clearDI();exampleFill();render();break;
   case 'rv':ui.rv=k;lsSet(KEYS.view,k);render();break;
   case 'dayClose':ui.selDay=null;ui.selSec=null;ui.etcAdd=null;render();break;
