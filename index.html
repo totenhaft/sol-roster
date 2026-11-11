@@ -765,6 +765,10 @@ a.tab{text-decoration:none}
 /* 하루 보기 상자도 같은 이름표 */
 .pbox .pn{display:inline-block;margin:2px 3px;padding:2px 7px;border-radius:6px;background:var(--accent-soft);color:var(--work-ink);font-weight:600}
 .pb-need{white-space:nowrap;padding:1px 5px;font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
+/* 비어 있는 자리: 칸은 칠하지 않고(흰 바탕) 빨간 테두리 배지로만 */
+.pc.short,.pbox.short{background:var(--surface)}
+.pboard.ph2 td.hpm.short{background:color-mix(in srgb,var(--surface-2) 35%,transparent)}
+.pboard.ph2 td.pc.short.can:hover,.pboard.ph2 td.pc.short.on{background:var(--accent-soft)}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
@@ -1816,7 +1820,7 @@ function placeFill(days){var filled=0,left=0,tgt={};
           var p=cand[0],f=sp.info[p.id],am=f.q.am,pm=f.q.pm;if(nA&&f.hv.am&&!f.A)am=x.id;if(nB&&f.hv.pm&&!f.B)pm=x.id;placeSetPair(t,p,iso,am,pm);tl[p.id+'|'+x.id]=(tl[p.id+'|'+x.id]||0)+1;filled++}
         var sp2=placeSplit(t,iso),c2=sp2.cnt[x.id];left+=Math.max(0,d.hasAM?needH(x,sp2,'am')-c2.am:0,d.hasPM?needH(x,sp2,'pm')-c2.pm:0)})})});
   return {filled:filled,left:left}}
-function placePrint(teams,days){var css='@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;margin:12px;font-size:11px}h1{font-size:15px;margin:0 0 8px;background:#FFF200;text-align:center;padding:4px}h2{font-size:13px;margin:12px 0 4px}table{border-collapse:collapse;width:100%;table-layout:fixed;page-break-inside:avoid}th,td{border:1px solid #BFC8C4;padding:3px 4px;text-align:center;vertical-align:middle;word-break:keep-all}thead th{background:#FCE4D6}tbody th{background:#F2F5F3;width:90px}.sun{color:#C2392D}.sat{color:#2352B0}.short{background:#FBE2DE;color:#C2392D}.x{background:#EEF1EF;color:#C2392D}.n{display:block}.n small{font-size:9px;color:#55615C;margin-left:2px}.away td{color:#64716C;font-size:10px}.hh th{font-size:9.5px;font-weight:500;background:#FDF1E9;padding:1px}.do{background:#F1F3F2}.o{color:#8A9590;font-size:9.5px}td{font-size:10.5px}';
+function placePrint(teams,days){var css='@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;margin:12px;font-size:11px}h1{font-size:15px;margin:0 0 8px;background:#FFF200;text-align:center;padding:4px}h2{font-size:13px;margin:12px 0 4px}table{border-collapse:collapse;width:100%;table-layout:fixed;page-break-inside:avoid}th,td{border:1px solid #BFC8C4;padding:3px 4px;text-align:center;vertical-align:middle;word-break:keep-all}thead th{background:#FCE4D6}tbody th{background:#F2F5F3;width:90px}.sun{color:#C2392D}.sat{color:#2352B0}.short .n:last-child{color:#C2392D;font-weight:700}.x{background:#EEF1EF;color:#C2392D}.n{display:block}.n small{font-size:9px;color:#55615C;margin-left:2px}.away td{color:#64716C;font-size:10px}.hh th{font-size:9.5px;font-weight:500;background:#FDF1E9;padding:1px}.do{background:#F1F3F2}.o{color:#8A9590;font-size:9.5px}td{font-size:10.5px}';
   var lbl=days.length===1?mdLabel(days[0]):(function(){var a=parts(days[0]),b=parts(days[days.length-1]);return a[1]+'/'+a[2]+' ~ '+b[1]+'/'+b[2]})();
   var h='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(S.clinic+' 근무 배치표 '+lbl)+'</title>'+FONT_LINK+'<style>'+css+'</style></head><body><h1>'+esc(S.clinic)+' 근무 배치표 · '+esc(lbl)+'</h1>';
   teams.forEach(function(t){if(!postsOf(t).length)return;var sp={};days.forEach(function(iso){sp[iso]=placeSplit(t,iso)});
