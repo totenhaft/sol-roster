@@ -706,6 +706,65 @@ a.tab{text-decoration:none}
 .cd-closed small{font-size:12px}
 .s-cnt,.cl-label.s-cnt{font-size:12.5px}
 .cd.can:empty:hover::before{font-size:12px}
+
+/* ===== 보기 좋게: 근무표 달력 =====
+   줄 종류마다 옅은 바탕색 → 한 줄을 가로로 따라 읽기 쉽게. 줄 이름 칸에는 같은 색 막대 */
+:root{--line-strong:#B9C6C0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--line-strong:#3C4A44}}
+:root[data-theme="dark"]{--line-strong:#3C4A44}
+.calrow{grid-template-columns:104px repeat(7,minmax(118px,1fr))}
+.cd.s-night{background:color-mix(in srgb,var(--night-soft) 42%,transparent)}
+.cd.s-work{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
+.cd.s-leave{background:color-mix(in srgb,var(--leave-soft) 50%,transparent)}
+.cd.s-etc{background:color-mix(in srgb,#E4F1DC 60%,transparent)}
+.cd.s-cnt{background:color-mix(in srgb,var(--surface-2) 55%,transparent);color:var(--ink-2)}
+.cd.s-cnt.short{background:color-mix(in srgb,var(--danger-soft) 55%,transparent)}
+.cl-label{font-size:13px;font-weight:700;box-shadow:inset 4px 0 0 transparent}
+.cl-label.s-night{background:color-mix(in srgb,var(--night-soft) 75%,var(--surface));box-shadow:inset 4px 0 0 var(--sec-night)}
+.cl-label.s-off{box-shadow:inset 4px 0 0 var(--line-strong)}
+.cl-label.s-work{background:color-mix(in srgb,var(--accent-soft) 80%,var(--surface));box-shadow:inset 4px 0 0 var(--accent)}
+.cl-label.s-leave{background:color-mix(in srgb,var(--leave-soft) 85%,var(--surface));box-shadow:inset 4px 0 0 var(--sec-leave)}
+.cl-label.s-etc{background:color-mix(in srgb,#E4F1DC 90%,var(--surface));box-shadow:inset 4px 0 0 var(--sec-etc)}
+.cl-label.s-cnt{background:color-mix(in srgb,var(--surface-2) 80%,var(--surface));font-weight:600}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cd.s-etc{background:rgba(124,170,96,.12)}:root:not([data-theme="light"]) .cl-label.s-etc{background:#1E2A1A}}
+:root[data-theme="dark"] .cd.s-etc{background:rgba(124,170,96,.12)}:root[data-theme="dark"] .cl-label.s-etc{background:#1E2A1A}
+/* 칸 안 이름: 줄 간격을 조금 넓히고 메모는 한 단계 흐리게 */
+.cd{line-height:1.45;gap:2px;padding:5px 6px}
+.cd.s-night,.cd.s-leave,.cd.s-etc{font-weight:500}
+.cd .it .nt{color:var(--muted);opacity:1}
+/* 주 사이를 또렷하게 */
+.calweek{border-bottom:3px solid var(--line-strong)}
+.cd-date{padding:6px;border-top:1px solid var(--line-strong)}
+/* 오늘: 날짜 칸을 진하게, 그 날짜 세로줄은 테두리로 */
+.cd-date.today{background:var(--accent);color:var(--accent-ink)}
+.cd-date.today .dn,.cd-date.today.sun .dn,.cd-date.today.sat .dn{color:var(--accent-ink)}
+.cd-date.today .dm{color:var(--accent-ink);opacity:.85}
+.dtoday{font-size:11px;font-weight:700;padding:0 6px;border-radius:999px;background:var(--accent-ink);color:var(--accent);line-height:1.5}
+.cd.tcol,.cd-closed.tcol{box-shadow:inset 2px 0 0 color-mix(in srgb,var(--accent) 55%,transparent),inset -2px 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}
+.cd.tcol.sel,.cd.tcol.on{box-shadow:inset 2px 0 0 var(--accent),inset -2px 0 0 var(--accent)}
+
+/* ===== 보기 좋게: 근무 배치표 =====
+   배치된 사람 = 초록 이름표, 빈 자리 = 옅은 빨강 + 흰 배지, 원장 없음 = 빗금, 자리 미정 = 노란 이름표 */
+.pboard th,.pboard td{border-color:var(--line)}
+.pboard tbody th{font-size:13.5px;line-height:1.3}
+.pboard .pn{display:block;margin:2px auto;padding:2px 6px;max-width:100%;border-radius:6px;background:var(--accent-soft);color:var(--work-ink);font-weight:600;line-height:1.3;box-sizing:border-box}
+.pboard .pn small,.pboard .pn .nt{color:color-mix(in srgb,var(--work-ink) 70%,transparent);font-weight:500}
+.pboard .pn.part{background:transparent;border:1px dashed color-mix(in srgb,var(--work-ink) 45%,transparent);color:var(--ink-2)}
+.pboard.ph2 .pn{font-size:13px}
+.pc.short{background:color-mix(in srgb,var(--danger-soft) 55%,var(--surface))}
+.pboard.ph2 td.hpm.short{background:color-mix(in srgb,var(--danger-soft) 55%,var(--surface))}
+.pb-need{display:inline-block;margin:2px auto 0;padding:1px 8px;border-radius:999px;background:var(--surface);border:1px solid color-mix(in srgb,var(--danger) 40%,transparent);color:var(--danger);font-size:11.5px;font-weight:700;line-height:1.5}
+.pboard td.pc.doff,.pbox.doff{background:repeating-linear-gradient(135deg,var(--hatch) 0 4px,transparent 4px 9px)}
+.pb-off{color:var(--muted);font-size:11.5px}
+.pb-free td.warn{background:color-mix(in srgb,var(--warn-soft) 45%,var(--surface));color:var(--warn)}
+.pb-free td .pn,.pb-free td.warn .pn{background:var(--warn-soft);color:var(--warn)}
+.pb-free td .pn small,.pb-free td .pn .nt{color:color-mix(in srgb,var(--warn) 75%,transparent)}
+.pb-free th{background:color-mix(in srgb,var(--warn-soft) 70%,var(--surface))!important}
+.pboard.ph2 td.pc.can:hover,.pboard.ph2 td.pc.on{background:var(--accent-soft)}
+.pboard.ph2 td.pc.on .pn{background:var(--surface)}
+/* 하루 보기 상자도 같은 이름표 */
+.pbox .pn{display:inline-block;margin:2px 3px;padding:2px 7px;border-radius:6px;background:var(--accent-soft);color:var(--work-ink);font-weight:600}
+.pb-need{white-space:nowrap;padding:1px 5px;font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
@@ -1420,14 +1479,14 @@ function calendarView(ym,teams){var dates=monthDates(ym),secs=calSections(ym,tea
       if(d.custom&&d.ov.note)memos.unshift(d.ov.note);
       teams.forEach(function(t){t.staff.forEach(function(p){var a=p.abs;if(!a)return;if(a.from===iso)memos.push((p.name||'')+' '+(a.why||'휴직')+' 시작');if(a.to===iso)memos.push((p.name||'')+' '+(a.why||'휴직')+' 끝')})});
       var dc=(d.dow===0||d.hol?'sun':d.dow===6?'sat':'');
-      h+='<button class="cd-date '+dc+sel+'" data-day="'+iso+'" style="grid-row:1;grid-column:'+col+'" aria-label="'+mdLabel(iso)+' 자세히 보기"><span class="dn">'+d.day+'</span>'+(memos.length?'<span class="dm">('+esc(memos.join(', '))+')</span>':'')+'</button>';
-      if(d.type==='closed'){var big=d.ov?(d.ov.note||'휴진'):d.hol?'휴진':'',small=!d.ov&&d.hol?d.hol:'';h+='<div class="cd-closed'+(big?' named':'')+sel+'" data-day="'+iso+'" style="grid-row:2 / span '+(nrow-1)+';grid-column:'+col+'">'+(big?'<b>'+esc(big)+'</b>':'')+(small?'<small>'+esc(small)+'</small>':'')+'</div>';return}
+      var tdy=iso===todayIso();h+='<button class="cd-date '+dc+sel+(tdy?' today':'')+'" data-day="'+iso+'" style="grid-row:1;grid-column:'+col+'" aria-label="'+mdLabel(iso)+(tdy?' (오늘)':'')+' 자세히 보기"'+(tdy?' aria-current="date"':'')+'><span class="dn">'+d.day+'</span>'+(tdy?'<span class="dtoday">오늘</span>':'')+(memos.length?'<span class="dm">('+esc(memos.join(', '))+')</span>':'')+'</button>';
+      if(d.type==='closed'){var big=d.ov?(d.ov.note||'휴진'):d.hol?'휴진':'',small=!d.ov&&d.hol?d.hol:'';h+='<div class="cd-closed'+(big?' named':'')+sel+(tdy?' tcol':'')+'" data-day="'+iso+'" style="grid-row:2 / span '+(nrow-1)+';grid-column:'+col+'">'+(big?'<b>'+esc(big)+'</b>':'')+(small?'<small>'+esc(small)+'</small>':'')+'</div>';return}
       secs.forEach(function(sc,i){var it=secItems(sc,iso,d,teams,Y),can=sc.k==='off'?canTeam(sc.t.id):editable,on=ui.selDay===iso&&ui.selSec===sc.id;
-        h+='<div class="cd '+sc.cls+sel+(can?' can':'')+(on?' on':'')+'" data-day="'+iso+'" data-sec="'+sc.id+'" role="button" tabindex="0" aria-label="'+esc(mdLabel(iso)+' '+sc.label+': '+(it.length?it.map(function(x){return x.replace(/<[^>]+>/g,'')}).join(', '):'없음')+(can?' · 눌러서 고치기':''))+'" style="grid-row:'+(i+2)+';grid-column:'+col+'">'+it.join('')+'</div>'});
+        h+='<div class="cd '+sc.cls+sel+(tdy?' tcol':'')+(can?' can':'')+(on?' on':'')+'" data-day="'+iso+'" data-sec="'+sc.id+'" role="button" tabindex="0" aria-label="'+esc(mdLabel(iso)+' '+sc.label+': '+(it.length?it.map(function(x){return x.replace(/<[^>]+>/g,'')}).join(', '):'없음')+(can?' · 눌러서 고치기':''))+'" style="grid-row:'+(i+2)+';grid-column:'+col+'">'+it.join('')+'</div>'});
       var x=st.days[iso],cnt='';if(x){var sa=false,sp=false,sn=false;Object.keys(x.teams).forEach(function(k){var y=x.teams[k];if(y.sAM)sa=true;if(y.sPM)sp=true;if(y.sNT)sn=true});
         cnt=(d.hasAM?'<span class="'+(sa?'bad':'')+'">오전 '+x.tot[0]+'</span>':'')+(d.hasPM?'<span class="'+(sp?'bad':'')+'">오후 '+x.tot[1]+'</span>':'')+(d.night?'<span class="'+(sn?'bad':'')+'">야간 '+x.tot[2]+'</span>':'');
         if(sa||sp||sn)cnt+='<span class="bad">인원 부족</span>';if(clash[iso])cnt+='<span class="bad" title="'+esc(clash[iso].join(', '))+'">휴무 겹침</span>'}
-      h+='<div class="cd s-cnt'+sel+'" data-day="'+iso+'" style="grid-row:'+nrow+';grid-column:'+col+'">'+cnt+'</div>'});
+      h+='<div class="cd s-cnt'+sel+(tdy?' tcol':'')+(/class="bad"/.test(cnt)?' short':'')+'" data-day="'+iso+'" style="grid-row:'+nrow+';grid-column:'+col+'">'+cnt+'</div>'});
     h+='</div>'});
   h+='</div></div>';
   var pane=ui.selDay?(ui.selSec?secEditor(ui.selDay,ui.selSec,teams,Y):dayEditor(ui.selDay,teams,Y)):'';
