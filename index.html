@@ -1197,7 +1197,7 @@ function stats(ym,teams){var dates=monthDates(ym),weeks=weeksOf(ym),per={},days=
 /* ---------- render ---------- */
 var GRID=null;
 /* 아래로 내려서 일할 때도 쓰는 달 넘기기(화면 양옆)와 맨 위로(오른쪽 아래) */
-function fnavOn(){return ui.view==='app'&&(ui.tab==='roster'||ui.tab==='place'||ui.tab==='att'||ui.tab==='lv')}
+function fnavOn(){return ui.view==='app'&&(ui.tab==='hours'||ui.tab==='roster'||ui.tab==='place'||ui.tab==='att'||ui.tab==='lv')}
 function floatNav(){if(ui.view!=='app')return '';var h='';
   if(fnavOn()){var pv=shiftYM(ui.ym,-1),nx=shiftYM(ui.ym,1),ml=function(ym){return (+ym.slice(5))+'월'};
     h+='<button class="fmon prev" id="fPrev" data-act="month" data-k="-1" aria-label="이전 달 ('+ml(pv)+')" title="'+ml(pv)+'로"><span aria-hidden="true">‹</span><small>'+ml(pv)+'</small></button>'+
