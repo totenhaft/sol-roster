@@ -1207,7 +1207,7 @@ var topRaf=0;window.addEventListener('scroll',function(){if(topRaf)return;topRaf
 function render(){
   PSC={};clearDI();rebuildTypes();fixTab();
   var fid=document.activeElement&&document.activeElement.id,body;
-  if(ui.view==='loading')body='<section class="panel empty">근무표를 불러오는 중이에요…</section>';
+  if(ui.view==='loading')body='<section class="panel empty">근무표를 불러오는 중이에요…'+(ui.slowTry?'<br><small class="muted" role="status">구글 서버 응답이 늦어서 다시 불러오고 있어요 ('+(ui.slowTry+1)+'/3)</small>':'')+'</section>';
   else if(ui.view==='setup')body=setupView();
   else if(ui.view==='login')body=loginView();
   else if(ui.view==='error')body=errorView();
@@ -2458,7 +2458,7 @@ function loginView(){var st=ui.status||{};return '<section class="panel authpane
   (ui.loginErr?'<p class="err">'+esc(ui.loginErr)+'</p>':'')+'<div class="row"><button class="btn primary" data-act="login">로그인</button>'+(st.viewPin?'':'<button class="btn" data-act="viewOnly">PIN 없이 보기</button>')+'</div></section>'}
 function saveNote(){return MODE==='server'?'고친 내용은 바로 자동 저장돼요.':'다 고쳤으면 위쪽 <b>저장</b>을 누르세요.'}
 function keepNote(){return MODE==='server'?' 자동 저장돼요.':' 저장을 눌러야 유지돼요.'}
-function errorView(){return '<section class="panel authpanel"><h2>서버에 연결하지 못했어요</h2><p>'+esc(ui.netErr||'')+'</p><p class="muted">인터넷 연결과 config.js에 넣은 주소(Apps Script 웹 앱 URL)를 확인한 뒤 다시 시도하세요.</p><button class="btn primary" data-act="retry">다시 시도</button></section>'}
+function errorView(){return '<section class="panel authpanel"><h2>서버에 연결하지 못했어요</h2><p>'+esc(ui.netErr||'')+'</p><p class="muted">'+(/너무 늦어요/.test(ui.netErr||'')?'구글 서버가 잠깐 느려질 때가 있어요. 1~2분 뒤에 <b>다시 시도</b>를 눌러 주세요.':'인터넷 연결을 확인한 뒤 다시 시도하세요. 계속 안 되면 관리자에게 알려 주세요.')+'</p><button class="btn primary" data-act="retry">다시 시도</button></section>'}
 
 /* ---------- dirty tracking ---------- */
 var draftTimer=null;
@@ -2750,10 +2750,20 @@ function moveStaff(L,tid){var to=teamById(tid);if(!to||to.id===L.team.id||!isAdm
   dTeam(from.id);dTeam(to.id);toast(L.p.name+' 님을 '+to.name+'(으)로 옮겼어요.')}
 
 /* ---------- server (Google Apps Script) ---------- */
-function api(action,payload,again){var body=JSON.stringify(Object.assign({action:action},payload||{}));
-  /* reading calls try once more: right after a server update Google can answer with a page instead of data for a few seconds */
-  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:body,redirect:'follow'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).catch(function(e){
-    if(!again&&(action==='status'||action==='load'||action==='login'))return new Promise(function(res){setTimeout(res,1500)}).then(function(){return api(action,payload,true)});throw e})}
+/* Google 서버가 가끔 응답 없이 멈춰요: 읽기는 15초, 저장은 35초(다른 사람 저장을 기다릴 수 있어서)가 지나면 끊고,
+   읽기는 3번까지 다시 해요. 저장은 끊기면 자동 저장이 잠시 뒤 다시 해요(그사이 실제로 들어갔으면 아래 landed가 알아봐요). */
+var API_READ={status:1,load:1,login:1,att:1,history:1,handbook:1};
+function api(action,payload,tries){tries=tries||0;var body=JSON.stringify(Object.assign({action:action},payload||{})),rd=!!API_READ[action],
+    ac=typeof AbortController!=='undefined'?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},rd?15000:35000):0;
+  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:body,redirect:'follow',signal:ac?ac.signal:undefined}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(j){clearTimeout(tm);if(tries)apiSlow(0);return j},function(e){clearTimeout(tm);
+    var to=!!(e&&e.name==='AbortError'),err=to?new Error('서버 응답이 너무 늦어요'):e;if(to){err.timeout=true;if(!rd)ui.wto=Date.now()}
+    if(rd&&tries<2){apiSlow(tries+1);return new Promise(function(res){setTimeout(res,tries?3000:1500)}).then(function(){return api(action,payload,tries+1)})}
+    apiSlow(0);throw err})}
+function apiSlow(n){if(ui.slowTry===n)return;ui.slowTry=n;if(ui.view==='loading')render()}
+/* 저장이 '먼저 저장한 사람이 있어요'로 돌아왔는데 바로 전에 내 저장이 시간 초과로 끊겼다면: 서버 것이 내 것과 같으면 내 저장이 들어간 거예요 */
+function canon(v){if(Array.isArray(v))return '['+v.map(canon).join(',')+']';if(v&&typeof v==='object')return '{'+Object.keys(v).filter(function(k){return v[k]!==undefined&&v[k]!==null&&!(Array.isArray(v[k])&&!v[k].length)&&v[k]!==false&&v[k]!==''}).sort().map(function(k){return JSON.stringify(k)+':'+canon(v[k])}).join(',')+'}';return JSON.stringify(v===undefined?null:v)}
+function sameKeys(a,b,keys){return keys.every(function(k){return canon(a&&a[k])===canon(b&&b[k])})}
+function landed(check){if(!ui.wto||Date.now()-ui.wto>600000)return Promise.resolve(null);return api('load',{pin:pinArg()}).then(function(L){return L&&L.ok?check(L.data||{}):null},function(){return null})}
 function pinArg(){return ui.auth?ui.auth.pin:''}
 function readAuth(){var raw=ssGet(KEYS.auth)||lsGet(KEYS.auth);try{return raw?JSON.parse(raw):null}catch(e){return null}}
 function writeAuth(rem){var v=JSON.stringify({pin:ui.auth.pin,remember:!!rem});ssSet(KEYS.auth,v);if(rem)lsSet(KEYS.auth,v);else lsDel(KEYS.auth)}
@@ -2788,13 +2798,19 @@ function applyServer(r){var d=r.data||{},c=d.config||{};var n=blankState();n.cli
   n.teams=(c.teamOrder||[]).map(function(id){return (d.teams||{})[id]}).filter(Boolean);n.sched=d.sched||{};n.att=d.att||{};n.attRule=c.attRule||{};n.meta={configAt:c.updatedAt||0};S=normalize(n);S.attNt=cleanAttNt(d.attNt);ui.base={};Object.keys(S.sched).forEach(function(ym){Object.keys(S.sched[ym]).forEach(function(tid){ui.base[ym+'|'+tid]=JSON.stringify(roPayload(S.sched[ym][tid]))})});ui.saveErr='';ui.pins=r.pins||null;ui.attMonths=r.attMonths||null;ui.attTried={};
   if(ui.auth&&ui.auth.role==='leader'&&!teamById(ui.auth.teamId)){ui.auth=null;clearAuth()}rebuildTypes()}
 function saveServer(){var pin=pinArg(),steps=[];
-  if(ui.dirty.config&&isAdmin())steps.push(function(){var g=ui.dirty.config;return api('saveConfig',{pin:pin,base:S.meta.configAt||0,config:{clinic:S.clinic,holidayCredit:S.holidayCredit,labels:S.labels,attRule:S.attRule,rules:S.rules,groups:S.groups,hours:S.hours,dateHours:S.dateHours,types:S.types,teams:S.teams.map(function(t){return {id:t.id,name:t.name,leader:t.leader}})}}).then(function(r){
+  if(ui.dirty.config&&isAdmin())steps.push(function(){var g=ui.dirty.config,pc={clinic:S.clinic,holidayCredit:S.holidayCredit,labels:S.labels,attRule:S.attRule,rules:S.rules,groups:S.groups,hours:S.hours,dateHours:S.dateHours,types:S.types,teams:S.teams.map(function(t){return {id:t.id,name:t.name,leader:t.leader}})};return api('saveConfig',{pin:pin,base:S.meta.configAt||0,config:pc}).then(function(r){
+    if(!r.ok&&r.error==='conflict')return landed(function(D){var c=D.config||{};return sameKeys(c,JSON.parse(JSON.stringify(pc)),['clinic','holidayCredit','labels','attRule','rules','groups','hours','dateHours','types'])&&canon((c.teamOrder||[]))===canon(pc.teams.map(function(t){return t.id}))?c:null}).then(function(c){if(!c){r.what='진료 시간·근무 형태·팀 설정';throw r}S.meta.configAt=c.updatedAt;if(ui.dirty.config===g)ui.dirty.config=false});
     if(!r.ok){r.what='진료 시간·근무 형태·팀 설정';throw r}S.meta.configAt=r.updatedAt;Object.keys(r.teams||{}).forEach(function(id){var tm=teamById(id);if(tm&&!tm.updatedAt){tm.updatedAt=r.teams[id];ui.needRender=true}else if(tm&&!ui.dirty.teams[id])tm.updatedAt=r.teams[id]});if(ui.dirty.config===g)ui.dirty.config=false})});
   Object.keys(ui.dirty.teams).forEach(function(tid){steps.push(function(){var tm=teamById(tid);if(!tm||!canTeam(tid)){delete ui.dirty.teams[tid];return Promise.resolve()}var g=ui.dirty.teams[tid];
-    return api('saveTeam',{pin:pin,base:tm.updatedAt||0,team:{id:tm.id,need:tm.need,staff:tm.staff,groups:tm.groups||[],posts:tm.posts||[]}}).then(function(r){if(!r.ok){r.what=tm.name+' 직원 명단';throw r}tm.updatedAt=r.updatedAt;tm.updatedBy=r.updatedBy||'';if(ui.dirty.teams[tid]===g)delete ui.dirty.teams[tid]})})});
+    var pt={id:tm.id,need:tm.need,staff:tm.staff,groups:tm.groups||[],posts:tm.posts||[]};
+    return api('saveTeam',{pin:pin,base:tm.updatedAt||0,team:pt}).then(function(r){
+      if(!r.ok&&r.error==='conflict')return landed(function(D){var st=(D.teams||{})[tid];return st&&sameKeys(st,JSON.parse(JSON.stringify(pt)),['need','staff','groups','posts'])?st:null}).then(function(st){if(!st){r.what=tm.name+' 직원 명단';throw r}tm.updatedAt=st.updatedAt;tm.updatedBy=st.updatedBy||'';if(ui.dirty.teams[tid]===g)delete ui.dirty.teams[tid]});
+      if(!r.ok){r.what=tm.name+' 직원 명단';throw r}tm.updatedAt=r.updatedAt;tm.updatedBy=r.updatedBy||'';if(ui.dirty.teams[tid]===g)delete ui.dirty.teams[tid]})})});
   Object.keys(ui.dirty.rosters).forEach(function(key){steps.push(function(){return saveRo(key,pin,0)})});
   Object.keys(ui.dirty.att||{}).forEach(function(ym){steps.push(function(){var A=attOf(ym);if(!A||!isAdmin()){delete ui.dirty.att[ym];return Promise.resolve()}var g=ui.dirty.att[ym];A.nt=attNtOf(ym);S.attNt=S.attNt||{};if(Object.keys(A.nt).length)S.attNt[ym]=A.nt;else delete S.attNt[ym];
-    return api('saveAtt',{pin:pin,ym:ym,base:A.updatedAt||0,att:A}).then(function(r){if(!r.ok){r.what=ymLabel(ym)+' 근태';throw r}A.updatedAt=r.updatedAt;A.updatedBy=r.updatedBy||'';if(ui.dirty.att[ym]===g)delete ui.dirty.att[ym]})})});
+    return api('saveAtt',{pin:pin,ym:ym,base:A.updatedAt||0,att:A}).then(function(r){
+      if(!r.ok&&r.error==='conflict')return landed(function(D){var sa=(D.att||{})[ym];return sa&&sameKeys(sa,JSON.parse(JSON.stringify(A)),['rows','fix','fin','map','nt'])?sa:null}).then(function(sa){if(!sa){r.what=ymLabel(ym)+' 근태';throw r}A.updatedAt=sa.updatedAt;A.updatedBy=sa.updatedBy||'';if(ui.dirty.att[ym]===g)delete ui.dirty.att[ym]});
+      if(!r.ok){r.what=ymLabel(ym)+' 근태';throw r}A.updatedAt=r.updatedAt;A.updatedBy=r.updatedBy||'';if(ui.dirty.att[ym]===g)delete ui.dirty.att[ym]})})});
   return steps.reduce(function(p,f){return p.then(f)},Promise.resolve())}
 /* one team-month: save it; if someone else saved it first, take their version, put my changes on top and save again */
 var RO_F={cells:2,locks:2,reqs:2,adj:2,notes:2,place:2,ot:2,vis:2,memo:1,dut:1};
@@ -2829,7 +2845,7 @@ function autoSave(){clearTimeout(autoTimer);autoTimer=null;
       if(r&&r.error==='conflict'){ui.conflict='다른 사람이 먼저 저장한 내용이 있어서 자동 저장을 멈췄어요'+(r.what?' ('+r.what+')':'')+'.';render()}
       else if(r&&r.error==='pin'){clearAuth();ui.auth=null;ui.dirty=freshDirty();ui.view='login';ui.loginErr='PIN이 바뀌었거나 팀장 등록이 삭제됐어요. 다시 로그인해 주세요.';render()}
       else if(r&&r.error){ui.saveErr=errMsg(r);paintSave();toast(errMsg(r))}
-      else{var first=!retryMs;retryMs=Math.min(60000,retryMs?retryMs*2:3000);ui.saveErr='인터넷 연결 문제로 아직 저장하지 못했어요. 잠시 뒤 다시 저장해요.';paintSave();if(first)toast('인터넷 연결 문제로 저장하지 못했어요. 연결되면 자동으로 다시 저장해요.');scheduleSave(retryMs)}
+      else{var first=!retryMs;retryMs=Math.min(60000,retryMs?retryMs*2:3000);ui.saveErr=(r&&r.timeout?'구글 서버 응답이 늦어서':'인터넷 연결 문제로')+' 아직 저장하지 못했어요. 잠시 뒤 자동으로 다시 저장해요.';paintSave();if(first)toast((r&&r.timeout?'구글 서버 응답이 늦어서':'인터넷 연결 문제로')+' 저장하지 못했어요. 잠시 뒤 자동으로 다시 저장해요.');scheduleSave(retryMs)}
       throw r||new Error('save')});
   return saveP}
 function paintSave(){var b=app.querySelector('.savebox');if(b)b.innerHTML=saveBoxInner()}
