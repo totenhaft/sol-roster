@@ -769,6 +769,14 @@ a.tab{text-decoration:none}
 .pc.short,.pbox.short{background:var(--surface)}
 .pboard.ph2 td.hpm.short{background:color-mix(in srgb,var(--surface-2) 35%,transparent)}
 .pboard.ph2 td.pc.short.can:hover,.pboard.ph2 td.pc.short.on{background:var(--accent-soft)}
+/* 배치표 '야간' 줄: 근무표에서 야간인 사람 (파란 이름표) */
+.pb-night th{color:var(--sec-night)!important;background:color-mix(in srgb,var(--night-soft) 75%,var(--surface))!important}
+.pb-night td{background:color-mix(in srgb,var(--night-soft) 38%,var(--surface))}
+.pb-night td.nonight{background:repeating-linear-gradient(135deg,var(--hatch) 0 4px,transparent 4px 9px)}
+.pboard .pb-night .pn{display:inline-block;margin:2px 3px}
+.pboard .pn.pnight,.pday-line .pn.pnight{background:var(--night-soft);color:var(--sec-night);border-radius:6px;padding:2px 6px;font-weight:600}
+.pboard .pn.pnight small,.pday-line .pn.pnight small{color:color-mix(in srgb,var(--sec-night) 75%,transparent);font-weight:500}
+.pnight-line b{color:var(--sec-night)}
 </style>
 <div id="app"></div>
 <script src="config.js"></script>
@@ -1738,10 +1746,18 @@ function weekBoard(t,days){var posts=postsOf(t),ed=canTeam(t.id),sp={},HL={am:'�
     days.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td colspan="2" class="pd closed">'+(ri===0?'<span class="pb-closed">휴진</span>':'')+'</td>';return}
       var hs=dayHalves(d);h+=hs.length===2?cell(x,iso,'am')+cell(x,iso,'pm'):cell(x,iso,hs[0],true)});
     h+='</tr>'});
+  if(days.some(function(iso){return di(iso).night})){h+='<tr class="pb-night"><th scope="row">야간</th>';days.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td colspan="2" class="pd closed"></td>';return}
+    if(!d.night){h+='<td colspan="2" class="pd nonight" aria-label="'+esc(mdLabel(iso))+' 야간 진료 없음"></td>';return}
+    var L=nightOf(t,iso,d),lb=nightShort(t,d,L.length);h+='<td colspan="2" class="pd" data-nd="'+iso+'" aria-label="'+esc(mdLabel(iso)+' 야간: '+(L.length?L.map(function(p){return p.name}).join(', '):'없음')+(lb?' · '+lb:''))+'">'+nightChips(t,iso,d)+(lb?'<span class="pb-need">'+lb+'</span>':'')+'</td>'});h+='</tr>'}
   if(posts.length){h+='<tr class="pb-free"><th scope="row">자리 미정</th>';days.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td colspan="2" class="pd closed"></td>';return}
     var hs=dayHalves(d);hs.forEach(function(hf,k){var f=halfList(t,sp[iso],null,hf);h+='<td'+(hs.length===1?' colspan="2"':'')+' class="'+(k===0?'pd ham':'hpm')+(f.length?' warn':'')+'" data-fd="'+iso+'" data-fh="'+hf+'">'+f.map(function(p){return pNameH(sp[iso].ro,p,iso)}).join('')+'</td>'})});h+='</tr>'}
   h+='<tr class="pb-away"><th scope="row">쉼</th>';days.forEach(function(iso){var d=di(iso);if(d.type==='closed'){h+='<td colspan="2" class="pd closed"></td>';return}h+='<td colspan="2" class="pd" data-ad="'+iso+'">'+sp[iso].away.map(function(a){return awayName(a)}).join('')+sp[iso].part.map(function(a){return awayName(a,true)}).join('')+'</td>'});
   return h+'</tr></tbody></table></div>'}
+/* 근무표에서 야간인 사람(그 팀): 배치표의 '야간' 줄 */
+function nightOf(t,iso,d){if(!d.night)return [];var ro=roster(iso.slice(0,7),t.id);return t.staff.filter(function(p){var v=cellCode(ro,p.id,iso);return !!v&&isNightCode(v)&&!absOf(p,iso)})}
+function nightTag(ro,p,iso){var v=cellCode(ro,p.id,iso),nt=noteOf(ro,p.id,iso);return [v==='HN'?'오후·야간':'',nt?'('+nt+')':''].filter(Boolean).join(' ')}
+function nightShort(t,d,n){var need=nightNeed(t,d);return need&&n<need?(n?(need-n)+'명 부족':'비어 있음'):''}
+function nightChips(t,iso,d){var ro=roster(iso.slice(0,7),t.id);return nightOf(t,iso,d).map(function(p){var tg=nightTag(ro,p,iso);return '<span class="pn pnight">'+esc(p.name)+(tg?'<small>'+esc(tg)+'</small>':'')+'</span>'}).join('')}
 function dayBoard(teams,iso){var d=di(iso),h='<div class="pday">';
   if(d.type==='closed')return h+'<section class="panel empty">'+esc(mdLabel(iso))+'은 휴진이에요'+(d.why?' ('+esc(d.why)+')':'')+'.</section></div>';
   teams.forEach(function(t){var posts=postsOf(t),ed=canTeam(t.id),sp=placeSplit(t,iso);
@@ -1749,6 +1765,7 @@ function dayBoard(teams,iso){var d=di(iso),h='<div class="pday">';
     if(!posts.length){h+='<p class="muted">아직 자리가 없어요.</p></section>';return}
     h+='<div class="pday-grid">'+posts.map(function(x){var ppl=sp.by[x.id],sh=shortOf(sp,x),on=ui.psel&&ui.psel.t===t.id&&ui.psel.p===x.id&&ui.psel.d===iso,offAll=dayHalves(d).every(function(hf){return depOff(x,sp,hf)});
       return '<div class="pbox'+(sh.any?' short':'')+(offAll?' doff':'')+(ed?' can':'')+(on?' on':'')+'" data-pt="'+t.id+'" data-pp="'+x.id+'" data-pd="'+iso+'" role="button" tabindex="0" aria-label="'+esc(x.name+': '+(ppl.length?ppl.map(function(e){return e.p.name+(e.h==='am'?' 오전':e.h==='pm'?' 오후':'')}).join(', '):'없음')+(sh.label?' · '+sh.label:''))+'"><div class="pbox-h">'+esc(x.name)+(x.need&&!offAll?'<small>'+cntText(sp,x)+'/'+x.need+'</small>':'')+'</div><div class="pbox-n'+(d.hasAM&&d.hasPM?' two':'')+'">'+dayHalves(d).map(function(hf){var ps=halfList(t,sp,x,hf),lb=halfShort(sp,x,hf),off=depOff(x,sp,hf);return '<div class="pbh">'+(d.hasAM&&d.hasPM?'<span class="pbh-l">'+(hf==='am'?'오전':'오후')+'</span>':'')+ps.map(function(p){return pNameH(sp.ro,p,iso)}).join('')+(lb?'<span class="pb-need">'+lb+'</span>':off?'<span class="pb-off">'+esc(off)+'</span>':(ps.length?'':'<span class="pb-need">—</span>'))+'</div>'}).join('')+'</div></div>'}).join('')+'</div>';
+    if(d.night){var nL=nightOf(t,iso,d),nlb=nightShort(t,d,nL.length);if(nL.length||nlb)h+='<p class="pday-line pnight-line"><b>야간</b> '+nightChips(t,iso,d)+(nlb?'<span class="pb-need">'+nlb+'</span>':'')+'</p>'}
     if(sp.free.length)h+='<p class="pday-line warn"><b>자리 미정</b> '+sp.free.map(function(e){return pName(sp.ro,e.p,iso,e.h)}).join('')+'</p>';
     if(sp.away.length||sp.part.length)h+='<p class="pday-line"><b>쉼</b> '+sp.away.map(function(a){return awayName(a)}).join('')+sp.part.map(function(a){return awayName(a,true)}).join('')+'</p>';
     h+='</section>'});
@@ -1820,7 +1837,7 @@ function placeFill(days){var filled=0,left=0,tgt={};
           var p=cand[0],f=sp.info[p.id],am=f.q.am,pm=f.q.pm;if(nA&&f.hv.am&&!f.A)am=x.id;if(nB&&f.hv.pm&&!f.B)pm=x.id;placeSetPair(t,p,iso,am,pm);tl[p.id+'|'+x.id]=(tl[p.id+'|'+x.id]||0)+1;filled++}
         var sp2=placeSplit(t,iso),c2=sp2.cnt[x.id];left+=Math.max(0,d.hasAM?needH(x,sp2,'am')-c2.am:0,d.hasPM?needH(x,sp2,'pm')-c2.pm:0)})})});
   return {filled:filled,left:left}}
-function placePrint(teams,days){var css='@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;margin:12px;font-size:11px}h1{font-size:15px;margin:0 0 8px;background:#FFF200;text-align:center;padding:4px}h2{font-size:13px;margin:12px 0 4px}table{border-collapse:collapse;width:100%;table-layout:fixed;page-break-inside:avoid}th,td{border:1px solid #BFC8C4;padding:3px 4px;text-align:center;vertical-align:middle;word-break:keep-all}thead th{background:#FCE4D6}tbody th{background:#F2F5F3;width:90px}.sun{color:#C2392D}.sat{color:#2352B0}.short .n:last-child{color:#C2392D;font-weight:700}.x{background:#EEF1EF;color:#C2392D}.n{display:block}.n small{font-size:9px;color:#55615C;margin-left:2px}.away td{color:#64716C;font-size:10px}.hh th{font-size:9.5px;font-weight:500;background:#FDF1E9;padding:1px}.do{background:#F1F3F2}.o{color:#8A9590;font-size:9.5px}td{font-size:10.5px}';
+function placePrint(teams,days){var css='@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#17211E;margin:12px;font-size:11px}h1{font-size:15px;margin:0 0 8px;background:#FFF200;text-align:center;padding:4px}h2{font-size:13px;margin:12px 0 4px}table{border-collapse:collapse;width:100%;table-layout:fixed;page-break-inside:avoid}th,td{border:1px solid #BFC8C4;padding:3px 4px;text-align:center;vertical-align:middle;word-break:keep-all}thead th{background:#FCE4D6}tbody th{background:#F2F5F3;width:90px}.sun{color:#C2392D}.sat{color:#2352B0}.short .n:last-child{color:#C2392D;font-weight:700}.x{background:#EEF1EF;color:#C2392D}.n{display:block}.n small{font-size:9px;color:#55615C;margin-left:2px}.away td{color:#64716C;font-size:10px}.hh th{font-size:9.5px;font-weight:500;background:#FDF1E9;padding:1px}.do{background:#F1F3F2}.o{color:#8A9590;font-size:9.5px}.nrow th{color:#3D4BA8}.nrow td{background:#F1F2FB}.no{background:#F4F5F4}.o2{color:#C2392D;font-weight:700}td{font-size:10.5px}';
   var lbl=days.length===1?mdLabel(days[0]):(function(){var a=parts(days[0]),b=parts(days[days.length-1]);return a[1]+'/'+a[2]+' ~ '+b[1]+'/'+b[2]})();
   var h='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(S.clinic+' 근무 배치표 '+lbl)+'</title>'+FONT_LINK+'<style>'+css+'</style></head><body><h1>'+esc(S.clinic)+' 근무 배치표 · '+esc(lbl)+'</h1>';
   teams.forEach(function(t){if(!postsOf(t).length)return;var sp={};days.forEach(function(iso){sp[iso]=placeSplit(t,iso)});
@@ -1828,6 +1845,7 @@ function placePrint(teams,days){var css='@page{size:A4 landscape;margin:8mm}*{bo
     function hn(ro,ps,iso){return ps.map(function(p){var v=cellCode(ro,p.id,iso),g=isQ(v)?qGap(TY[v],di(iso)):null,tg=[g?hmRange(g)+' 쉼':'',timeTag(ro,p,iso)].filter(Boolean).join(' ');return '<span class="n">'+esc(p.name)+(tg?'<small>'+esc(tg)+'</small>':'')+'</span>'}).join('')}
     h+='<h2>'+esc(t.name)+'</h2><table><thead><tr><th rowspan="2">자리</th>'+days.map(function(iso){var d=di(iso);return '<th colspan="2" class="'+((d.dow===0||d.hol)?'sun':d.dow===6?'sat':'')+'">'+d.day+' ('+DOWK[d.dow]+')</th>'}).join('')+'</tr><tr class="hh">'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<th colspan="2"></th>';var hs=dayHalves(d);return hs.length===2?'<th>오전</th><th>오후</th>':'<th colspan="2">'+(hs[0]==='am'?'오전':'오후')+'</th>'}).join('')+'</tr></thead><tbody>';
     postsOf(t).forEach(function(x){h+='<tr><th>'+esc(x.name)+'</th>'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<td class="x" colspan="2">휴진</td>';var hs=dayHalves(d);return hs.map(function(hf){var ps=halfList(t,sp[iso],x,hf),lb=halfShort(sp[iso],x,hf),off=depOff(x,sp[iso],hf);return '<td'+(hs.length===1?' colspan="2"':'')+' class="'+(lb?'short':off?'do':'')+'">'+hn(sp[iso].ro,ps,iso)+(lb?'<span class="n">'+lb+'</span>':'')+(off?'<span class="n o">'+esc(off)+'</span>':'')+'</td>'}).join('')}).join('')+'</tr>'});
+    if(days.some(function(iso){return di(iso).night}))h+='<tr class="nrow"><th>야간</th>'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<td class="x" colspan="2"></td>';if(!d.night)return '<td class="no" colspan="2"></td>';var ro=roster(iso.slice(0,7),t.id),L=nightOf(t,iso,d),lb=nightShort(t,d,L.length);return '<td colspan="2">'+L.map(function(p){var tg=nightTag(ro,p,iso);return '<span class="n">'+esc(p.name)+(tg?'<small>'+esc(tg)+'</small>':'')+'</span>'}).join('')+(lb?'<span class="n o2">'+lb+'</span>':'')+'</td>'}).join('')+'</tr>';
     h+='<tr><th>자리 미정</th>'+days.map(function(iso){var d=di(iso);if(d.type==='closed')return '<td class="x" colspan="2"></td>';var hs=dayHalves(d);return hs.map(function(hf){return '<td'+(hs.length===1?' colspan="2"':'')+'>'+hn(sp[iso].ro,halfList(t,sp[iso],null,hf),iso)+'</td>'}).join('')}).join('')+'</tr>';
     h+='<tr class="away"><th>쉼</th>'+days.map(function(iso){return di(iso).type==='closed'?'<td class="x" colspan="2"></td>':'<td colspan="2">'+sp[iso].away.concat(sp[iso].part).map(function(a){return '<span class="n">'+esc(a.p.name)+'<small>'+esc(a.why)+'</small></span>'}).join('')+'</td>'}).join('')+'</tr></tbody></table>'});
   return h+'<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},500)})<\/script></body></html>'}
